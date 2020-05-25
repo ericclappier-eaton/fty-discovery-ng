@@ -14,12 +14,12 @@
     ========================================================================
 */
 
+#include "include.hpp"
 #include <iostream>
 #include <thread>
-#include "include.hpp"
 
-int main ()
+int main()
 {
-  std::cout << hello << std::endl;
-  return 0;
-} 
+    std::cout << hello << std::endl;
+    return 0;
+}
