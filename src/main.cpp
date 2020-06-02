@@ -1,14 +1,13 @@
 #include "daemon.h"
 #include "discovery.h"
 #include <fty/command-line.h>
-#include <signal.h>
 #include <fty/fty-log.h>
 
 int main(int argc, char** argv)
 {
     bool        daemon = false;
     std::string config = "conf/discovery.conf";
-    bool        help = false;
+    bool        help   = false;
 
     // clang-format off
     fty::CommandLine cmd("New discovery service", {
@@ -35,14 +34,16 @@ int main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    fty::ManageFtyLog::setInstanceFtylog(fty::Discovery::ActorName, dis.config().logConfig);
+    fty::ManageFtyLog::setInstanceFtylog(dis.config().actorName, dis.config().logConfig);
 
     if (daemon) {
-        logDbg() << "Start agent as daemon";
+        logDbg() << "Start discovery agent as daemon";
         fty::Daemon::daemonize();
     }
 
+    dis.init();
     logDbg() << "Run discovery";
-
-    return dis.run();
+    dis.run();
+    dis.shutdown();
+    return EXIT_SUCCESS;
 }

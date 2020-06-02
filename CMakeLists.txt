@@ -11,19 +11,54 @@ project(fty-discovery-ng
 
 ##############################################################################################################
 
+etn_target(static ${PROJECT_NAME}-static
+    SOURCES
+        src/daemon.cpp
+        src/daemon.h
+        src/discovery.cpp
+        src/discovery.h
+        src/config.h
+        src/message.cpp
+        src/message.h
+        src/message-bus.cpp
+        src/message-bus.h
+
+        src/jobs/discover.cpp
+        src/jobs/discover.h
+    USES
+        fty-utils
+        fty-common-logging-ng
+        fty-pack
+        fty-common-messagebus
+        pthread
+    PRIVATE
+)
+
+##############################################################################################################
+
 etn_target(exe ${PROJECT_NAME}
     CONFIGS
         conf/discovery.conf
         conf/logger.conf
     SOURCES
         src/main.cpp
-        src/daemon.cpp
-        src/daemon.h
-        src/discovery.cpp
-        src/discovery.h
-        src/config.h
     USES
-        fty-utils
-        fty-common-logging
-        fty-pack
+        ${PROJECT_NAME}-static
 )
+
+##############################################################################################################
+
+etn_target(exe ${PROJECT_NAME}-test
+    CONFIGS
+        test/conf/discovery.conf
+        test/conf/logger.conf
+    SOURCES
+        test/main.cpp
+    INCLUDE_DIRS
+        src
+    USES
+        ${PROJECT_NAME}-static
+        Catch2::Catch2
+)
+
+##############################################################################################################

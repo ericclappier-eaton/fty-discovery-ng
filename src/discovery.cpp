@@ -1,9 +1,8 @@
 #include "discovery.h"
 #include "daemon.h"
+#include "jobs/discover.h"
 #include <fty/fty-log.h>
-#include <signal.h>
-#include <unistd.h>
-#include <fty/fty-log.h>
+#include <fty/thread-pool.h>
 #include <iostream>
 
 namespace fty {
@@ -15,20 +14,38 @@ Discovery::Discovery(const std::string& config)
     m_loadConfigSlot.connect(Daemon::instance().loadConfigEvent);
 }
 
-void Discovery::stop()
+void Discovery::doStop()
 {
-    logDbg() << "stopping discovery agent";
+    stop();
 }
 
 bool Discovery::loadConfig()
 {
-    pack::yaml::deserializeFile(m_configPath, m_config);
-    std::cerr << m_config.logConfig.value() << std::endl;
+    if (auto ret = pack::yaml::deserializeFile(m_configPath, m_config); !ret) {
+        logError() << ret.error();
+        return false;
+    }
     return true;
+}
+
+void Discovery::init()
+{
+    ThreadPool::init();
+    m_bus.init(m_config.actorName);
+
+    m_bus.subsribe("discover", &Discovery::discover, this);
+}
+
+void Discovery::shutdown()
+{
+    stop();
+    logDbg() << "stopping discovery agent";
+    ThreadPool::stop();
 }
 
 int Discovery::run()
 {
+    stop.wait();
     return 0;
 }
 
@@ -36,5 +53,20 @@ const Config& Discovery::config() const
 {
     return m_config;
 }
+
+void Discovery::discover(const Message& msg)
+{
+    logInfo() << "Discovery: got message " << msg.dump();
+    ThreadPool::pushWorker<job::Discover>(msg, m_bus);
+}
+
+void Discovery::configure(const Message& /*msg*/)
+{
+}
+
+void Discovery::details(const Message& /*msg*/)
+{
+}
+
 
 } // namespace fty

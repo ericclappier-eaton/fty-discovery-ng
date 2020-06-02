@@ -60,7 +60,7 @@ void Daemon::daemonize()
     umask(0);
 
     // Change the working directory to the root directory or another appropriated directory
-    chdir("/");
+    //chdir("/");
 
     // Close all open file descriptors
     for (long fd = sysconf(_SC_OPEN_MAX); fd > 0; --fd) {
