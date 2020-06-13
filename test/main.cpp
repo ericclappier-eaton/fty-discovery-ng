@@ -22,13 +22,13 @@ TEST_CASE("Discover")
     {
         using namespace std::chrono_literals;
         std::vector<std::thread> reqs;
-        for (int i = 0; i < 100; ++i) {
+        for (int i = 0; i < 1; ++i) {
             std::this_thread::sleep_for(10ms);
             reqs.emplace_back([&, num = i]() {
                 fty::MessageBus bus;
                 bus.init("unit-test"+std::to_string(num));
                 fty::Message msg;
-                msg.userData.append("127.0.0.1");
+                msg.userData.append("10.130.38.125");//append("clement.roz.lab.etn.com");//append("127.0.0.1");
                 msg.userData.append(std::to_string(num));
 
                 msg.meta.to      = "discovery-ng-test";

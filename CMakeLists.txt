@@ -25,12 +25,23 @@ etn_target(static ${PROJECT_NAME}-static
 
         src/jobs/discover.cpp
         src/jobs/discover.h
+
+        src/jobs/protocols/snmp.cpp
+        src/jobs/protocols/snmp.h
+        src/jobs/protocols/xml.cpp
+        src/jobs/protocols/xml.h
+        src/jobs/protocols/socket.cpp
+        src/jobs/protocols/socket.h
+        src/jobs/protocols/neon.cpp
+        src/jobs/protocols/neon.h
     USES
         fty-utils
         fty-common-logging-ng
         fty-pack
         fty-common-messagebus
         pthread
+        netsnmp
+        neon
     PRIVATE
 )
 
