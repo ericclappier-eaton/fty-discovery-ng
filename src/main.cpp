@@ -1,5 +1,7 @@
+#include "config.h"
 #include "daemon.h"
 #include "discovery.h"
+#include "jobs/protocols/snmp.h"
 #include <fty/command-line.h>
 #include <fty/fty-log.h>
 
@@ -34,7 +36,8 @@ int main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    fty::ManageFtyLog::setInstanceFtylog(dis.config().actorName, dis.config().logConfig);
+    fty::protocol::Snmp::instance().init(fty::Config::instance().mibDatabase);
+    fty::ManageFtyLog::setInstanceFtylog(fty::Config::instance().actorName, fty::Config::instance().logConfig);
 
     if (daemon) {
         logDbg() << "Start discovery agent as daemon";

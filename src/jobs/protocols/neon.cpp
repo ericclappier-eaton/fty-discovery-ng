@@ -1,43 +1,36 @@
+/*  =========================================================================
+    neon.cpp - Neon library wrapper
+
+    Copyright (C) 2014 - 2020 Eaton
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+    =========================================================================
+ */
+
 #include "neon.h"
-#include <iostream>
+#include <fty/split.h>
 #include <neon/ne_request.h>
 #include <neon/ne_session.h>
 #include <neon/ne_xml.h>
 #include <pack/visitor.h>
+#include <iostream>
 
 namespace neon {
 
-struct Request
-{
-    Request(ne_request* req)
-        : m_request(req, &ne_request_destroy)
-    {
-        ne_begin_request(m_request.get());
-    }
-
-    ~Request()
-    {
-        ne_end_request(m_request.get());
-    }
-
-    const ne_status* status() const
-    {
-        return ne_get_status(m_request.get());
-    }
-
-    ne_request* get()
-    {
-        return m_request.get();
-    }
-
-private:
-    using NeonRequest = std::unique_ptr<ne_request, decltype(&ne_request_destroy)>;
-
-    NeonRequest m_request;
-};
-
-Neon::Neon()
-    : m_session(nullptr, &closeSession)
+Neon::Neon(const std::string& address, uint16_t port)
+    : m_session(ne_session_create("http", address.c_str(), port), &closeSession)
 {
 }
 
@@ -45,40 +38,39 @@ Neon::~Neon()
 {
 }
 
-fty::Expected<std::string> Neon::get(const std::string& path)
+fty::Expected<std::string> Neon::get(const std::string& path) const
 {
-    static constexpr size_t SIZE = 1024;
-    Request                 request(ne_request_create(m_session.get(), "GET", ("/" + path).c_str()));
+    std::string rpath = "/" + path;
+    std::unique_ptr<ne_request, decltype(&ne_request_destroy)> request(
+        ne_request_create(m_session.get(), "GET", rpath.c_str()), &ne_request_destroy);
 
-    auto status = request.status();
+    std::string body;
 
-    if (status->code == 200) {
-        std::string body;
+    do {
+        int stat = ne_begin_request(request.get());
+        if (stat != NE_OK) {
+            auto status = ne_get_status(request.get());
+            if (!status->code) {
+                return fty::unexpected(ne_get_error(m_session.get()));
+            }
+            return fty::unexpected() << status->code << " " << status->reason_phrase;
+        }
 
-        std::string chunk;
-        chunk.resize(SIZE);
+        body.clear();
+        std::array<char, 1024> buffer;
 
         ssize_t bytes = 0;
-        while ((bytes = ne_read_response_block(request.get(), chunk.data(), 1024)) > 0) {
-            body += std::string(chunk, 0, size_t(bytes));
+        while ((bytes = ne_read_response_block(request.get(), buffer.data(), buffer.size())) > 0) {
+            body += std::string(buffer.data(), size_t(bytes));
         }
-        return body;
-    } else {
-        return fty::unexpected() << status->code << " " << status->reason_phrase;
-    }
-}
+    } while(ne_end_request(request.get()) == NE_RETRY);
 
-bool Neon::connect(const std::string& address, uint16_t port)
-{
-    m_session = NeonSession(ne_session_create("http", address.c_str(), port), &closeSession);
-    return m_session != nullptr;
+    return body;
 }
 
 void Neon::closeSession(ne_session* sess)
 {
-    if (sess) {
-        ne_session_destroy(sess);
-    }
+    ne_session_destroy(sess);
 }
 
 // =====================================================================================================================
@@ -89,7 +81,27 @@ struct NeonNode
     std::string           value;
     std::vector<NeonNode> children;
     NeonNode*             parent = nullptr;
+
+    void dump(std::ostream& st, size_t level = 0) const
+    {
+        std::string indent(level * 4, ' ');
+        if (parent == nullptr) {
+            st << indent << "[root]\n";
+        } else {
+            st << indent << "[" << name << "]";
+            if (!value.empty()) {
+                st << " = " << value;
+            }
+            st << "\n";
+        }
+
+        for (const auto& child : children) {
+            child.dump(st, level + 1);
+        }
+    }
 };
+
+// =====================================================================================================================
 
 template <pack::Type ValType>
 struct Convert
@@ -109,6 +121,8 @@ struct Convert
     {
     }
 };
+
+// =====================================================================================================================
 
 class NeonDeserializer : public pack::Deserialize<NeonDeserializer>
 {
@@ -135,14 +149,28 @@ public:
     {
     }
 
-    static void unpackValue(pack::IObjectList& /*list*/, const NeonNode& /*neon*/)
+    static void unpackValue(pack::IObjectList& list, const NeonNode& neon)
     {
+        NeonNode* parent = neon.parent;
+        if (!parent) {
+            return;
+        }
+        for (const auto& ch : parent->children) {
+            if (ch.name != neon.name) {
+                continue;
+            }
+
+            auto& item = list.create();
+            visit(item, ch);
+        }
     }
 
     static void unpackValue(pack::IProtoMap& /*map*/, const NeonNode& /*neon*/)
     {
     }
 };
+
+// =====================================================================================================================
 
 class Parser
 {
@@ -183,8 +211,18 @@ private:
 
     static int valueEl(void* userdata, int /*state*/, const char* cdata, size_t len)
     {
+        std::string data = trimmed(cdata, len);
+        if (data.empty()) {
+            return NE_XML_STATEROOT;
+        }
+
         Parser* self = reinterpret_cast<Parser*>(userdata);
-        self->m_current->value = std::string(cdata, len);
+
+        NeonNode& cdataNode = self->m_current->children.emplace_back();
+        cdataNode.name      = "cdata";
+        cdataNode.value     = data;
+        cdataNode.parent    = self->m_current;
+
         return NE_XML_STATEROOT;
     }
 
@@ -197,36 +235,26 @@ private:
         return NE_XML_STATEROOT;
     }
 
+    static std::string trimmed(const char* data, size_t len)
+    {
+        return fty::trimmed(std::string(data, len));
+    }
+
 private:
     NeonNode* m_current = nullptr;
 };
 
 // =====================================================================================================================
 
-void dump(const NeonNode& node, size_t level = 0)
-{
-    std::string indent(level * 4, ' ');
-    if (node.parent == nullptr) {
-        std::cerr << indent << "[root]\n";
-    } else {
-        std::cerr << indent << "[" << node.name << "]";
-        if (!node.value.empty()) {
-            std::cerr << " = " << node.value;
-        }
-        std::cerr << "\n";
-    }
-    for (const auto& child : node.children) {
-        dump(child, level + 1);
-    }
-}
-
 void deserialize(const std::string& cnt, pack::Attribute& node)
 {
     NeonNode neon;
     Parser   p(neon);
     p.parse(cnt);
-    dump(neon);
-    NeonDeserializer::visit(node, neon.children[0]);
+    //neon.dump(std::cout);
+    if (!neon.children.empty()) {
+        NeonDeserializer::visit(node, neon.children[0]);
+    }
 }
 
 } // namespace neon

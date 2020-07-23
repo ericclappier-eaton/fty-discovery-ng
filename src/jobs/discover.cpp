@@ -1,27 +1,54 @@
+/*  =========================================================================
+    discover.cpp - Protocols discovery job
+
+    Copyright (C) 2014 - 2020 Eaton
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+    =========================================================================
+ */
+
 #include "discover.h"
-#include "protocols/snmp.h"
-#include "protocols/xml.h"
+#include "common.h"
+#include "protocols/xml-pdc.h"
 #include "src/message-bus.h"
 #include <fty/fty-log.h>
-#include <netdb.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <unistd.h>
+#include <fty/split.h>
+#include <set>
 
 namespace fty::job {
 
-namespace {
-    struct Response : public pack::Node
+// =====================================================================================================================
+
+/// Response wrapper
+class DisResponse : public BasicResponse<DisResponse>
+{
+public:
+    pack::StringList protocols = FIELD("protocols");
+
+public:
+    using BasicResponse::BasicResponse;
+    META(DisResponse, protocols)
+
+public:
+    const pack::StringList& data()
     {
-        using pack::Node::Node;
+        return protocols;
+    }
+};
 
-        pack::StringList            protocols = FIELD("protocols");
-        pack::String                error     = FIELD("error");
-        pack::Enum<Message::Status> status    = FIELD("status");
-
-        META_FIELDS(result, error)
-    };
-} // namespace
+// =====================================================================================================================
 
 Discover::Discover(const Message& in, MessageBus& bus)
     : m_in(in)
@@ -31,104 +58,104 @@ Discover::Discover(const Message& in, MessageBus& bus)
 
 void Discover::operator()()
 {
-    Response result;
-    Message  reply;
-    reply.meta.to   = m_in.meta.from;
-    reply.meta.from = m_in.meta.to;
-
-    auto sendReply = [&]() {
-        reply.meta.status = result.status;
-        if (result.status == Message::Status::ok) {
-            reply.userData.append(*pack::json::serialize(result.protocols));
-        } else {
-            reply.userData.append(*pack::json::serialize(result.error));
-        }
-        m_bus->reply("discover", m_in, reply);
-    };
+    DisResponse response;
 
     if (m_in.userData.empty()) {
-        result.status = Message::Status::ko;
-        result.error  = "Wrong input data";
-        sendReply();
+        response.setError("Wrong input data");
+        m_bus->reply("discover", m_in, response);
         return;
     }
 
-    std::string ipAddress = m_in.userData[0];
+    std::string            ipAddress = m_in.userData[0];
+    std::vector<BasicInfo> protocols;
 
-    protocol::Snmp snmp;
-    if (auto res = snmp.discover(ipAddress)) {
-        if (*res) {
-            result.protocols.append("NUT_SNMP");
-        }
+    if (auto res = tryXmlPdc(ipAddress)) {
+        protocols.emplace_back(*res);
+        logInfo() << Logger::nowhitespace() << "Found XML  device: '" << res->name << "' mibs: []";
     } else {
         logError() << res.error();
     }
 
-    protocol::Xml xml;
-    if (auto res = xml.discover(ipAddress)) {
-        if (*res) {
-            result.protocols.append("NUT_XML_PDC");
-        }
+    if (auto res = trySnmp(ipAddress)) {
+        protocols.emplace_back(*res);
+        logInfo() << Logger::nowhitespace() << "Found SNMP device: '" << res->name << "' mibs: ["
+                  << implode(res->mibs, ", ") << "]";
     } else {
         logError() << res.error();
     }
 
-    result.status = Message::Status::ok;
-    sendReply();
+    sortProtocols(protocols);
+
+    for (const auto& prot : protocols) {
+        switch (prot.type) {
+            case BasicInfo::Type::Snmp:
+                response.protocols.append("NUT_SNMP");
+                break;
+            case BasicInfo::Type::Xml:
+                response.protocols.append("NUT_XML_PDC");
+                break;
+        }
+    }
+
+    response.status = Message::Status::ok;
+    m_bus->reply("discover", m_in, response);
 }
 
-Expected<bool> Discover::portIsOpen(const std::string& address, uint16_t port)
+Expected<BasicInfo> Discover::tryXmlPdc(const std::string& ipAddress) const
 {
-    std::string portStr = std::to_string(port);
-    addrinfo    hints;
-    memset(&hints, 0, sizeof(addrinfo));
-
-    hints.ai_family   = AF_UNSPEC;
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_flags    = AI_PASSIVE;
-
-    addrinfo* result;
-    if (int ret = getaddrinfo(address.c_str(), portStr.c_str(), &hints, &result); ret != 0) {
-        return unexpected(gai_strerror(ret));
-    }
-
-    int sock = -1;
-
-    for (addrinfo* rp = result; rp != nullptr; rp = rp->ai_next) {
-        sock = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
-        if (sock == -1) {
-            continue;
-        }
-
-        struct timeval timeout;
-        timeout.tv_sec  = 0;
-        timeout.tv_usec = 100 * 1000; // 100 ms to connect
-        setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
-
-        if (connect(sock, rp->ai_addr, rp->ai_addrlen) == 0) {
-            char hbuf[NI_MAXHOST], sbuf[NI_MAXSERV];
-            logInfo() << "connected " << sock;
-
-            if (getnameinfo(rp->ai_addr, rp->ai_addrlen, hbuf, sizeof(hbuf), sbuf, sizeof(sbuf),
-                    NI_NUMERICHOST | NI_NUMERICSERV) == 0) {
-                logInfo() << "host " << hbuf << ", port " << sbuf;
+    protocol::XmlPdc xml(ipAddress);
+    if (auto prod = xml.get<protocol::ProductInfo>("product.xml")) {
+        if (auto props = xml.get<protocol::Properties>(prod->summary.summary.url)) {
+            BasicInfo info;
+            if (auto res = props->value("UPS.PowerSummary.iProduct")) {
+                info.name = *res;
             }
-            break;
+            if (auto res = props->value("UPS.PowerSummary.iModel")) {
+                info.name = info.name.value() + (info.name.empty() ? "" : " ") + *res;
+            }
+            info.type = BasicInfo::Type::Xml;
+            return info;
+        } else {
+            return unexpected(props.error());
         }
-
-
-        close(sock);
-        sock = -1;
+    } else {
+        return unexpected(prod.error());
     }
-
-    freeaddrinfo(result);
-
-    if (sock != -1) {
-        close(sock);
-        return true;
-    }
-
-    return false;
 }
+
+Expected<BasicInfo> Discover::trySnmp(const std::string& ipAddress) const
+{
+    return readSnmp(ipAddress);
+}
+
+void Discover::sortProtocols(std::vector<BasicInfo>& protocols)
+{
+    static std::set<std::string> epdus = {
+        "EATON-EPDU-MIB", "EATON-OIDS", "EATON-GENESIS-II-MIB", "EATON-EPDU-PU-SW-MIB", "ACS-MIB"};
+
+    static std::set<std::string> atss = {"EATON-OIDS", "PowerNet-MIB"};
+
+    auto isMib = [](const BasicInfo& info, const std::set<std::string>& mibs) {
+        for (const auto& mib : info.mibs) {
+            if (mibs.count(mib)) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    std::sort(protocols.begin(), protocols.end(), [&](const BasicInfo& l, const BasicInfo& r) {
+        if (l.type == BasicInfo::Type::Snmp && (isMib(l, epdus) || isMib(l, atss))) {
+            return false;
+        }
+        if (r.type == BasicInfo::Type::Snmp && (isMib(r, epdus) || isMib(r, atss))) {
+            return true;
+        }
+        return true;
+    });
+}
+
+
+// =====================================================================================================================
 
 } // namespace fty::job

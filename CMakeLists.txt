@@ -23,15 +23,19 @@ etn_target(static ${PROJECT_NAME}-static
         src/message-bus.cpp
         src/message-bus.h
 
+        src/jobs/common.h
+        src/jobs/common.cpp
         src/jobs/discover.cpp
         src/jobs/discover.h
+        src/jobs/configure.cpp
+        src/jobs/configure.h
+        src/jobs/chaineddevices.cpp
+        src/jobs/chaineddevices.h
 
         src/jobs/protocols/snmp.cpp
         src/jobs/protocols/snmp.h
-        src/jobs/protocols/xml.cpp
-        src/jobs/protocols/xml.h
-        src/jobs/protocols/socket.cpp
-        src/jobs/protocols/socket.h
+        src/jobs/protocols/xml-pdc.cpp
+        src/jobs/protocols/xml-pdc.h
         src/jobs/protocols/neon.cpp
         src/jobs/protocols/neon.h
     USES
@@ -48,6 +52,8 @@ etn_target(static ${PROJECT_NAME}-static
 ##############################################################################################################
 
 etn_target(exe ${PROJECT_NAME}
+    DATA
+        mibs/*
     CONFIGS
         conf/discovery.conf
         conf/logger.conf
