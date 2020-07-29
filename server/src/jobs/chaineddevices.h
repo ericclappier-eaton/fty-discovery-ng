@@ -1,5 +1,5 @@
 #pragma once
-#include "src/message.h"
+#include "message.h"
 #include <fty/expected.h>
 #include <fty/thread-pool.h>
 

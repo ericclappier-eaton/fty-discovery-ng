@@ -20,7 +20,7 @@
  */
 
 #pragma once
-#include "src/message-bus.h"
+#include "message-bus.h"
 #include <fty/expected.h>
 #include <pack/pack.h>
 

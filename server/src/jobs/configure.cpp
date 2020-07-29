@@ -22,7 +22,7 @@
 #include "configure.h"
 #include "common.h"
 #include "protocols/snmp.h"
-#include "src/message-bus.h"
+#include "message-bus.h"
 #include <fty/fty-log.h>
 #include <fty/split.h>
 

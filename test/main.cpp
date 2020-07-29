@@ -1,16 +1,17 @@
 #define CATCH_CONFIG_MAIN
-#include "config.h"
-#include "discovery.h"
-#include "jobs/protocols/snmp.h"
+
 #include "message-bus.h"
 #include "message.h"
+#include "src/config.h"
+#include "src/discovery.h"
+#include "src/jobs/protocols/snmp.h"
 #include <catch2/catch.hpp>
 #include <fty/fty-log.h>
 #include <thread>
 
 TEST_CASE("Discover")
 {
-    fty::Discovery dis("test/conf/discovery.conf");
+    fty::Discovery dis("conf/discovery.conf");
     REQUIRE(dis.loadConfig());
 
     fty::protocol::Snmp::instance().init(fty::Config::instance().mibDatabase);

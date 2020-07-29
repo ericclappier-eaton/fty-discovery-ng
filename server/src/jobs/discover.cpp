@@ -22,7 +22,7 @@
 #include "discover.h"
 #include "common.h"
 #include "protocols/xml-pdc.h"
-#include "src/message-bus.h"
+#include "message-bus.h"
 #include <fty/fty-log.h>
 #include <fty/split.h>
 #include <set>

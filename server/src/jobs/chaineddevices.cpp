@@ -1,6 +1,6 @@
 #include "chaineddevices.h"
 #include "protocols/snmp.h"
-#include "src/message-bus.h"
+#include "message-bus.h"
 
 namespace fty::job {
 

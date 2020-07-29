@@ -10,72 +10,14 @@ project(fty-discovery-ng
 )
 
 ##############################################################################################################
+#set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-etn_target(static ${PROJECT_NAME}-static
-    SOURCES
-        src/daemon.cpp
-        src/daemon.h
-        src/discovery.cpp
-        src/discovery.h
-        src/config.h
-        src/message.cpp
-        src/message.h
-        src/message-bus.cpp
-        src/message-bus.h
+add_subdirectory(common)
+add_subdirectory(server)
 
-        src/jobs/common.h
-        src/jobs/common.cpp
-        src/jobs/discover.cpp
-        src/jobs/discover.h
-        src/jobs/configure.cpp
-        src/jobs/configure.h
-        src/jobs/chaineddevices.cpp
-        src/jobs/chaineddevices.h
-
-        src/jobs/protocols/snmp.cpp
-        src/jobs/protocols/snmp.h
-        src/jobs/protocols/xml-pdc.cpp
-        src/jobs/protocols/xml-pdc.h
-        src/jobs/protocols/neon.cpp
-        src/jobs/protocols/neon.h
-    USES
-        fty-utils
-        fty-common-logging-ng
-        fty-pack
-        fty-common-messagebus
-        pthread
-        netsnmp
-        neon
-    PRIVATE
-)
-
-##############################################################################################################
-
-etn_target(exe ${PROJECT_NAME}
-    DATA
-        mibs/*
-    CONFIGS
-        conf/discovery.conf
-        conf/logger.conf
-    SOURCES
-        src/main.cpp
-    USES
-        ${PROJECT_NAME}-static
-)
-
-##############################################################################################################
-
-etn_target(exe ${PROJECT_NAME}-test
-    CONFIGS
-        test/conf/discovery.conf
-        test/conf/logger.conf
-    SOURCES
-        test/main.cpp
-    INCLUDE_DIRS
-        src
-    USES
-        ${PROJECT_NAME}-static
-        Catch2::Catch2
-)
+if (BUILD_TESTING)
+    enable_testing()
+    add_subdirectory(test)
+endif()
 
 ##############################################################################################################
