@@ -21,11 +21,13 @@
 
 #include "discover.h"
 #include "common.h"
+#include "commands.h"
 #include "protocols/xml-pdc.h"
 #include "message-bus.h"
 #include <fty/fty-log.h>
 #include <fty/split.h>
 #include <set>
+#include "protocols/ping.h"
 
 namespace fty::job {
 
@@ -35,14 +37,14 @@ namespace fty::job {
 class DisResponse : public BasicResponse<DisResponse>
 {
 public:
-    pack::StringList protocols = FIELD("protocols");
+    commands::protocols::Out protocols = FIELD("protocols");
 
 public:
     using BasicResponse::BasicResponse;
-    META(DisResponse, protocols)
+    META(DisResponse, protocols);
 
 public:
-    const pack::StringList& data()
+    const commands::protocols::Out& data()
     {
         return protocols;
     }
@@ -62,21 +64,48 @@ void Discover::operator()()
 
     if (m_in.userData.empty()) {
         response.setError("Wrong input data");
-        m_bus->reply("discover", m_in, response);
+        if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
+            logError() << res.error();
+        }
         return;
     }
 
-    std::string            ipAddress = m_in.userData[0];
+    Expected<commands::protocols::In> cmd = m_in.userData.decode<commands::protocols::In>();
+    if (!cmd) {
+        response.setError("Wrong input data");
+        if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
+            logError() << res.error();
+        }
+        return;
+    }
+
+    if (cmd->address == "__fake__") {
+        response.protocols.setValue({"NUT_SNMP", "NUT_XML_PDC"});
+        response.status = Message::Status::Ok;
+        if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
+            logError() << res.error();
+        }
+        return;
+    }
+
+    if (!available(cmd->address)) {
+        response.setError("Host is not available");
+        if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
+            logError() << res.error();
+        }
+        return;
+    }
+
     std::vector<BasicInfo> protocols;
 
-    if (auto res = tryXmlPdc(ipAddress)) {
+    if (auto res = tryXmlPdc(cmd->address)) {
         protocols.emplace_back(*res);
         logInfo() << Logger::nowhitespace() << "Found XML  device: '" << res->name << "' mibs: []";
     } else {
         logError() << res.error();
     }
 
-    if (auto res = trySnmp(ipAddress)) {
+    if (auto res = trySnmp(cmd->address)) {
         protocols.emplace_back(*res);
         logInfo() << Logger::nowhitespace() << "Found SNMP device: '" << res->name << "' mibs: ["
                   << implode(res->mibs, ", ") << "]";
@@ -97,8 +126,10 @@ void Discover::operator()()
         }
     }
 
-    response.status = Message::Status::ok;
-    m_bus->reply("discover", m_in, response);
+    response.status = Message::Status::Ok;
+    if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
+        logError() << res.error();
+    }
 }
 
 Expected<BasicInfo> Discover::tryXmlPdc(const std::string& ipAddress) const

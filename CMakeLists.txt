@@ -14,6 +14,7 @@ project(fty-discovery-ng
 
 add_subdirectory(common)
 add_subdirectory(server)
+add_subdirectory(client)
 
 if (BUILD_TESTING)
     enable_testing()

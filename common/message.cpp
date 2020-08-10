@@ -57,8 +57,8 @@ Message::Message(const messagebus::Message& msg)
 
     meta.status.fromString(value(msg.metaData(), messagebus::Message::STATUS, "ok"));
 
-    for (const auto& data : msg.userData()) {
-        userData.append(data);
+    if (!msg.userData().empty()) {
+        userData.setString(msg.userData().front());
     }
 }
 
@@ -66,9 +66,7 @@ messagebus::Message Message::toMessageBus() const
 {
     messagebus::Message msg;
 
-    for (const auto& data : userData) {
-        msg.userData().emplace_back(data);
-    }
+    msg.userData().emplace_back(userData.asString());
 
     msg.metaData()[messagebus::Message::TO]             = meta.to;
     msg.metaData()[messagebus::Message::FROM]           = meta.from;

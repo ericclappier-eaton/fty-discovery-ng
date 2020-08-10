@@ -1,5 +1,5 @@
 /*  =========================================================================
-    daemon.h - Discovery config data desctripor
+    neon.h - ping remote address
 
     Copyright (C) 2014 - 2020 Eaton
 
@@ -20,24 +20,40 @@
  */
 
 #pragma once
-#include <pack/pack.h>
+#include <fcntl.h>
+#include <iostream>
+#include <netdb.h>
+#include <string.h>
+#include <string>
+#include <sys/socket.h>
+#include <unistd.h>
 
-namespace fty {
-
-class Config : public pack::Node
+inline bool available(const std::string& address)
 {
-public:
-    pack::String actorName   = FIELD("actor-name", "discovery-ng");
-    pack::String logConfig   = FIELD("log-config", "conf/logger.conf");
-    pack::String mibDatabase = FIELD("mib-database", "mibs");
-    pack::Bool   tryAll      = FIELD("try-all", false);
+    addrinfo hints;
+    memset(&hints, 0, sizeof(addrinfo));
 
-public:
-    using pack::Node::Node;
-    META(Config, actorName, logConfig, mibDatabase, tryAll);
+    hints.ai_family   = AF_UNSPEC;
+    hints.ai_socktype = SOCK_DGRAM;
+    hints.ai_flags    = AI_PASSIVE;
+    hints.ai_protocol = 0;
 
-public:
-    static Config& instance();
-};
+    addrinfo* result;
+    if (getaddrinfo(address.c_str(), nullptr, &hints, &result) != 0) {
+        return false;
+    }
 
-} // namespace fty
+    bool ret = false;
+    for (addrinfo* rp = result; rp != nullptr; rp = rp->ai_next) {
+        int sock = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+        if (sock == -1) {
+            continue;
+        }
+        if (connect(sock, rp->ai_addr, rp->ai_addrlen) != -1) {
+            ret = true;
+        }
+    }
+    freeaddrinfo(result);
+
+    return ret;
+}

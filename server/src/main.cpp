@@ -44,9 +44,13 @@ int main(int argc, char** argv)
         fty::Daemon::daemonize();
     }
 
-    dis.init();
-    logDbg() << "Run discovery";
-    dis.run();
-    dis.shutdown();
+    if (auto res = dis.init()) {
+        logDbg() << "Run discovery";
+        dis.run();
+        dis.shutdown();
+    } else {
+        logError() << res.error();
+        return EXIT_FAILURE;
+    }
     return EXIT_SUCCESS;
 }

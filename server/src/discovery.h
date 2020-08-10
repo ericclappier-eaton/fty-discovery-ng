@@ -23,6 +23,7 @@
 #include "message-bus.h"
 #include <fty/event.h>
 #include <string>
+#include <fty/thread-pool.h>
 
 namespace fty {
 
@@ -39,7 +40,7 @@ public:
     int  run();
 
     /// Inits discovery instance
-    void init();
+    [[nodiscard]] Expected<void> init();
 
     /// Shutdowns discovery instance
     void shutdown();
@@ -54,6 +55,7 @@ private:
 private:
     std::string m_configPath;
     MessageBus  m_bus;
+    ThreadPool  m_pool;
 
     Slot<>               m_stopSlot       = {&Discovery::doStop, this};
     Slot<>               m_loadConfigSlot = {&Discovery::loadConfig, this};

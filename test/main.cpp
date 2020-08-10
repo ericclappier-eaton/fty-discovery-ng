@@ -1,5 +1,6 @@
 #define CATCH_CONFIG_MAIN
 
+#include "commands.h"
 #include "message-bus.h"
 #include "message.h"
 #include "src/config.h"
@@ -9,70 +10,186 @@
 #include <fty/fty-log.h>
 #include <thread>
 
-TEST_CASE("Discover")
+struct DiscoverTest
 {
-    fty::Discovery dis("conf/discovery.conf");
-    REQUIRE(dis.loadConfig());
-
-    fty::protocol::Snmp::instance().init(fty::Config::instance().mibDatabase);
-    fty::ManageFtyLog::setInstanceFtylog(fty::Config::instance().actorName, fty::Config::instance().logConfig);
-
-    dis.init();
-    std::thread th([&]() {
-        dis.run();
-    });
-
-    SECTION("Send request")
+    DiscoverTest()
+        : m_dis("conf/discovery.conf")
     {
-        using namespace std::chrono_literals;
-        std::vector<std::thread> reqs;
-        for (int i = 0; i < 1; ++i) {
-            std::this_thread::sleep_for(10ms);
-            reqs.emplace_back([&, num = i]() {
-                fty::MessageBus bus;
-                bus.init("unit-test" + std::to_string(num));
-                fty::Message msg;
-                msg.userData.append("10.130.38.125");
-                msg.userData.append(std::to_string(num));
+        REQUIRE(m_dis.loadConfig());
 
-                msg.meta.to      = "discovery-ng-test";
-                msg.meta.subject = "discovery";
-                msg.meta.from    = "unit-test" + std::to_string(num);
+        fty::protocol::Snmp::instance().init(fty::Config::instance().mibDatabase);
+        fty::ManageFtyLog::setInstanceFtylog(fty::Config::instance().actorName, fty::Config::instance().logConfig);
 
-                fty::Message ret = bus.send("discover", msg);
-                logInfo() << "recieve: " << ret.dump();
-
-                //                std::this_thread::sleep_for(100ms);
-
-                fty::Message confmsg;
-                confmsg.userData.append("10.130.38.125");
-                confmsg.userData.append(std::to_string(num));
-
-                confmsg.meta.to      = "discovery-ng-test";
-                confmsg.meta.subject = "configure";
-                confmsg.meta.from    = "unit-test" + std::to_string(num);
-
-                fty::Message confret = bus.send("discover", confmsg);
-                logInfo() << "recieve: " << confret.dump();
-
-                //                fty::Message chmsg;
-                //                chmsg.userData.append("10.130.38.125");
-                //                chmsg.userData.append(std::to_string(num));
-
-                //                chmsg.meta.to      = "discovery-ng-test";
-                //                chmsg.meta.subject = "configure";
-                //                chmsg.meta.from    = "unit-test" + std::to_string(num);
-
-                //                fty::Message chret = bus.send("configure", chmsg);
-                //                logInfo() << "recieve: " << chret.dump();
-            });
+        if (auto res = m_dis.init(); !res) {
+            FAIL(res.error());
         }
-        std::cerr << "reqs done\n";
-        for (auto& req : reqs) {
-            req.join();
+
+        if (auto res = m_bus.init("unit-test"); !res) {
+            FAIL(res.error());
         }
+
+        m_th = std::thread([&]() {
+            m_dis.run();
+        });
+    };
+
+    ~DiscoverTest()
+    {
+        m_dis.shutdown();
+        m_th.join();
     }
 
-    dis.shutdown();
-    th.join();
+    fty::Message createProtocolMessage()
+    {
+        fty::Message msg;
+        msg.meta.to      = fty::Config::instance().actorName;
+        msg.meta.subject = fty::commands::protocols::Subject;
+        msg.meta.from    = "unit-test";
+        return msg;
+    };
+
+    fty::Message createMibsMessage()
+    {
+        fty::Message msg;
+        msg.meta.to      = fty::Config::instance().actorName;
+        msg.meta.subject = fty::commands::mibs::Subject;
+        msg.meta.from    = "unit-test";
+        return msg;
+    };
+
+    fty::MessageBus& bus()
+    {
+        return m_bus;
+    }
+
+private:
+    fty::Discovery  m_dis;
+    std::thread     m_th;
+    fty::MessageBus m_bus;
+};
+
+TEST_CASE("Discover")
+{
+    DiscoverTest test;
+
+    SECTION("Empty request")
+    {
+        fty::Message                msg = test.createProtocolMessage();
+        fty::Expected<fty::Message> ret = test.bus().send(fty::Channel, msg);
+        CHECK_FALSE(ret);
+        CHECK("Wrong input data" == ret.error());
+    }
+
+    SECTION("Wrong request")
+    {
+        fty::Message msg = test.createProtocolMessage();
+        msg.userData.setString("Some shit");
+        fty::Expected<fty::Message> ret = test.bus().send(fty::Channel, msg);
+        CHECK_FALSE(ret);
+        CHECK("Wrong input data" == ret.error());
+    }
+
+    //    SECTION("Unaviable host")
+    //    {
+    //        fty::Message msg = test.createProtocolMessage();
+    //        fty::commands::protocols::In in;
+    //        in.address = "pointtosky";
+    //        msg.userData.setString(*pack::json::serialize(in));
+    //        fty::Expected<fty::Message> ret = test.bus().send(fty::Channel, msg);
+    //        CHECK_FALSE(ret);
+    //        CHECK("Host is not available" == ret.error());
+    //    }
+
+    SECTION("Fake request")
+    {
+        fty::Message                 msg = test.createProtocolMessage();
+        fty::commands::protocols::In in;
+        in.address = "__fake__";
+        msg.userData.setString(*pack::json::serialize(in));
+        fty::Expected<fty::Message> ret = test.bus().send(fty::Channel, msg);
+        CHECK(ret);
+        auto res = ret->userData.decode<fty::commands::protocols::Out>();
+        CHECK(res);
+        CHECK(2 == res->size());
+        CHECK("NUT_SNMP" == (*res)[0]);
+        CHECK("NUT_XML_PDC" == (*res)[1]);
+    }
+
+    SECTION("Real request")
+    {
+        fty::Message                 msg = test.createProtocolMessage();
+        fty::commands::protocols::In in;
+        in.address = "10.130.38.125";
+        msg.userData.setString(*pack::json::serialize(in));
+        fty::Expected<fty::Message> ret = test.bus().send(fty::Channel, msg);
+        CHECK(ret);
+        auto res = ret->userData.decode<fty::commands::protocols::Out>();
+        CHECK(res);
+        CHECK(2 == res->size());
+        CHECK("NUT_SNMP" == (*res)[0]);
+        CHECK("NUT_XML_PDC" == (*res)[1]);
+    }
+}
+
+TEST_CASE("Mibs")
+{
+    DiscoverTest test;
+
+    SECTION("Empty request")
+    {
+        fty::Message                msg = test.createMibsMessage();
+        fty::Expected<fty::Message> ret = test.bus().send(fty::Channel, msg);
+        CHECK_FALSE(ret);
+        CHECK("Wrong input data" == ret.error());
+    }
+
+    SECTION("Wrong request")
+    {
+        fty::Message msg = test.createMibsMessage();
+        msg.userData.setString("Some shit");
+        fty::Expected<fty::Message> ret = test.bus().send(fty::Channel, msg);
+        CHECK_FALSE(ret);
+        CHECK("Wrong input data" == ret.error());
+    }
+
+    SECTION("Unaviable host")
+    {
+        fty::Message msg = test.createMibsMessage();
+        fty::commands::protocols::In in;
+        in.address = "pointtosky";
+        msg.userData.setString(*pack::json::serialize(in));
+        fty::Expected<fty::Message> ret = test.bus().send(fty::Channel, msg);
+        CHECK_FALSE(ret);
+        CHECK("Host is not available" == ret.error());
+    }
+
+    SECTION("Fake request")
+    {
+        fty::Message                 msg = test.createMibsMessage();
+        fty::commands::protocols::In in;
+        in.address = "__fake__";
+        msg.userData.setString(*pack::json::serialize(in));
+        fty::Expected<fty::Message> ret = test.bus().send(fty::Channel, msg);
+        CHECK(ret);
+        auto res = ret->userData.decode<fty::commands::protocols::Out>();
+        CHECK(res);
+        CHECK(2 == res->size());
+        CHECK("NUT_SNMP" == (*res)[0]);
+        CHECK("NUT_XML_PDC" == (*res)[1]);
+    }
+
+    SECTION("Real request")
+    {
+        fty::Message                 msg = test.createMibsMessage();
+        fty::commands::protocols::In in;
+        in.address = "10.130.38.125";
+        msg.userData.setString(*pack::json::serialize(in));
+        fty::Expected<fty::Message> ret = test.bus().send(fty::Channel, msg);
+        CHECK(ret);
+        auto res = ret->userData.decode<fty::commands::protocols::Out>();
+        CHECK(res);
+        CHECK(2 == res->size());
+        CHECK("NUT_SNMP" == (*res)[0]);
+        CHECK("NUT_XML_PDC" == (*res)[1]);
+    }
 }

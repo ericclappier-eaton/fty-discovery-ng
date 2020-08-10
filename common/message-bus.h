@@ -46,26 +46,27 @@ public:
     MessageBus();
     ~MessageBus();
 
-    void init(const std::string& actorName);
+    [[nodiscard]] Expected<void> init(const std::string& actorName);
 
-    Message send(const std::string& queue, const Message& msg);
-    void    reply(const std::string& queue, const Message& req, const Message& answ);
-    Message recieve(const std::string& queue);
+    [[nodiscard]] Expected<Message> send(const std::string& queue, const Message& msg);
+    [[nodiscard]] Expected<void>    reply(const std::string& queue, const Message& req, const Message& answ);
+    [[nodiscard]] Expected<Message> recieve(const std::string& queue);
 
     template <typename Func, typename Cls>
-    void subsribe(const std::string& queue, Func&& fnc, Cls* cls)
+    [[nodiscard]] Expected<void> subsribe(const std::string& queue, Func&& fnc, Cls* cls)
     {
-        subsribe(queue, [f = std::move(fnc), c = cls](const messagebus::Message& msg) -> void {
+        return subsribe(queue, [f = std::move(fnc), c = cls](const messagebus::Message& msg) -> void {
             std::invoke(f, *c, Message(msg));
         });
     }
 
 private:
-    void subsribe(const std::string& queue, std::function<void(const messagebus::Message&)>&& func);
+    Expected<void> subsribe(const std::string& queue, std::function<void(const messagebus::Message&)>&& func);
 
 private:
     std::unique_ptr<messagebus::MessageBus> m_bus;
     std::mutex                              m_mutex;
+    std::string                             m_actorName;
 };
 
 } // namespace fty

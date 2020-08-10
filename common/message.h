@@ -38,8 +38,8 @@ class Message : public pack::Node
 public:
     enum class Status
     {
-        ok,
-        ko
+        Ok,
+        Error
     };
 
     struct Meta : public pack::Node
@@ -53,21 +53,46 @@ public:
         mutable pack::String correlationId = FIELD("correlation-id");
 
         using pack::Node::Node;
-        META_FIELDS(Meta, replyTo, from, to, subject, status, timeout, correlationId)
+        META(Meta, replyTo, from, to, subject, status, timeout, correlationId);
     };
 
 public:
-    pack::StringList userData = FIELD("user-data");
-    Meta             meta     = FIELD("meta-data");
+    pack::Binary userData = FIELD("user-data");
+    Meta         meta     = FIELD("meta-data");
 
 public:
     using pack::Node::Node;
-    META_FIELDS(Message, userData, meta)
+    META(Message, userData, meta);
 
 public:
     explicit Message(const messagebus::Message& msg);
     messagebus::Message toMessageBus() const;
 };
+
+inline std::ostream& operator<<(std::ostream& ss, Message::Status status)
+{
+    switch (status) {
+    case Message::Status::Ok:
+        ss << "ok";
+        break;
+    case Message::Status::Error:
+        ss << "ko";
+        break;
+    }
+    return ss;
+}
+
+inline std::istream& operator>>(std::istream& ss, Message::Status& status)
+{
+    std::string str;
+    ss >> str;
+    if (str == "ok") {
+        status = Message::Status::Ok;
+    } else if (str == "ko") {
+        status = Message::Status::Error;
+    }
+    return ss;
+}
 
 } // namespace fty
 

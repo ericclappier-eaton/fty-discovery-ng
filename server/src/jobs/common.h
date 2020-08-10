@@ -44,7 +44,7 @@ public:
 
 public:
     using pack::Node::Node;
-    META_FIELDS(BasicInfo, name, mibs, type)
+    META(BasicInfo, name, mibs, type);
 };
 
 // =====================================================================================================================
@@ -59,23 +59,23 @@ public:
 
 public:
     using pack::Node::Node;
-    META_FIELDS(Response, error, status)
+    META(BasicResponse, error, status);
 
 public:
     void setError(const std::string& errMsg)
     {
         error = errMsg;
-        status = Message::Status::ko;
+        status = Message::Status::Error;
     }
 
     operator Message()
     {
         Message msg;
         msg.meta.status = status;
-        if (status == Message::Status::ok) {
-            msg.userData.append(*pack::json::serialize(static_cast<T*>(this)->data()));
+        if (status == Message::Status::Ok) {
+            msg.userData.setString(*pack::json::serialize(static_cast<T*>(this)->data()));
         } else {
-            msg.userData.append(*pack::json::serialize(error));
+            msg.userData.setString(error);
         }
         return msg;
     }
@@ -88,5 +88,30 @@ const std::vector<std::string>& knownMibs();
 Expected<BasicInfo>             readSnmp(const std::string& ipAddress);
 
 // =====================================================================================================================
+
+inline std::ostream& operator<<(std::ostream& ss, BasicInfo::Type type)
+{
+    switch (type) {
+    case BasicInfo::Type::Snmp:
+        ss << "Snmp";
+        break;
+    case BasicInfo::Type::Xml:
+        ss << "Xml";
+        break;
+    }
+    return ss;
+}
+
+inline std::istream& operator>>(std::istream& ss, BasicInfo::Type& type)
+{
+    std::string str;
+    ss >> str;
+    if (str == "Snmp") {
+        type = BasicInfo::Type::Snmp;
+    } else if (str == "Xml") {
+        type = BasicInfo::Type::Xml;
+    }
+    return ss;
+}
 
 } // namespace fty::job

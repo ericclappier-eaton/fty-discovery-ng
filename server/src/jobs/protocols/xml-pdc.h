@@ -38,7 +38,7 @@ public:
         pack::String value = FIELD("cdata");
 
         using pack::Node::Node;
-        META_FIELDS(Value, key, value)
+        META(Value, key, value);
     };
 
 public:
@@ -47,7 +47,7 @@ public:
 
 public:
     using pack::Node::Node;
-    META_FIELDS(Props, auth, values)
+    META(Properties, auth, values);
 
 public:
     std::optional<std::string> value(const std::string& key);
@@ -66,7 +66,7 @@ public:
         pack::String mode     = FIELD("a::mode");
 
         using pack::Node::Node;
-        META_FIELDS(Page, url, security, mode)
+        META(Page, url, security, mode);
     };
 
     struct Summary : public pack::Node
@@ -76,7 +76,7 @@ public:
         Page logs    = FIELD("CSV_LOGS");
 
         using pack::Node::Node;
-        META_FIELDS(Summary, summary, config, logs)
+        META(Summary, summary, config, logs);
     };
 
 public:
@@ -87,7 +87,7 @@ public:
 
 public:
     using pack::Node::Node;
-    META_FIELDS(ProductInfo, name, type, version, summary)
+    META(ProductInfo, name, type, version, summary);
 };
 
 // =====================================================================================================================

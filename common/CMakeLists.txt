@@ -8,6 +8,7 @@ etn_target(static ${PROJECT_NAME}-common
         message-bus.h
         message.h
         message.cpp
+        commands.h
     USES
         fty-utils
         fty-common-logging-ng

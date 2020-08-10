@@ -21,6 +21,8 @@
 
 #include "configure.h"
 #include "common.h"
+#include "commands.h"
+#include "protocols/ping.h"
 #include "protocols/snmp.h"
 #include "message-bus.h"
 #include <fty/fty-log.h>
@@ -35,14 +37,14 @@ namespace fty::job {
 class ConfResponse : public BasicResponse<ConfResponse>
 {
 public:
-    pack::StringList mibs = FIELD("mibs");
+    commands::mibs::Out mibs = FIELD("mibs");
 
 public:
     using BasicResponse::BasicResponse;
-    META(ConfResponse, mibs)
+    META(ConfResponse, mibs);
 
 public:
-    const pack::StringList& data()
+    const commands::mibs::Out& data()
     {
         return mibs;
     }
@@ -86,15 +88,36 @@ void Configure::operator()()
 
     if (m_in.userData.empty()) {
         response.setError("Wrong input data");
-        m_bus->reply("discover", m_in, response);
+        if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
+            logError() << res.error();
+        }
         return;
     }
 
-    auto info = readSnmp(m_in.userData[0]);
+    Expected<commands::mibs::In> cmd = m_in.userData.decode<commands::mibs::In>();
+    if (!cmd) {
+        response.setError("Wrong input data");
+        if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
+            logError() << res.error();
+        }
+        return;
+    }
+
+    if (!available(cmd->address)) {
+        response.setError("Host is not available");
+        if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
+            logError() << res.error();
+        }
+        return;
+    }
+
+    auto info = readSnmp(cmd->address);
     if (!info) {
         logError() << info.error();
         response.setError(info.error());
-        m_bus->reply("discover", m_in, response);
+        if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
+            logError() << res.error();
+        }
         return;
     }
 
@@ -104,8 +127,10 @@ void Configure::operator()()
     logInfo() << Logger::nowhitespace() << "Configure: '" << info->name << "' mibs: [" << implode(response.mibs, ", ")
               << "]";
 
-    response.status = Message::Status::ok;
-    m_bus->reply("discover", m_in, response);
+    response.status = Message::Status::Ok;
+    if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
+        logError() << res.error();
+    }
 }
 
 // =====================================================================================================================

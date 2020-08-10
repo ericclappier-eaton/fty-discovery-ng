@@ -22,6 +22,7 @@
 #include "discovery.h"
 #include "config.h"
 #include "daemon.h"
+#include "commands.h"
 #include "jobs/chaineddevices.h"
 #include "jobs/configure.h"
 #include "jobs/discover.h"
@@ -51,18 +52,23 @@ bool Discovery::loadConfig()
     return true;
 }
 
-void Discovery::init()
+Expected<void> Discovery::init()
 {
-    ThreadPool::init();
-    m_bus.init(Config::instance().actorName);
-    m_bus.subsribe("discover", &Discovery::discover, this);
+    if (auto res = m_bus.init(Config::instance().actorName)) {
+        if (auto sub = m_bus.subsribe(fty::Channel, &Discovery::discover, this)) {
+            return {};
+        } else {
+            return unexpected(res.error());
+        }
+    } else {
+        return unexpected(res.error());
+    }
 }
 
 void Discovery::shutdown()
 {
     stop();
-    logDbg() << "stopping discovery agent";
-    ThreadPool::stop();
+    m_pool.stop();
 }
 
 int Discovery::run()
@@ -74,12 +80,12 @@ int Discovery::run()
 void Discovery::discover(const Message& msg)
 {
     logInfo() << "Discovery: got message " << msg.dump();
-    if (msg.meta.subject == "discovery") {
-        ThreadPool::pushWorker<job::Discover>(msg, m_bus);
-    } else if (msg.meta.subject == "configure") {
-        ThreadPool::pushWorker<job::Configure>(msg, m_bus);
-    } else if (msg.meta.subject == "details") {
-        ThreadPool::pushWorker<job::ChainedDevices>(msg, m_bus);
+    if (msg.meta.subject == commands::protocols::Subject) {
+        m_pool.pushWorker<job::Discover>(msg, m_bus);
+    } else if (msg.meta.subject == commands::mibs::Subject) {
+        m_pool.pushWorker<job::Configure>(msg, m_bus);
+//    } else if (msg.meta.subject == "details") {
+//        ThreadPool::pushWorker<job::ChainedDevices>(msg, m_bus);
     }
 }
 
