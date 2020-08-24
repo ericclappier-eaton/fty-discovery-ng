@@ -25,7 +25,7 @@
 #include "protocols/ping.h"
 #include "protocols/snmp.h"
 #include "message-bus.h"
-#include <fty/fty-log.h>
+#include <fty_log.h>
 #include <fty/split.h>
 
 
@@ -89,7 +89,7 @@ void Configure::operator()()
     if (m_in.userData.empty()) {
         response.setError("Wrong input data");
         if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
-            logError() << res.error();
+            log_error(res.error().c_str());
         }
         return;
     }
@@ -98,7 +98,16 @@ void Configure::operator()()
     if (!cmd) {
         response.setError("Wrong input data");
         if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
-            logError() << res.error();
+            log_error(res.error().c_str());
+        }
+        return;
+    }
+
+    if (cmd->address == "__fake__") {
+        response.mibs.setValue({"MG-SNMP-UPS-MIB", "UPS-MIB", "XUPS-MIB"});
+        response.status = Message::Status::Ok;
+        if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
+            log_error(res.error().c_str());
         }
         return;
     }
@@ -106,17 +115,17 @@ void Configure::operator()()
     if (!available(cmd->address)) {
         response.setError("Host is not available");
         if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
-            logError() << res.error();
+            log_error(res.error().c_str());
         }
         return;
     }
 
     auto info = readSnmp(cmd->address);
     if (!info) {
-        logError() << info.error();
+        log_error(info.error().c_str());
         response.setError(info.error());
         if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
-            logError() << res.error();
+            log_error(res.error().c_str());
         }
         return;
     }
@@ -124,12 +133,11 @@ void Configure::operator()()
     response.mibs = info->mibs;
     response.mibs.sort(sortMibs);
 
-    logInfo() << Logger::nowhitespace() << "Configure: '" << info->name << "' mibs: [" << implode(response.mibs, ", ")
-              << "]";
+    log_info("Configure: '%s' mibs: [%s]", info->name.value().c_str(), implode(response.mibs, ", ").c_str());
 
     response.status = Message::Status::Ok;
     if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
-        logError() << res.error();
+        log_error(res.error().c_str());
     }
 }
 

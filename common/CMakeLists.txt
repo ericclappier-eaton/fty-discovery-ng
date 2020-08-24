@@ -11,7 +11,7 @@ etn_target(static ${PROJECT_NAME}-common
         commands.h
     USES
         fty-utils
-        fty-common-logging-ng
+        fty-common-logging
         fty-pack
         fty-common-messagebus
     PRIVATE

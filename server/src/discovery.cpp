@@ -26,7 +26,7 @@
 #include "jobs/chaineddevices.h"
 #include "jobs/configure.h"
 #include "jobs/discover.h"
-#include <fty/fty-log.h>
+#include <fty_log.h>
 #include <fty/thread-pool.h>
 
 namespace fty {
@@ -46,7 +46,7 @@ void Discovery::doStop()
 bool Discovery::loadConfig()
 {
     if (auto ret = pack::yaml::deserializeFile(m_configPath, Config::instance()); !ret) {
-        logError() << ret.error();
+        log_error(ret.error().c_str());
         return false;
     }
     return true;
@@ -79,7 +79,7 @@ int Discovery::run()
 
 void Discovery::discover(const Message& msg)
 {
-    logInfo() << "Discovery: got message " << msg.dump();
+    log_info("Discovery: got message %s", msg.dump().c_str());
     if (msg.meta.subject == commands::protocols::Subject) {
         m_pool.pushWorker<job::Discover>(msg, m_bus);
     } else if (msg.meta.subject == commands::mibs::Subject) {

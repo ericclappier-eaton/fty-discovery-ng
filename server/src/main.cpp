@@ -3,7 +3,7 @@
 #include "discovery.h"
 #include "jobs/protocols/snmp.h"
 #include <fty/command-line.h>
-#include <fty/fty-log.h>
+#include <fty_log.h>
 
 int main(int argc, char** argv)
 {
@@ -37,19 +37,19 @@ int main(int argc, char** argv)
     }
 
     fty::protocol::Snmp::instance().init(fty::Config::instance().mibDatabase);
-    fty::ManageFtyLog::setInstanceFtylog(fty::Config::instance().actorName, fty::Config::instance().logConfig);
+    ManageFtyLog::setInstanceFtylog(fty::Config::instance().actorName, fty::Config::instance().logConfig);
 
     if (daemon) {
-        logDbg() << "Start discovery agent as daemon";
+        log_debug("Start discovery agent as daemon");
         fty::Daemon::daemonize();
     }
 
     if (auto res = dis.init()) {
-        logDbg() << "Run discovery";
+        log_debug("Run discovery");
         dis.run();
         dis.shutdown();
     } else {
-        logError() << res.error();
+        log_error(res.error().c_str());
         return EXIT_FAILURE;
     }
     return EXIT_SUCCESS;

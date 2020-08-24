@@ -24,7 +24,7 @@
 #include "commands.h"
 #include "protocols/xml-pdc.h"
 #include "message-bus.h"
-#include <fty/fty-log.h>
+#include <fty_log.h>
 #include <fty/split.h>
 #include <set>
 #include "protocols/ping.h"
@@ -65,7 +65,7 @@ void Discover::operator()()
     if (m_in.userData.empty()) {
         response.setError("Wrong input data");
         if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
-            logError() << res.error();
+            log_error(res.error().c_str());
         }
         return;
     }
@@ -74,7 +74,7 @@ void Discover::operator()()
     if (!cmd) {
         response.setError("Wrong input data");
         if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
-            logError() << res.error();
+            log_error(res.error().c_str());
         }
         return;
     }
@@ -83,7 +83,7 @@ void Discover::operator()()
         response.protocols.setValue({"NUT_SNMP", "NUT_XML_PDC"});
         response.status = Message::Status::Ok;
         if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
-            logError() << res.error();
+            log_error(res.error().c_str());
         }
         return;
     }
@@ -91,7 +91,7 @@ void Discover::operator()()
     if (!available(cmd->address)) {
         response.setError("Host is not available");
         if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
-            logError() << res.error();
+            log_error(res.error().c_str());
         }
         return;
     }
@@ -100,17 +100,16 @@ void Discover::operator()()
 
     if (auto res = tryXmlPdc(cmd->address)) {
         protocols.emplace_back(*res);
-        logInfo() << Logger::nowhitespace() << "Found XML  device: '" << res->name << "' mibs: []";
+        log_info("Found XML  device: '%s' mibs[]", res->name.value().c_str());
     } else {
-        logError() << res.error();
+        log_error(res.error().c_str());
     }
 
     if (auto res = trySnmp(cmd->address)) {
         protocols.emplace_back(*res);
-        logInfo() << Logger::nowhitespace() << "Found SNMP device: '" << res->name << "' mibs: ["
-                  << implode(res->mibs, ", ") << "]";
+        log_info("Found SNMP device: '%s' mibs[%s]", res->name.value().c_str(), implode(res->mibs, ", ").c_str());
     } else {
-        logError() << res.error();
+        log_error(res.error().c_str());
     }
 
     sortProtocols(protocols);
@@ -128,7 +127,7 @@ void Discover::operator()()
 
     response.status = Message::Status::Ok;
     if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
-        logError() << res.error();
+        log_error(res.error().c_str());
     }
 }
 

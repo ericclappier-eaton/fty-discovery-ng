@@ -21,7 +21,7 @@
 
 #include "message-bus.h"
 #include "message.h"
-#include <fty/fty-log.h>
+#include <fty_log.h>
 #include <fty_common_messagebus_exception.h>
 #include <fty_common_messagebus_interface.h>
 #include <fty_common_messagebus_message.h>

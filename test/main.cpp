@@ -7,7 +7,7 @@
 #include "src/discovery.h"
 #include "src/jobs/protocols/snmp.h"
 #include <catch2/catch.hpp>
-#include <fty/fty-log.h>
+#include <fty_log.h>
 #include <thread>
 
 struct DiscoverTest
@@ -18,7 +18,7 @@ struct DiscoverTest
         REQUIRE(m_dis.loadConfig());
 
         fty::protocol::Snmp::instance().init(fty::Config::instance().mibDatabase);
-        fty::ManageFtyLog::setInstanceFtylog(fty::Config::instance().actorName, fty::Config::instance().logConfig);
+        ManageFtyLog::setInstanceFtylog(fty::Config::instance().actorName, fty::Config::instance().logConfig);
 
         if (auto res = m_dis.init(); !res) {
             FAIL(res.error());
@@ -173,9 +173,10 @@ TEST_CASE("Mibs")
         CHECK(ret);
         auto res = ret->userData.decode<fty::commands::protocols::Out>();
         CHECK(res);
-        CHECK(2 == res->size());
-        CHECK("NUT_SNMP" == (*res)[0]);
-        CHECK("NUT_XML_PDC" == (*res)[1]);
+        CHECK(3 == res->size());
+        CHECK("MG-SNMP-UPS-MIB" == (*res)[0]);
+        CHECK("UPS-MIB" == (*res)[1]);
+        CHECK("XUPS-MIB" == (*res)[2]);
     }
 
     SECTION("Real request")
@@ -188,8 +189,9 @@ TEST_CASE("Mibs")
         CHECK(ret);
         auto res = ret->userData.decode<fty::commands::protocols::Out>();
         CHECK(res);
-        CHECK(2 == res->size());
-        CHECK("NUT_SNMP" == (*res)[0]);
-        CHECK("NUT_XML_PDC" == (*res)[1]);
+        CHECK(3 == res->size());
+        CHECK("XUPS-MIB" == (*res)[0]);
+        CHECK("MG-SNMP-UPS-MIB" == (*res)[1]);
+        CHECK("UPS-MIB" == (*res)[2]);
     }
 }

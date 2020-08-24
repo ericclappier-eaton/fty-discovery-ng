@@ -25,7 +25,7 @@ etn_target(static ${PROJECT_NAME}-static
         src/jobs/protocols/neon.h
     USES
         fty-utils
-        fty-common-logging-ng
+        fty-common-logging
         fty-pack
         ${PROJECT_NAME}-common
         pthread
