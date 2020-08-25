@@ -1,0 +1,30 @@
+Source: fty-discovery-ng
+Maintainer: Clement Perrette <clementperrette@eaton.com>
+Build-Depends:
+    cmake (>=3.0),
+    debhelper (>= 9),
+    fty-cmake-dev,
+    fty-utils-dev,
+    libfty-common-logging-dev,
+    libfty-pack-dev,
+    libfty-common-messagebus-dev,
+    libsnmp-dev,
+    libneon27-dev
+Standards-Version: 1.0.0
+Section: devel
+Priority: extra
+
+Package: fty-discovery-ng
+Architecture: any
+Depends:    ${shlibs:Depends},
+            ${misc:Depends}
+Description: fty-discovery-ng service
+
+Package: fty-discovery-ng-dev
+Architecture: any
+Section: libdevel
+Depends:
+    fty-utils-dev,
+    ${shlibs:Depends},
+    ${misc:Depends}
+Description: fty-discovery-ng client library

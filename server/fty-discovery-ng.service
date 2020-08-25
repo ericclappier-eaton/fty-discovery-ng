@@ -1,0 +1,8 @@
+[Unit]
+Description=FTY discovery service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/fty-discovery-ng
+User=root
+ExecReload=/bin/kill -HUP $MAINPID

@@ -25,7 +25,7 @@ etn_target(static ${PROJECT_NAME}-static
         src/jobs/protocols/neon.h
     USES
         fty-utils
-        fty-common-logging
+        fty_common_logging
         fty-pack
         ${PROJECT_NAME}-common
         pthread
@@ -42,6 +42,8 @@ etn_target(exe ${PROJECT_NAME}
     CONFIGS
         conf/discovery.conf
         conf/logger.conf
+    SYSTEMD
+        ${PROJECT_NAME}.service
     SOURCES
         src/main.cpp
     USES

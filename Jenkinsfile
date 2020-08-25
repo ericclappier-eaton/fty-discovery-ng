@@ -42,7 +42,7 @@ pipeline {
             steps {
                 cmakeBuild buildType: 'Release',
                 cleanBuild: true,
-                cmakeArgs: "-DENABLE_STANDALONE=TRUE -DCREATE_CMAKE_PKG=ON -DCREATE_PKGCONFIG=ON",
+                cmakeArgs: "-DCREATE_CMAKE_PKG=ON -DCREATE_PKGCONFIG=ON",
                 installation: 'InSearchPath',
                 steps: [[withCmake: true]]
             }
