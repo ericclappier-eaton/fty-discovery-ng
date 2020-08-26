@@ -40,14 +40,6 @@ pipeline {
 
         stage('Build') {
             steps {
-                cmakeBuild buildType: 'Release',
-                cleanBuild: true,
-                cmakeArgs: "-DCREATE_CMAKE_PKG=ON -DCREATE_PKGCONFIG=ON",
-                installation: 'InSearchPath',
-                steps: [[withCmake: true]]
-            }
-        }
-        steps {
                 sh '''
                    cmake -DCMAKE_BUILD_TYPE=Release \
                          -DCREATE_CMAKE_PKG=ON \
@@ -55,7 +47,8 @@ pipeline {
                          -B build
                    cmake --build build --parallel $(($(nproc) + 1))
                    '''
-       }
+            }
+        }
 
         /*stage('Tests') {
             steps {
