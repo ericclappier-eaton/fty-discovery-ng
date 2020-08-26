@@ -47,6 +47,15 @@ pipeline {
                 steps: [[withCmake: true]]
             }
         }
+        steps {
+                sh '''
+                   cmake -DCMAKE_BUILD_TYPE=Release \
+                         -DCREATE_CMAKE_PKG=ON \
+                         -DCREATE_PKGCONFIG=ON \
+                         -B build
+                   cmake --build build --parallel $(($(nproc) + 1))
+                   '''
+       }
 
         /*stage('Tests') {
             steps {
@@ -71,7 +80,7 @@ pipeline {
             }
         }*/
 
-        /*stage ('deploy if appropriate') {
+        stage ('deploy if appropriate') {
             steps {
                 script {
                     def myDEPLOY_JOB_NAME = sh(returnStdout: true, script: """echo "${params["DEPLOY_JOB_NAME"]}" """).trim();
@@ -106,7 +115,7 @@ pipeline {
                     }
                 }
             }
-        }*/
+        }
     }
     post {
         success {
