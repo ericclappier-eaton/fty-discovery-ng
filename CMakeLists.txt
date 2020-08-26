@@ -1,7 +1,24 @@
 cmake_minimum_required(VERSION 3.13)
-project(fty-discovery-ng-topproject CXX)
 
-# Common cmake settings
-include(fty-project/cmake/fty-project.cmake)
+##############################################################################################################
+find_package(fty-cmake PATHS ${CMAKE_BINARY_DIR}/fty-cmake)
+##############################################################################################################
 
-add_subdirectory(${PROJECT_SOURCE_DIR}/exec)
+project(fty-discovery-ng
+    VERSION 1.0.0
+    DESCRIPTION "New fty discovery"
+)
+
+##############################################################################################################
+#set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
+add_subdirectory(common)
+add_subdirectory(server)
+add_subdirectory(client)
+
+if (BUILD_TESTING)
+    enable_testing()
+    add_subdirectory(test)
+endif()
+
+##############################################################################################################
