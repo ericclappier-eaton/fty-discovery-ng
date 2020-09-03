@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13)
 
-etn_target(exe ${PROJECT_NAME}-test
+etn_test(${PROJECT_NAME}-test
     CONFIGS
         conf/discovery.conf
         conf/logger.conf

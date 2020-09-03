@@ -88,6 +88,7 @@ void Discover::operator()()
         return;
     }
 
+    log_error("check addr %s", cmd->address.value().c_str());
     if (!available(cmd->address)) {
         response.setError("Host is not available");
         if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
@@ -144,7 +145,7 @@ Expected<BasicInfo> Discover::tryXmlPdc(const std::string& ipAddress) const
                 info.name = info.name.value() + (info.name.empty() ? "" : " ") + *res;
             }
             info.type = BasicInfo::Type::Xml;
-            return info;
+            return std::move(info);
         } else {
             return unexpected(props.error());
         }

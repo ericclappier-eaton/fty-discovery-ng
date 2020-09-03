@@ -55,7 +55,7 @@ fty::Expected<std::string> Neon::get(const std::string& path) const
             if (!status->code) {
                 return fty::unexpected(ne_get_error(m_session.get()));
             }
-            return fty::unexpected() << status->code << " " << status->reason_phrase;
+            return fty::unexpected("{} {}", status->code, status->reason_phrase);
         }
 
         body.clear();
@@ -67,7 +67,7 @@ fty::Expected<std::string> Neon::get(const std::string& path) const
         }
     } while(ne_end_request(request.get()) == NE_RETRY);
 
-    return body;
+    return fty::Expected<std::string>(body);
 }
 
 void Neon::closeSession(ne_session* sess)

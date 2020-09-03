@@ -2,3 +2,4 @@
 /usr/lib/systemd/system/*
 /usr/share/fty-discovery-ng/*
 /etc/*
+/usr/lib/tntnet

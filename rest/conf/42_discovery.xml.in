@@ -1,0 +1,10 @@
+<mapping>
+    <target>discovery_mibs_get@lib${NAME}</target>
+    <url>^/api/v1/admin/discovery/mibs$</url>
+    <method>GET</method>
+</mapping>
+<mapping>
+    <target>discovery_protocols_get@lib${NAME}</target>
+    <url>^/api/v1/admin/discovery/protocols$</url>
+    <method>GET</method>
+</mapping>

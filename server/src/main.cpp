@@ -8,14 +8,14 @@
 int main(int argc, char** argv)
 {
     bool        daemon = false;
-    std::string config = "conf/discovery.conf";
+    std::string config = "discovery.conf";
     bool        help   = false;
 
     // clang-format off
     fty::CommandLine cmd("New discovery service", {
         {"--config", config, "Configuration file"},
         {"--daemon", daemon, "Daemonize this application"},
-        {"--help", help, "Show this help"}
+        {"--help",   help,   "Show this help"}
     });
     // clang-format on
 
