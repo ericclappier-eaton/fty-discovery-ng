@@ -20,14 +20,14 @@
  */
 
 #include "protocols.h"
-#include "common.h"
 #include "commands.h"
-#include "protocols/xml-pdc.h"
+#include "common.h"
 #include "message-bus.h"
-#include <fty_log.h>
-#include <fty/split.h>
-#include <set>
 #include "protocols/ping.h"
+#include "protocols/xml-pdc.h"
+#include <fty/split.h>
+#include <fty_log.h>
+#include <set>
 
 namespace fty::job {
 
@@ -35,24 +35,24 @@ namespace fty::job {
 
 namespace response {
 
-/// Response wrapper
-class Protocols : public BasicResponse<Protocols>
-{
-public:
-    commands::protocols::Out protocols = FIELD("protocols");
-
-public:
-    using BasicResponse::BasicResponse;
-    META(Protocols, protocols);
-
-public:
-    const commands::protocols::Out& data()
+    /// Response wrapper
+    class Protocols : public BasicResponse<Protocols>
     {
-        return protocols;
-    }
-};
+    public:
+        commands::protocols::Out protocols = FIELD("protocols");
 
-}
+    public:
+        using BasicResponse::BasicResponse;
+        META_BASE(Protocols, BasicResponse<Protocols>, protocols);
+
+    public:
+        const commands::protocols::Out& data()
+        {
+            return protocols;
+        }
+    };
+
+} // namespace response
 // =====================================================================================================================
 
 Protocols::Protocols(const Message& in, MessageBus& bus)

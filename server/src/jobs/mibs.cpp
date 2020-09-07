@@ -43,7 +43,7 @@ public:
 
 public:
     using BasicResponse::BasicResponse;
-    META(Mibs, mibs);
+    META_BASE(Mibs, BasicResponse<Mibs>, mibs);
 
 public:
     const commands::mibs::Out& data()

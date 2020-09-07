@@ -1,2 +1,3 @@
 actor-name: 'discovery-ng'
 log-config: 'logger.conf'
+mib-database: '${DATA_DIR}/mibs/'

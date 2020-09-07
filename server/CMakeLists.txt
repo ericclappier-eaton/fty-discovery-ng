@@ -37,20 +37,43 @@ etn_target(static ${PROJECT_NAME}-static
 ########################################################################################################################
 
 etn_target(exe ${PROJECT_NAME}
-    CONFIGS
-        conf/discovery.conf
-        conf/logger.conf
     DATA
         mibs/*
-    CONFIGS
-        conf/discovery.conf
-        conf/logger.conf
-    SYSTEMD
-        ${PROJECT_NAME}.service
     SOURCES
+        ${PROJECT_NAME}.service.in
+        conf/discovery.conf.in
+        conf/logger.conf.in
+
         src/main.cpp
     USES
         ${PROJECT_NAME}-static
+)
+
+########################################################################################################################
+
+etn_configure_file(
+    ${PROJECT_NAME}.service.in
+
+    TARGET      ${PROJECT_NAME}
+    DESTINATION /usr/lib/systemd/system/
+)
+
+########################################################################################################################
+
+etn_configure_file(
+    conf/discovery.conf.in
+
+    TARGET      ${PROJECT_NAME}
+    DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/${PROJECT_NAME}
+)
+
+########################################################################################################################
+
+etn_configure_file(
+    conf/logger.conf.in
+
+    TARGET      ${PROJECT_NAME}
+    DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/${PROJECT_NAME}
 )
 
 ########################################################################################################################

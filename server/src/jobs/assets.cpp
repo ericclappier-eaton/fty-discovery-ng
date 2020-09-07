@@ -8,6 +8,8 @@
 
 namespace fty::job {
 
+// =====================================================================================================================
+
 namespace response {
 
     /// Response wrapper
@@ -18,7 +20,7 @@ namespace response {
 
     public:
         using BasicResponse::BasicResponse;
-        META(Assets, assets);
+        META_BASE(Assets, BasicResponse<Assets>, assets);
 
     public:
         const commands::assets::Out& data()
@@ -28,6 +30,8 @@ namespace response {
     };
 
 } // namespace response
+
+// =====================================================================================================================
 
 Assets::Assets(const Message& in, MessageBus& bus)
     : m_in(in)
