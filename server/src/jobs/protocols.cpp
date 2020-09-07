@@ -19,7 +19,7 @@
     =========================================================================
  */
 
-#include "discover.h"
+#include "protocols.h"
 #include "common.h"
 #include "commands.h"
 #include "protocols/xml-pdc.h"
@@ -33,15 +33,17 @@ namespace fty::job {
 
 // =====================================================================================================================
 
+namespace response {
+
 /// Response wrapper
-class DisResponse : public BasicResponse<DisResponse>
+class Protocols : public BasicResponse<Protocols>
 {
 public:
     commands::protocols::Out protocols = FIELD("protocols");
 
 public:
     using BasicResponse::BasicResponse;
-    META(DisResponse, protocols);
+    META(Protocols, protocols);
 
 public:
     const commands::protocols::Out& data()
@@ -50,17 +52,18 @@ public:
     }
 };
 
+}
 // =====================================================================================================================
 
-Discover::Discover(const Message& in, MessageBus& bus)
+Protocols::Protocols(const Message& in, MessageBus& bus)
     : m_in(in)
     , m_bus(&bus)
 {
 }
 
-void Discover::operator()()
+void Protocols::operator()()
 {
-    DisResponse response;
+    response::Protocols response;
 
     if (m_in.userData.empty()) {
         response.setError("Wrong input data");
@@ -132,7 +135,7 @@ void Discover::operator()()
     }
 }
 
-Expected<BasicInfo> Discover::tryXmlPdc(const std::string& ipAddress) const
+Expected<BasicInfo> Protocols::tryXmlPdc(const std::string& ipAddress) const
 {
     protocol::XmlPdc xml(ipAddress);
     if (auto prod = xml.get<protocol::ProductInfo>("product.xml")) {
@@ -154,12 +157,12 @@ Expected<BasicInfo> Discover::tryXmlPdc(const std::string& ipAddress) const
     }
 }
 
-Expected<BasicInfo> Discover::trySnmp(const std::string& ipAddress) const
+Expected<BasicInfo> Protocols::trySnmp(const std::string& ipAddress) const
 {
     return readSnmp(ipAddress);
 }
 
-void Discover::sortProtocols(std::vector<BasicInfo>& protocols)
+void Protocols::sortProtocols(std::vector<BasicInfo>& protocols)
 {
     static std::set<std::string> epdus = {
         "EATON-EPDU-MIB", "EATON-OIDS", "EATON-GENESIS-II-MIB", "EATON-EPDU-PU-SW-MIB", "ACS-MIB"};

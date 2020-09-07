@@ -10,12 +10,12 @@ etn_target(static ${PROJECT_NAME}-static
 
         src/jobs/common.h
         src/jobs/common.cpp
-        src/jobs/discover.cpp
-        src/jobs/discover.h
-        src/jobs/configure.cpp
-        src/jobs/configure.h
-        src/jobs/chaineddevices.cpp
-        src/jobs/chaineddevices.h
+        src/jobs/protocols.cpp
+        src/jobs/protocols.h
+        src/jobs/mibs.cpp
+        src/jobs/mibs.h
+        src/jobs/assets.cpp
+        src/jobs/assets.h
 
         src/jobs/protocols/snmp.cpp
         src/jobs/protocols/snmp.h

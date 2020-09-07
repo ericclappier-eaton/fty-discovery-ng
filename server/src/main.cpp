@@ -8,7 +8,7 @@
 int main(int argc, char** argv)
 {
     bool        daemon = false;
-    std::string config = "discovery.conf";
+    std::string config = "conf/discovery.conf";
     bool        help   = false;
 
     // clang-format off

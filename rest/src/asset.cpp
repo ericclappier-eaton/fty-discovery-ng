@@ -19,14 +19,12 @@
     ====================================================================================================================
 */
 
-#include "mibs.h"
-#include "commands.h"
+#include "asset.h"
 #include "message-bus.h"
-#include <fty_common_rest_utils_web.h>
 
 namespace fty {
 
-unsigned Mibs::run()
+unsigned Asset::run()
 {
     auto user = global<UserInfo>("UserInfo user");
     if (auto ret = checkPermissions(**user, m_permissions); !ret) {
@@ -34,23 +32,23 @@ unsigned Mibs::run()
         return ret.error().code;
     }
 
-    commands::mibs::In param;
+    commands::assets::In param;
     if (auto res = pack::json::deserialize(m_request.getBody(), param); !res) {
         auto err = rest::error("bad-input", m_request.getArg(0));
         m_reply.out() << err.message << "\n\n";
         return err.code;
     }
 
-    if (auto list = mibs(param)) {
-        m_reply.out() << *pack::json::serialize(*list) << "\n\n";
+    if (auto asset = assets(param)) {
+        m_reply.out() << *pack::json::serialize(*asset) << "\n\n";
         return HTTP_OK;
     } else {
-        m_reply.out() << list.error() << "\n\n";
+        m_reply.out() << asset.error() << "\n\n";
         return HTTP_INTERNAL_SERVER_ERROR;
     }
 }
 
-Expected<pack::StringList> Mibs::mibs(const commands::mibs::In& param)
+Expected<commands::assets::Out> Asset::assets(const commands::assets::In& param)
 {
     fty::MessageBus bus;
     if (auto res = bus.init("discovery_rest"); !res) {
@@ -60,7 +58,7 @@ Expected<pack::StringList> Mibs::mibs(const commands::mibs::In& param)
     fty::Message msg;
     msg.userData.setString(*pack::json::serialize(param));
     msg.meta.to      = "discovery-ng";
-    msg.meta.subject = commands::mibs::Subject;
+    msg.meta.subject = commands::assets::Subject;
     msg.meta.from    = "discovery_rest";
 
     if (Expected<fty::Message> resp = bus.send(fty::Channel, msg)) {
@@ -68,7 +66,7 @@ Expected<pack::StringList> Mibs::mibs(const commands::mibs::In& param)
             return unexpected(resp->userData.asString());
         }
 
-        if (auto res = resp->userData.decode<commands::mibs::Out>()) {
+        if (auto res = resp->userData.decode<commands::assets::Out>()) {
             return res.value();
         } else {
             return unexpected(res.error());
@@ -80,4 +78,4 @@ Expected<pack::StringList> Mibs::mibs(const commands::mibs::In& param)
 
 } // namespace fty
 
-registerHandler(fty::Mibs)
+registerHandler(fty::Asset)

@@ -8,6 +8,8 @@ etn_target(shared ${PROJECT_NAME}-rest
         src/mibs.cpp
         src/protocols.cpp
         src/protocols.h
+        src/asset.cpp
+        src/asset.h
     USES
         ${PROJECT_NAME}-common
         fty-cmake-rest

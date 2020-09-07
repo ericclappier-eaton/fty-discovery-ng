@@ -19,7 +19,7 @@
     =========================================================================
  */
 
-#include "configure.h"
+#include "mibs.h"
 #include "common.h"
 #include "commands.h"
 #include "protocols/ping.h"
@@ -33,15 +33,17 @@ namespace fty::job {
 
 // =====================================================================================================================
 
+namespace response {
+
 /// Response wrapper
-class ConfResponse : public BasicResponse<ConfResponse>
+class Mibs : public BasicResponse<Mibs>
 {
 public:
     commands::mibs::Out mibs = FIELD("mibs");
 
 public:
     using BasicResponse::BasicResponse;
-    META(ConfResponse, mibs);
+    META(Mibs, mibs);
 
 public:
     const commands::mibs::Out& data()
@@ -49,6 +51,8 @@ public:
         return mibs;
     }
 };
+
+}
 
 // =====================================================================================================================
 
@@ -76,15 +80,15 @@ static bool sortMibs(const std::string& l, const std::string& r)
 
 // =====================================================================================================================
 
-Configure::Configure(const Message& in, MessageBus& bus)
+Mibs::Mibs(const Message& in, MessageBus& bus)
     : m_in(in)
     , m_bus(&bus)
 {
 }
 
-void Configure::operator()()
+void Mibs::operator()()
 {
-    ConfResponse response;
+    response::Mibs response;
 
     if (m_in.userData.empty()) {
         response.setError("Wrong input data");

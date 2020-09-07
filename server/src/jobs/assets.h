@@ -9,10 +9,10 @@ class MessageBus;
 
 namespace fty::job {
 
-class ChainedDevices: public Task<ChainedDevices>
+class Assets: public Task<Assets>
 {
 public:
-    ChainedDevices(const Message& in, MessageBus& bus);
+    Assets(const Message& in, MessageBus& bus);
 
     void operator()() override;
 

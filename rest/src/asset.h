@@ -20,24 +20,22 @@
 */
 
 #pragma once
-
 #include "commands.h"
 #include <fty/rest-support.h>
-#include <pack/pack.h>
 
 namespace fty {
 
-class Mibs : public rest::Runner
+class Asset : public rest::Runner
 {
 public:
-    static constexpr const char* NAME = "discovery/mibs";
+    static constexpr const char* NAME = "discovery/assets";
 
 public:
     using rest::Runner::Runner;
     unsigned run() override;
 
 private:
-    Expected<pack::StringList> mibs(const commands::mibs::In& param);
+    Expected<commands::assets::Out> assets(const commands::assets::In& param);
 
 private:
     // clang-format off
