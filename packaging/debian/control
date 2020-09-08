@@ -8,6 +8,7 @@ Build-Depends:
     libfty-common-logging-dev,
     libfty-pack-dev,
     libfty-common-messagebus-dev,
+    libfty-common-rest-dev,
     libsnmp-dev,
     libneon27-dev,
     libtntnet-dev,
