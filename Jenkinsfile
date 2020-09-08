@@ -71,7 +71,7 @@ pipeline {
             }
         }*/
 
-        /*stage ('deploy if appropriate') {
+        stage ('deploy if appropriate') {
             steps {
                 script {
                     def myDEPLOY_JOB_NAME = sh(returnStdout: true, script: """echo "${params["DEPLOY_JOB_NAME"]}" """).trim();
@@ -106,7 +106,7 @@ pipeline {
                     }
                 }
             }
-        }*/
+        }
     }
     post {
         success {
