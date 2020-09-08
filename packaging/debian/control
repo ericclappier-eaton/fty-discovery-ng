@@ -9,7 +9,9 @@ Build-Depends:
     libfty-pack-dev,
     libfty-common-messagebus-dev,
     libsnmp-dev,
-    libneon27-dev
+    libneon27-dev,
+    libtntnet-dev,
+    fty-cmake-rest-dev
 Standards-Version: 1.0.0
 Section: devel
 Priority: extra
@@ -19,12 +21,3 @@ Architecture: any
 Depends:    ${shlibs:Depends},
             ${misc:Depends}
 Description: fty-discovery-ng service
-
-Package: fty-discovery-ng-dev
-Architecture: any
-Section: libdevel
-Depends:
-    fty-utils-dev,
-    ${shlibs:Depends},
-    ${misc:Depends}
-Description: fty-discovery-ng client library

@@ -72,7 +72,7 @@ Expected<BasicInfo> readSnmp(const std::string& ipAddress)
 
     info.mibs.setValue(std::vector<std::string>(mibs.begin(), mibs.end()));
 
-    return info;
+    return std::move(info);
 }
 
 bool filterMib(const std::string& mib)

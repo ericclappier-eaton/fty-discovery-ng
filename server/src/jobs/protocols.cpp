@@ -19,48 +19,51 @@
     =========================================================================
  */
 
-#include "discover.h"
-#include "common.h"
+#include "protocols.h"
 #include "commands.h"
-#include "protocols/xml-pdc.h"
+#include "common.h"
 #include "message-bus.h"
-#include <fty_log.h>
-#include <fty/split.h>
-#include <set>
 #include "protocols/ping.h"
+#include "protocols/xml-pdc.h"
+#include <fty/split.h>
+#include <fty_log.h>
+#include <set>
 
 namespace fty::job {
 
 // =====================================================================================================================
 
-/// Response wrapper
-class DisResponse : public BasicResponse<DisResponse>
-{
-public:
-    commands::protocols::Out protocols = FIELD("protocols");
+namespace response {
 
-public:
-    using BasicResponse::BasicResponse;
-    META(DisResponse, protocols);
-
-public:
-    const commands::protocols::Out& data()
+    /// Response wrapper
+    class Protocols : public BasicResponse<Protocols>
     {
-        return protocols;
-    }
-};
+    public:
+        commands::protocols::Out protocols = FIELD("protocols");
 
+    public:
+        using BasicResponse::BasicResponse;
+        META_BASE(Protocols, BasicResponse<Protocols>, protocols);
+
+    public:
+        const commands::protocols::Out& data()
+        {
+            return protocols;
+        }
+    };
+
+} // namespace response
 // =====================================================================================================================
 
-Discover::Discover(const Message& in, MessageBus& bus)
+Protocols::Protocols(const Message& in, MessageBus& bus)
     : m_in(in)
     , m_bus(&bus)
 {
 }
 
-void Discover::operator()()
+void Protocols::operator()()
 {
-    DisResponse response;
+    response::Protocols response;
 
     if (m_in.userData.empty()) {
         response.setError("Wrong input data");
@@ -88,6 +91,7 @@ void Discover::operator()()
         return;
     }
 
+    log_error("check addr %s", cmd->address.value().c_str());
     if (!available(cmd->address)) {
         response.setError("Host is not available");
         if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
@@ -131,7 +135,7 @@ void Discover::operator()()
     }
 }
 
-Expected<BasicInfo> Discover::tryXmlPdc(const std::string& ipAddress) const
+Expected<BasicInfo> Protocols::tryXmlPdc(const std::string& ipAddress) const
 {
     protocol::XmlPdc xml(ipAddress);
     if (auto prod = xml.get<protocol::ProductInfo>("product.xml")) {
@@ -144,7 +148,7 @@ Expected<BasicInfo> Discover::tryXmlPdc(const std::string& ipAddress) const
                 info.name = info.name.value() + (info.name.empty() ? "" : " ") + *res;
             }
             info.type = BasicInfo::Type::Xml;
-            return info;
+            return std::move(info);
         } else {
             return unexpected(props.error());
         }
@@ -153,12 +157,12 @@ Expected<BasicInfo> Discover::tryXmlPdc(const std::string& ipAddress) const
     }
 }
 
-Expected<BasicInfo> Discover::trySnmp(const std::string& ipAddress) const
+Expected<BasicInfo> Protocols::trySnmp(const std::string& ipAddress) const
 {
     return readSnmp(ipAddress);
 }
 
-void Discover::sortProtocols(std::vector<BasicInfo>& protocols)
+void Protocols::sortProtocols(std::vector<BasicInfo>& protocols)
 {
     static std::set<std::string> epdus = {
         "EATON-EPDU-MIB", "EATON-OIDS", "EATON-GENESIS-II-MIB", "EATON-EPDU-PU-SW-MIB", "ACS-MIB"};
