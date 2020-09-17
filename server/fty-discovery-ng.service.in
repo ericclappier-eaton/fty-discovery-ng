@@ -3,6 +3,6 @@ Description=FTY discovery service
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/fty-discovery-ng
+ExecStart=${INSTALL_DIR}/${NAME} --config=${CONFIG_DIR}/discovery.conf --daemon
 User=root
 ExecReload=/bin/kill -HUP $MAINPID

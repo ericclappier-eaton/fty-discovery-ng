@@ -1,5 +1,5 @@
-/*  =========================================================================
-    daemon.h - Discovery config data desctripor
+/*  ====================================================================================================================
+    message.h - Common message bus wrapper
 
     Copyright (C) 2014 - 2020 Eaton
 
@@ -16,28 +16,34 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-    =========================================================================
- */
+    ====================================================================================================================
+*/
 
 #pragma once
+#include "commands.h"
+#include <fty/rest-support.h>
 #include <pack/pack.h>
 
 namespace fty {
 
-class Config : public pack::Node
+class Protocols : public rest::Runner
 {
 public:
-    pack::String actorName   = FIELD("actor-name", "conf/discovery-ng");
-    pack::String logConfig   = FIELD("log-config", "conf/logger.conf");
-    pack::String mibDatabase = FIELD("mib-database", "mibs");
-    pack::Bool   tryAll      = FIELD("try-all", false);
+    static constexpr const char* NAME = "discovery/protocols";
 
 public:
-    using pack::Node::Node;
-    META(Config, actorName, logConfig, mibDatabase, tryAll);
+    using rest::Runner::Runner;
+    unsigned run() override;
 
-public:
-    static Config& instance();
+private:
+    Expected<pack::StringList> protocols(const commands::protocols::In& address);
+
+private:
+    // clang-format off
+    Permissions m_permissions = {
+        { BiosProfile::Admin, rest::Access::Read }
+    };
+    // clang-format on
 };
 
 } // namespace fty

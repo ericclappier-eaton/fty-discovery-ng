@@ -20,14 +20,14 @@
  */
 
 #include "discovery.h"
+#include "commands.h"
 #include "config.h"
 #include "daemon.h"
-#include "commands.h"
-#include "jobs/chaineddevices.h"
-#include "jobs/configure.h"
-#include "jobs/discover.h"
-#include <fty_log.h>
+#include "jobs/assets.h"
+#include "jobs/mibs.h"
+#include "jobs/protocols.h"
 #include <fty/thread-pool.h>
+#include <fty_log.h>
 
 namespace fty {
 
@@ -81,11 +81,12 @@ void Discovery::discover(const Message& msg)
 {
     log_info("Discovery: got message %s", msg.dump().c_str());
     if (msg.meta.subject == commands::protocols::Subject) {
-        m_pool.pushWorker<job::Discover>(msg, m_bus);
+        m_pool.pushWorker<job::Protocols>(msg, m_bus);
     } else if (msg.meta.subject == commands::mibs::Subject) {
-        m_pool.pushWorker<job::Configure>(msg, m_bus);
-//    } else if (msg.meta.subject == "details") {
-//        ThreadPool::pushWorker<job::ChainedDevices>(msg, m_bus);
+        m_pool.pushWorker<job::Mibs>(msg, m_bus);
+    } else if (msg.meta.subject == commands::assets::Subject) {
+        log_error("process assets");
+        m_pool.pushWorker<job::Assets>(msg, m_bus);
     }
 }
 

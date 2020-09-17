@@ -48,4 +48,37 @@ namespace commands::mibs {
 
 // =====================================================================================================================
 
+namespace commands::assets {
+    static constexpr const char* Subject = "assets";
+
+    class In : public pack::Node
+    {
+    public:
+        pack::String address      = FIELD("address");
+        pack::UInt32 port         = FIELD("port", 161);
+        pack::String credentialId = FIELD("credential-id");
+
+    public:
+        using pack::Node::Node;
+        META(In, address, port, credentialId);
+    };
+
+    class Out : public pack::Node
+    {
+    public:
+        pack::String ip           = FIELD("ip");
+        pack::String uuid         = FIELD("uuid");
+        pack::String hostName     = FIELD("hostname");
+        pack::String manufacturer = FIELD("manufacturer");
+        pack::String model        = FIELD("model");
+
+    public:
+        using pack::Node::Node;
+        META(Out, ip, uuid, hostName, manufacturer, model);
+    };
+
+} // namespace commands::assets
+
+// =====================================================================================================================
+
 } // namespace fty

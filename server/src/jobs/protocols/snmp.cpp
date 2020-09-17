@@ -72,7 +72,7 @@ public:
         size_t nameLen = MAX_OID_LEN;
 
         if (!snmp_parse_oid(stroid.c_str(), name, &nameLen)) {
-            return unexpected() << "Cannot parse OID '" << stroid << "'";
+            return unexpected("Cannot parse OID '{}'", stroid);
         }
 
         netsnmp_pdu* pdu = snmp_pdu_create(SNMP_MSG_GET);
@@ -90,13 +90,13 @@ public:
                     return std::string(
                         reinterpret_cast<const char*>(response->variables->val.string), response->variables->val_len);
                 } else {
-                    unexpected() << "Wrong value type";
+                    unexpected("Wrong value type");
                 }
             } else {
-                return unexpected() << snmp_errstring(int(response->errstat));
+                return unexpected(snmp_errstring(int(response->errstat)));
             }
         }
-        return unexpected() << snmp_api_errstring(m_sess.s_snmp_errno);
+        return unexpected(snmp_api_errstring(m_sess.s_snmp_errno));
     }
 
     Expected<void> walk(std::function<void(const std::string&)>&& func)
@@ -107,7 +107,7 @@ public:
         bool running = true;
         snmp_parse_oid(".1.3.6.1.2.1", name, &nameLen);
         if (!snmp_parse_oid(".1.3.6.1.2.1", name, &nameLen)) {
-            return unexpected() << "Cannot parse root OID '.1.3.6.1.2.1'";
+            return unexpected("Cannot parse root OID '.1.3.6.1.2.1'");
         }
 
         std::array<char, 255> buff;

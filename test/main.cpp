@@ -31,7 +31,7 @@ struct DiscoverTest
         m_th = std::thread([&]() {
             m_dis.run();
         });
-    };
+    }
 
     ~DiscoverTest()
     {
@@ -46,7 +46,7 @@ struct DiscoverTest
         msg.meta.subject = fty::commands::protocols::Subject;
         msg.meta.from    = "unit-test";
         return msg;
-    };
+    }
 
     fty::Message createMibsMessage()
     {
@@ -55,7 +55,7 @@ struct DiscoverTest
         msg.meta.subject = fty::commands::mibs::Subject;
         msg.meta.from    = "unit-test";
         return msg;
-    };
+    }
 
     fty::MessageBus& bus()
     {

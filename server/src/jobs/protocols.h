@@ -1,5 +1,5 @@
 /*  =========================================================================
-    configure.h - Mibs discovery job
+    discover.h - Protocols discovery job
 
     Copyright (C) 2014 - 2020 Eaton
 
@@ -30,22 +30,35 @@ namespace fty {
 class MessageBus;
 } // namespace fty
 
+namespace fty::job {
+class BasicInfo;
+}
+
 // =====================================================================================================================
 
 namespace fty::job {
 
-class Configure : public Task<Configure>
+// =====================================================================================================================
+
+class Protocols : public Task<Protocols>
 {
 public:
-    Configure(const Message& in, MessageBus& bus);
+    Protocols(const Message& in, MessageBus& bus);
 
     void operator()() override;
+
+private:
+    Expected<BasicInfo>                    tryXmlPdc(const std::string& ipAddress) const;
+    Expected<BasicInfo>                    trySnmp(const std::string& ipAddress) const;
+    static bool                            filterMib(const std::string& mib);
+    static const std::vector<std::string>& knownMibs();
+    static void                            sortProtocols(std::vector<BasicInfo>& protocols);
 
 private:
     Message     m_in;
     MessageBus* m_bus;
 };
 
-} // namespace fty::job
-
 // =====================================================================================================================
+
+} // namespace fty::job

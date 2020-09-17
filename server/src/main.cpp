@@ -15,7 +15,7 @@ int main(int argc, char** argv)
     fty::CommandLine cmd("New discovery service", {
         {"--config", config, "Configuration file"},
         {"--daemon", daemon, "Daemonize this application"},
-        {"--help", help, "Show this help"}
+        {"--help",   help,   "Show this help"}
     });
     // clang-format on
 

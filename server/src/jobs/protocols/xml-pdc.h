@@ -106,7 +106,7 @@ public:
         }
         T info;
         neon::deserialize(*cnt, info);
-        return info;
+        return std::move(info);
     }
 
 private:
