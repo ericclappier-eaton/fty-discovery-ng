@@ -37,16 +37,16 @@ namespace fty::protocol {
 class Snmp::Session::Impl
 {
 public:
-    Impl(const std::string& addr)
-        : m_addr(addr)
+    Impl(const std::string& addr, uint16_t port, const std::string& community)
+        : m_addr(addr + ":" + std::to_string(port))
     {
         snmp_sess_init(&m_sess);
 
-        m_sess.peername      = const_cast<char*>(addr.c_str());
+        m_sess.peername      = const_cast<char*>(m_addr.c_str());
         m_sess.version       = SNMP_VERSION_1;
         m_sess.retries       = 1;
-        m_sess.timeout       = 100 * 1000;
-        m_sess.community     = const_cast<u_char*>(reinterpret_cast<const u_char*>("public"));
+        m_sess.timeout       = 1000 * 1000;
+        m_sess.community     = const_cast<u_char*>(reinterpret_cast<const u_char*>(community.c_str()));
         m_sess.community_len = strlen(reinterpret_cast<const char*>(m_sess.community));
     }
 
@@ -87,8 +87,7 @@ public:
         if (status == STAT_SUCCESS) {
             if (response->errstat == SNMP_ERR_NOERROR) {
                 if (response->variables->val_len > 0) {
-                    return std::string(
-                        reinterpret_cast<const char*>(response->variables->val.string), response->variables->val_len);
+                    return readVal(response->variables);
                 } else {
                     unexpected("Wrong value type");
                 }
@@ -145,6 +144,37 @@ public:
     }
 
 private:
+    Expected<std::string> readVal(const netsnmp_variable_list* lst)
+    {
+        switch (lst->type) {
+            case ASN_BOOLEAN:
+            case ASN_INTEGER:
+            case ASN_COUNTER:
+            case ASN_GAUGE:
+            case ASN_TIMETICKS:
+            case ASN_UINTEGER:
+                return convert<std::string>(int64_t(lst->val.integer));
+            case ASN_BIT_STR:
+            case ASN_OCTET_STR:
+            case ASN_OPAQUE:
+                return std::string(reinterpret_cast<const char*>(lst->val.string), lst->val_len);
+            case ASN_IPADDRESS:
+                return fmt::format("{:d}.{:d}.{:d}.{:d}", lst->val.string[0], lst->val.string[1], lst->val.string[2],
+                    lst->val.string[3]);
+            case ASN_OBJECT_ID:
+                return readObjName(lst);
+        }
+        return unexpected("Unsupported type or null value");
+    }
+
+    Expected<std::string> readObjName(const netsnmp_variable_list* lst)
+    {
+        std::array<char, 255> buff;
+        snprint_objid(buff.data(), buff.size(), lst->val.objid, lst->val_len / sizeof(oid) + 1);
+        return std::string(buff.data());
+    }
+
+private:
     void*           m_handle = nullptr;
     netsnmp_session m_sess;
     std::string     m_addr;
@@ -180,15 +210,15 @@ void Snmp::init(const std::string& mibsPath)
     read_all_mibs();
 }
 
-Snmp::SessionPtr Snmp::session(const std::string& address)
+Snmp::SessionPtr Snmp::session(const std::string& address, u_int16_t port, const std::string& community)
 {
-    return std::shared_ptr<Session>(new Session(address));
+    return std::shared_ptr<Session>(new Session(address, port, community));
 }
 
 // =====================================================================================================================
 
-Snmp::Session::Session(const std::string& addr)
-    : m_impl(new Impl(addr))
+Snmp::Session::Session(const std::string& addr, uint16_t port, const std::string& community)
+    : m_impl(new Impl(addr, port, community))
 {
 }
 

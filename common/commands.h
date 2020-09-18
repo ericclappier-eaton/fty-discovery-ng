@@ -37,10 +37,11 @@ namespace commands::mibs {
         pack::String address      = FIELD("address");
         pack::UInt32 port         = FIELD("port", 161);
         pack::String credentialId = FIELD("credential-id");
+        pack::String community    = FIELD("community");
 
     public:
         using pack::Node::Node;
-        META(In, address, port, credentialId);
+        META(In, address, port, credentialId, community);
     };
 
     using Out = pack::StringList;
@@ -57,26 +58,38 @@ namespace commands::assets {
         pack::String address      = FIELD("address");
         pack::UInt32 port         = FIELD("port", 161);
         pack::String credentialId = FIELD("credential-id");
+        pack::String community    = FIELD("community");
+        pack::String driver       = FIELD("driver");
+        pack::String mib          = FIELD("mib");
 
     public:
         using pack::Node::Node;
-        META(In, address, port, credentialId);
+        META(In, address, port, credentialId, community, driver, mib);
     };
 
-    class Out : public pack::Node
+    class Return : public pack::Node
     {
     public:
-        pack::String ip           = FIELD("ip");
-        pack::String uuid         = FIELD("uuid");
-        pack::String hostName     = FIELD("hostname");
-        pack::String manufacturer = FIELD("manufacturer");
-        pack::String model        = FIELD("model");
+        class Asset : public pack::Node
+        {
+        public:
+            pack::ObjectList<pack::StringMap> ext = FIELD("ext");
+
+        public:
+            using pack::Node::Node;
+            META(Asset, ext);
+        };
+
+    public:
+        pack::String subAddress = FIELD("sub_address");
+        Asset        asset      = FIELD("asset");
 
     public:
         using pack::Node::Node;
-        META(Out, ip, uuid, hostName, manufacturer, model);
+        META(Return, subAddress, asset);
     };
 
+    using Out = pack::ObjectList<Return>;
 } // namespace commands::assets
 
 // =====================================================================================================================

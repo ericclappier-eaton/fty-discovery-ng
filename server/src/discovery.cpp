@@ -73,6 +73,7 @@ void Discovery::shutdown()
 
 int Discovery::run()
 {
+    log_error("Runned!!!");
     stop.wait();
     return 0;
 }
