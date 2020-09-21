@@ -20,5 +20,7 @@ Priority: extra
 Package: fty-discovery-ng
 Architecture: any
 Depends:    ${shlibs:Depends},
-            ${misc:Depends}
+            ${misc:Depends},
+            nut-snmp
+            libfty-common-nut1
 Description: fty-discovery-ng service
