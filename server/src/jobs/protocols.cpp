@@ -109,7 +109,7 @@ void Protocols::operator()()
         log_error(res.error().c_str());
     }
 
-    if (auto res = trySnmp(cmd->address)) {
+    if (auto res = trySnmp(cmd->address, 161, "public")) {
         protocols.emplace_back(*res);
         log_info("Found SNMP device: '%s' mibs[%s]", res->name.value().c_str(), implode(res->mibs, ", ").c_str());
     } else {
@@ -157,9 +157,9 @@ Expected<BasicInfo> Protocols::tryXmlPdc(const std::string& ipAddress) const
     }
 }
 
-Expected<BasicInfo> Protocols::trySnmp(const std::string& ipAddress) const
+Expected<BasicInfo> Protocols::trySnmp(const std::string& ipAddress, uint16_t port, const std::string& community) const
 {
-    return readSnmp(ipAddress);
+    return readSnmp(ipAddress, port, community);
 }
 
 void Protocols::sortProtocols(std::vector<BasicInfo>& protocols)

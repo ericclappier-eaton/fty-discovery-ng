@@ -23,6 +23,8 @@ etn_target(static ${PROJECT_NAME}-static
         src/jobs/protocols/xml-pdc.h
         src/jobs/protocols/neon.cpp
         src/jobs/protocols/neon.h
+        src/jobs/protocols/nut.cpp
+        src/jobs/protocols/nut.h
     USES
         fty-utils
         fty_common_logging
@@ -31,6 +33,8 @@ etn_target(static ${PROJECT_NAME}-static
         pthread
         netsnmp
         neon
+        nutclient
+        stdc++fs
     PRIVATE
 )
 

@@ -40,7 +40,7 @@ public:
         Expected<void>        walk(std::function<void(const std::string&)>&& func) const;
 
     protected:
-        Session(const std::string& address);
+        Session(const std::string& address, uint16_t port, const std::string& community);
 
     private:
         friend class Snmp;
@@ -54,7 +54,7 @@ public:
 public:
     ~Snmp();
     static Snmp& instance();
-    SessionPtr   session(const std::string& address);
+    SessionPtr   session(const std::string& address, uint16_t port, const std::string& community);
     void         init(const std::string& mibsPath);
 
 private:

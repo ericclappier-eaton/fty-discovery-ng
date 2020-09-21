@@ -20,13 +20,14 @@
  */
 
 #include "mibs.h"
-#include "common.h"
 #include "commands.h"
+#include "common.h"
+#include "message-bus.h"
 #include "protocols/ping.h"
 #include "protocols/snmp.h"
-#include "message-bus.h"
-#include <fty_log.h>
 #include <fty/split.h>
+#include <fty_log.h>
+#include <set>
 
 
 namespace fty::job {
@@ -35,24 +36,24 @@ namespace fty::job {
 
 namespace response {
 
-/// Response wrapper
-class Mibs : public BasicResponse<Mibs>
-{
-public:
-    commands::mibs::Out mibs = FIELD("mibs");
-
-public:
-    using BasicResponse::BasicResponse;
-    META_BASE(Mibs, BasicResponse<Mibs>, mibs);
-
-public:
-    const commands::mibs::Out& data()
+    /// Response wrapper
+    class Mibs : public BasicResponse<Mibs>
     {
-        return mibs;
-    }
-};
+    public:
+        commands::mibs::Out mibs = FIELD("mibs");
 
-}
+    public:
+        using BasicResponse::BasicResponse;
+        META_BASE(Mibs, BasicResponse<Mibs>, mibs);
+
+    public:
+        const commands::mibs::Out& data()
+        {
+            return mibs;
+        }
+    };
+
+} // namespace response
 
 // =====================================================================================================================
 
@@ -107,15 +108,6 @@ void Mibs::operator()()
         return;
     }
 
-    if (cmd->address == "__fake__") {
-        response.mibs.setValue({"MG-SNMP-UPS-MIB", "UPS-MIB", "XUPS-MIB"});
-        response.status = Message::Status::Ok;
-        if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
-            log_error(res.error().c_str());
-        }
-        return;
-    }
-
     if (!available(cmd->address)) {
         response.setError("Host is not available");
         if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
@@ -124,9 +116,8 @@ void Mibs::operator()()
         return;
     }
 
-    auto info = readSnmp(cmd->address);
+    auto info = readSnmp(cmd->address, uint16_t(cmd->port.value()), cmd->community);
     if (!info) {
-        log_error(info.error().c_str());
         response.setError(info.error());
         if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
             log_error(res.error().c_str());

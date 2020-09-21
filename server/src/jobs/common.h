@@ -64,7 +64,7 @@ public:
 public:
     void setError(const std::string& errMsg)
     {
-        error = errMsg;
+        error  = errMsg;
         status = Message::Status::Error;
     }
 
@@ -85,19 +85,20 @@ public:
 
 bool                            filterMib(const std::string& mib);
 const std::vector<std::string>& knownMibs();
-Expected<BasicInfo>             readSnmp(const std::string& ipAddress);
+Expected<BasicInfo>             readSnmp(const std::string& ipAddress, uint16_t port, const std::string& community);
+bool                            isSnmp(const std::string& mib);
 
 // =====================================================================================================================
 
 inline std::ostream& operator<<(std::ostream& ss, BasicInfo::Type type)
 {
     switch (type) {
-    case BasicInfo::Type::Snmp:
-        ss << "Snmp";
-        break;
-    case BasicInfo::Type::Xml:
-        ss << "Xml";
-        break;
+        case BasicInfo::Type::Snmp:
+            ss << "Snmp";
+            break;
+        case BasicInfo::Type::Xml:
+            ss << "Xml";
+            break;
     }
     return ss;
 }

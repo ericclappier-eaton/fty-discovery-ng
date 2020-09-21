@@ -49,7 +49,7 @@ public:
 
 private:
     Expected<BasicInfo>                    tryXmlPdc(const std::string& ipAddress) const;
-    Expected<BasicInfo>                    trySnmp(const std::string& ipAddress) const;
+    Expected<BasicInfo>                    trySnmp(const std::string& ipAddress, uint16_t port, const std::string& community) const;
     static bool                            filterMib(const std::string& mib);
     static const std::vector<std::string>& knownMibs();
     static void                            sortProtocols(std::vector<BasicInfo>& protocols);
