@@ -52,6 +52,8 @@ Expected<BasicInfo> readSnmp(const std::string& ipAddress, uint16_t port, const 
         size_t pos;
         if (pos = oid->find("."); pos != std::string::npos) {
             mibs.insert(oid->substr(0, pos));
+        } else {
+            mibs.insert(*oid);
         }
     } else {
         if (fty::Config::instance().tryAll) {

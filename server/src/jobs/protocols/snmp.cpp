@@ -170,7 +170,7 @@ private:
     Expected<std::string> readObjName(const netsnmp_variable_list* lst)
     {
         std::array<char, 255> buff;
-        snprint_objid(buff.data(), buff.size(), lst->val.objid, lst->val_len / sizeof(oid) + 1);
+        snprint_objid(buff.data(), buff.size(), lst->val.objid, lst->val_len / sizeof(oid));
         return std::string(buff.data());
     }
 
