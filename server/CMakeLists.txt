@@ -33,7 +33,6 @@ etn_target(static ${PROJECT_NAME}-static
         pthread
         netsnmp
         neon
-        nutclient
         stdc++fs
     PRIVATE
 )

@@ -5,7 +5,6 @@
 #include "protocols/snmp.h"
 #include <fty_log.h>
 #include "protocols/ping.h"
-#include <nutclient.h>
 #include "protocols/nut.h"
 
 namespace fty::job {

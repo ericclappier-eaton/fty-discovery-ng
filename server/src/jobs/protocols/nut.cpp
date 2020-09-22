@@ -6,13 +6,7 @@
 #include <fty/process.h>
 #include <fty/split.h>
 #include <fty_log.h>
-#include <netdb.h>
-#include <nutclient.h>
 #include <regex>
-#include <string.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <unistd.h>
 #include "src/jobs/common.h"
 
 namespace fty::protocol {
