@@ -37,7 +37,7 @@ namespace commands::mibs {
         pack::String address      = FIELD("address");
         pack::UInt32 port         = FIELD("port", 161);
         pack::String credentialId = FIELD("credential-id");
-        pack::String community    = FIELD("community");
+        pack::String community    = FIELD("community", "public");
 
     public:
         using pack::Node::Node;
@@ -58,7 +58,7 @@ namespace commands::assets {
         pack::String address      = FIELD("address");
         pack::UInt32 port         = FIELD("port", 161);
         pack::String credentialId = FIELD("credential-id");
-        pack::String community    = FIELD("community");
+        pack::String community    = FIELD("community", "public");
         pack::String driver       = FIELD("driver");
         pack::String mib          = FIELD("mib");
 

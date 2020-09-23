@@ -21,6 +21,6 @@ Package: fty-discovery-ng
 Architecture: any
 Depends:    ${shlibs:Depends},
             ${misc:Depends},
-            nut-snmp
+            nut-snmp,
             libfty-common-nut1
 Description: fty-discovery-ng service

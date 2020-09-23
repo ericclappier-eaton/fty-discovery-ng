@@ -42,7 +42,7 @@ private:
 private:
     // clang-format off
     Permissions m_permissions = {
-        { BiosProfile::Admin, rest::Access::Read }
+        { BiosProfile::Admin, rest::Access::Edit }
     };
     // clang-format on
 };

@@ -78,7 +78,7 @@ static std::string driverName(const commands::assets::In& cmd)
 }
 
 NutProcess::NutProcess(const commands::assets::In& cmd)
-    : m_driver(std::filesystem::path("/usr/lib/nut") / driverName(cmd))
+    : m_driver(std::filesystem::path("/lib/nut") / driverName(cmd))
     , m_cmd(cmd)
 {
     char tmpl[] = "/tmp/nutXXXXXX";
