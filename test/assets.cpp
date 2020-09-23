@@ -51,39 +51,39 @@ TEST_CASE("Assets / Test output")
         in.port    = 1161;
         in.driver  = "snmp-ups";
 
-        SECTION("Daisy device 38.147")
+        SECTION("Daisy device epdu.147")
         {
-            in.community = "10.130.38.147";
+            in.community = "epdu.147";
         }
 
-        SECTION("MG device 38.125")
+        SECTION("MG device mge.125")
         {
-            in.community = "10.130.38.125";
+            in.community = "mge.125";
         }
 
-        SECTION("MG device 38.191")
+        SECTION("MG device mge.191")
         {
-            in.community = "10.130.38.191";
+            in.community = "mge.191";
         }
 
-        SECTION("HP device 38.114")
+        SECTION("HP device cpqpqwer.114")
         {
-            in.community = "10.130.38.114";
+            in.community = "cpqpqwer.114";
         }
 
-        SECTION("Lenovo device 38.181")
+        SECTION("Lenovo device lenovo.181")
         {
-            in.community = "10.130.38.181";
+            in.community = "lenovo.181";
         }
 
-        SECTION("Genapi device 38.238")
+        SECTION("Genapi device xups.238")
         {
-            in.community = "10.130.38.238";
+            in.community = "xups.238";
         }
 
-        SECTION("Genapi device 38.159")
+        SECTION("Genapi device xups.159")
         {
-            in.community = "10.130.38.159";
+            in.community = "xups.159";
         }
 
         msg.userData.setString(*pack::json::serialize(in));

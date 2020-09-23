@@ -65,51 +65,51 @@ TEST_CASE("Mibs / get mibs")
         in.address = "127.0.0.1";
         in.port    = 1161;
 
-        SECTION("Daisy device 38.147")
+        SECTION("Daisy device epdu.147")
         {
-            in.community = "10.130.38.147";
+            in.community = "epdu.147";
             auto res = getResponse(in);
             CHECK("EATON-EPDU-MIB::eatonEpdu" == res[0]);
         }
 
-        SECTION("MG device 38.125")
+        SECTION("MG device mge.125")
         {
-            in.community = "10.130.38.125";
+            in.community = "mge.125";
             auto res = getResponse(in);
             CHECK("MG-SNMP-UPS-MIB::upsmg" == res[0]);
         }
 
-        SECTION("MG device 38.191")
+        SECTION("MG device mge.191")
         {
-            in.community = "10.130.38.191";
+            in.community = "mge.191";
             auto res = getResponse(in);
             CHECK("MG-SNMP-UPS-MIB::upsmg" == res[0]);
         }
 
-        SECTION("HP device 38.114")
+        SECTION("HP device cpqpqwer.114")
         {
-            in.community = "10.130.38.114";
+            in.community = "cpqpqwer.114";
             auto res = getResponse(in);
             CHECK("CPQPOWER-MIB::ups" == res[0]);
         }
 
-        SECTION("Lenovo device 38.181")
+        SECTION("Lenovo device lenovo.181")
         {
-            in.community = "10.130.38.181";
+            in.community = "lenovo.181";
             auto res = getResponse(in);
             CHECK("joint-iso-ccitt" == res[0]);
         }
 
-        SECTION("Genapi device 38.238")
+        SECTION("Genapi device xups.238")
         {
-            in.community = "10.130.38.238";
+            in.community = "xups.238";
             auto res = getResponse(in);
             CHECK("EATON-OIDS::xupsMIB" == res[0]);
         }
 
-        SECTION("Genapi device 38.159")
+        SECTION("Genapi device xups.159")
         {
-            in.community = "10.130.38.159";
+            in.community = "xups.159";
             auto res = getResponse(in);
             CHECK("EATON-OIDS::xupsMIB" == res[0]);
         }
