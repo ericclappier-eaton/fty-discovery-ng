@@ -28,29 +28,23 @@
 #include <net-snmp/snmpv3_api.h>
 // Other
 #include <fty/expected.h>
+#include <fty_security_wallet.h>
 #include <iostream>
 #include <regex>
 #include <set>
 
 namespace fty::protocol {
 
+
 class Snmp::Session::Impl
 {
 public:
-    Impl(const std::string& addr, uint16_t port, const std::string& community)
+    Impl(const std::string& addr, uint16_t port)
         : m_addr(addr + ":" + std::to_string(port))
     {
-        snmp_sess_init(&m_sess);
-
-        m_sess.peername      = const_cast<char*>(m_addr.c_str());
-        m_sess.version       = SNMP_VERSION_1;
-        m_sess.retries       = 1;
-        m_sess.timeout       = 1000 * 1000;
-        m_sess.community     = const_cast<u_char*>(reinterpret_cast<const u_char*>(community.c_str()));
-        m_sess.community_len = strlen(reinterpret_cast<const char*>(m_sess.community));
     }
 
-    ~Impl()
+    virtual ~Impl()
     {
         if (m_handle) {
             snmp_sess_close(m_handle);
@@ -61,6 +55,7 @@ public:
     {
         m_handle = snmp_sess_open(&m_sess);
         if (!m_handle) {
+            log_error(snmp_api_errstring(snmp_errno));
             return unexpected(snmp_api_errstring(snmp_errno));
         }
         return {};
@@ -95,7 +90,7 @@ public:
                 return unexpected(snmp_errstring(int(response->errstat)));
             }
         }
-        return unexpected(snmp_api_errstring(m_sess.s_snmp_errno));
+        return unexpected(snmp_api_errstring(snmp_errno));
     }
 
     Expected<void> walk(std::function<void(const std::string&)>&& func)
@@ -175,9 +170,126 @@ private:
     }
 
 private:
+    friend class SessionCommunity;
+    friend class SessionWallet;
+
     void*           m_handle = nullptr;
     netsnmp_session m_sess;
     std::string     m_addr;
+};
+
+// =====================================================================================================================
+
+class SessionCommunity : public Snmp::Session
+{
+public:
+    SessionCommunity(const std::string& addr, uint16_t port, const std::string& community)
+        : Snmp::Session(addr, port)
+    {
+        snmp_sess_init(&m_impl->m_sess);
+
+        m_impl->m_sess.peername      = const_cast<char*>(m_impl->m_addr.c_str());
+        m_impl->m_sess.version       = SNMP_VERSION_1;
+        m_impl->m_sess.retries       = 1;
+        m_impl->m_sess.timeout       = 1000 * 1000;
+        m_impl->m_sess.community     = const_cast<u_char*>(reinterpret_cast<const u_char*>(community.c_str()));
+        m_impl->m_sess.community_len = strlen(reinterpret_cast<const char*>(m_impl->m_sess.community));
+    }
+};
+
+class SessionWallet : public Snmp::Session
+{
+public:
+    SessionWallet(const std::string& addr, uint16_t port, const std::string& securityId)
+        : Snmp::Session(addr, port)
+    {
+        snmp_sess_init(&m_impl->m_sess);
+        m_impl->m_sess.peername = const_cast<char*>(m_impl->m_addr.c_str());
+        m_impl->m_sess.retries  = 1;
+        m_impl->m_sess.timeout  = 1000 * 1000;
+
+        fty::SocketSyncClient secwSyncClient("/run/fty-security-wallet/secw.socket");
+        auto                  client  = secw::ConsumerAccessor(secwSyncClient);
+        auto                  secCred = client.getDocumentWithPrivateData("default", securityId);
+
+        if (auto credV3 = secw::Snmpv3::tryToCast(secCred)) {
+            auto level = [](secw::Snmpv3SecurityLevel lvl) -> Expected<int> {
+                switch (lvl) {
+                    case secw::NO_AUTH_NO_PRIV:
+                        return SNMP_SEC_LEVEL_NOAUTH;
+                    case secw::AUTH_NO_PRIV:
+                        return SNMP_SEC_LEVEL_AUTHNOPRIV;
+                    case secw::AUTH_PRIV:
+                        return SNMP_SEC_LEVEL_AUTHPRIV;
+                    case secw::MAX_SECURITY_LEVEL:
+                        return unexpected("No privs defined");
+                }
+                return unexpected("No privs defined");
+            };
+
+            auto authProt = [](secw::Snmpv3AuthProtocol proc) -> Expected<oid*> {
+                switch (proc) {
+                    case secw::MD5:
+                        return usmHMACMD5AuthProtocol;
+                    case secw::SHA:
+                        return usmHMACSHA1AuthProtocol;
+                    case secw::MAX_AUTH_PROTOCOL:
+                        return unexpected("Wrong protocol");
+                }
+                return unexpected("Wrong protocol");
+            };
+
+            auto authPriv = [](secw::Snmpv3PrivProtocol proc) -> Expected<oid*> {
+                switch (proc) {
+                    case secw::DES:
+                        return usmDESPrivProtocol;
+                    case secw::AES:
+                        return usmAESPrivProtocol;
+                    case secw::MAX_PRIV_PROTOCOL:
+                        return unexpected("Wrong protocol");
+                }
+                return unexpected("Wrong protocol");
+            };
+
+            m_impl->m_sess.version = SNMP_VERSION_3;
+
+            m_impl->m_sess.securityName    = strdup(credV3->getSecurityName().c_str());
+            m_impl->m_sess.securityNameLen = strlen(m_impl->m_sess.securityName);
+
+            if (auto lvl = level(credV3->getSecurityLevel())) {
+                m_impl->m_sess.securityLevel = *lvl;
+            }
+
+            if (auto prot = authProt(credV3->getAuthProtocol())) {
+                m_impl->m_sess.securityAuthProto    = *prot;
+                m_impl->m_sess.securityAuthProtoLen = sizeof(usmHMACMD5AuthProtocol) / sizeof(oid);
+                m_impl->m_sess.securityAuthKeyLen   = USM_AUTH_KU_LEN;
+            }
+
+            if (auto prot = authPriv(credV3->getPrivProtocol())) {
+                m_impl->m_sess.securityPrivProto    = *prot;
+                m_impl->m_sess.securityPrivProtoLen = sizeof(usmDESPrivProtocol) / sizeof(oid);
+                m_impl->m_sess.securityPrivKeyLen   = USM_AUTH_KU_LEN;
+            }
+
+            if (generate_Ku(m_impl->m_sess.securityAuthProto, u_int(m_impl->m_sess.securityAuthProtoLen),
+                    const_cast<u_char*>(reinterpret_cast<const u_char*>(credV3->getAuthPassword().c_str())),
+                    u_int(credV3->getAuthPassword().size()), m_impl->m_sess.securityAuthKey,
+                    &m_impl->m_sess.securityAuthKeyLen) != SNMPERR_SUCCESS) {
+                log_error("Error generating Ku from authentication pass phrase.");
+            }
+            if (generate_Ku(m_impl->m_sess.securityPrivProto, u_int(m_impl->m_sess.securityPrivProtoLen),
+                    const_cast<u_char*>(reinterpret_cast<const u_char*>(credV3->getPrivPassword().c_str())),
+                    u_int(credV3->getPrivPassword().size()), m_impl->m_sess.securityPrivKey,
+                    &m_impl->m_sess.securityPrivKeyLen) != SNMPERR_SUCCESS) {
+                log_error("Error generating Ku from authentication pass phrase.");
+            }
+        } else if (auto credV1 = secw::Snmpv1::tryToCast(secCred)) {
+            m_impl->m_sess.community =
+                const_cast<u_char*>(reinterpret_cast<const u_char*>(strdup(credV1->getCommunityName().c_str())));
+            m_impl->m_sess.community_len = strlen(reinterpret_cast<const char*>(m_impl->m_sess.community));
+        }
+    }
 };
 
 // =====================================================================================================================
@@ -210,15 +322,20 @@ void Snmp::init(const std::string& mibsPath)
     read_all_mibs();
 }
 
-Snmp::SessionPtr Snmp::session(const std::string& address, u_int16_t port, const std::string& community)
+Snmp::SessionPtr Snmp::sessionByCommunity(const std::string& address, u_int16_t port, const std::string& community)
 {
-    return std::shared_ptr<Session>(new Session(address, port, community));
+    return std::shared_ptr<Session>(new SessionCommunity(address, port, community));
+}
+
+Snmp::SessionPtr Snmp::sessionByWallet(const std::string& address, u_int16_t port, const std::string& securityId)
+{
+    return std::shared_ptr<Session>(new SessionWallet(address, port, securityId));
 }
 
 // =====================================================================================================================
 
-Snmp::Session::Session(const std::string& addr, uint16_t port, const std::string& community)
-    : m_impl(new Impl(addr, port, community))
+Snmp::Session::Session(const std::string& addr, uint16_t port)
+    : m_impl(new Impl(addr, port))
 {
 }
 

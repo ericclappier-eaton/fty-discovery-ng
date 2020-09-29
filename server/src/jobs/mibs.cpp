@@ -116,7 +116,7 @@ void Mibs::operator()()
         return;
     }
 
-    auto info = readSnmp(cmd->address, uint16_t(cmd->port.value()), cmd->community);
+    auto info = readSnmp(cmd->address, uint16_t(cmd->port.value()), cmd->community, cmd->credentialId);
     if (!info) {
         response.setError(info.error());
         if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {

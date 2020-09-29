@@ -28,9 +28,20 @@
 
 namespace fty::job {
 
-Expected<BasicInfo> readSnmp(const std::string& ipAddress, uint16_t port, const std::string& community)
+
+Expected<BasicInfo> readSnmp(
+    const std::string& ipAddress, uint16_t port, const std::string& community, const std::string& secId)
 {
-    auto session = protocol::Snmp::instance().session(ipAddress, port, community);
+    protocol::Snmp::SessionPtr session;
+    if (!community.empty()){
+        session = protocol::Snmp::instance().sessionByCommunity(ipAddress, port, community);
+    } else if (!secId.empty()){
+        session = protocol::Snmp::instance().sessionByWallet(ipAddress, port, secId);
+    }
+    if (!session) {
+        return unexpected("Session is wrong");
+    }
+
     if (auto res = session->open(); !res) {
         return unexpected(res.error());
     }

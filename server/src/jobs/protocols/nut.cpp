@@ -62,7 +62,7 @@ fty::Expected<commands::assets::Out> properties(const commands::assets::In& cmd)
     }
 }
 
-static void fetchFromSecurityWallet(const std::string& id, std::vector<std::string>& cmdLine)
+static Expected<void> fetchFromSecurityWallet(const std::string& id, Process& nutProc)
 {
     fty::SocketSyncClient secwSyncClient("/run/fty-security-wallet/secw.socket");
     auto                  client = secw::ConsumerAccessor(secwSyncClient);
@@ -95,38 +95,35 @@ static void fetchFromSecurityWallet(const std::string& id, std::vector<std::stri
         return unexpected("Wrong protocol");
     };
 
+    try {
+        auto secCred = client.getDocumentWithPrivateData("default", id);
 
-    auto secCred = client.getDocumentWithPrivateData("default", id);
-    auto credV3  = secw::Snmpv3::tryToCast(secCred);
-    auto credV1  = secw::Snmpv1::tryToCast(secCred);
-    credV1->getCommunityName();
-    if (credV3) {
-        cmdLine.push_back("-x");
-        cmdLine.push_back("snmp_version=v3");
-        if (auto lvl = levelStr(credV3->getSecurityLevel())) {
-            cmdLine.push_back("-x");
-            cmdLine.push_back(fmt::format("secLevel={}", *lvl));
+        if (auto credV3  = secw::Snmpv3::tryToCast(secCred)) {
+            log_debug("Init from wallet for snmp v3");
+            nutProc.setEnvVar("SU_VAR_VERSION", "v3");
+            if (auto lvl = levelStr(credV3->getSecurityLevel())) {
+                nutProc.setEnvVar("SU_VAR_SECLEVEL", *lvl);
+            }
+            nutProc.setEnvVar("SU_VAR_SECNAME", credV3->getSecurityName());
+            nutProc.setEnvVar("SU_VAR_AUTHPASSWD", credV3->getAuthPassword());
+            nutProc.setEnvVar("SU_VAR_PRIVPASSWD", credV3->getPrivPassword());
+            if (auto prot = authProtStr(credV3->getAuthProtocol())) {
+                nutProc.setEnvVar("SU_VAR_AUTHPROT", *prot);
+            }
+            if (auto prot = authPrivStr(credV3->getPrivProtocol())){
+                nutProc.setEnvVar("SU_VAR_PRIVPROT", *prot);
+            }
+        } else if (auto credV1  = secw::Snmpv1::tryToCast(secCred)) {
+            log_debug("Init from wallet for snmp v1");
+            nutProc.setEnvVar("SU_VAR_VERSION", "v1");
+            nutProc.setEnvVar("SU_VAR_COMMUNITY", credV1->getCommunityName());
+        } else {
+            return unexpected("Wrong wallet configuratoion");
         }
-        cmdLine.push_back("-x");
-        cmdLine.push_back(fmt::format("secName={}", credV3->getSecurityName()));
-        cmdLine.push_back("-x");
-        cmdLine.push_back(fmt::format("authPassword={}", credV3->getAuthPassword()));
-        cmdLine.push_back("-x");
-        cmdLine.push_back(fmt::format("privPassword={}", credV3->getPrivPassword()));
-        if (auto prot = authProtStr(credV3->getAuthProtocol())) {
-            cmdLine.push_back("-x");
-            cmdLine.push_back(fmt::format("authProtocol={}", *prot));
-        }
-        if (auto prot = authPrivStr(credV3->getPrivProtocol())){
-            cmdLine.push_back("-x");
-            cmdLine.push_back(fmt::format("privProtocol={}", *prot));
-        }
-    } else if (credV1) {
-        cmdLine.push_back("-x");
-        cmdLine.push_back(fmt::format("community={}", credV1->getCommunityName()));
-        cmdLine.push_back("-x");
-        cmdLine.push_back("snmp_version=v1");
+    } catch (const secw::SecwException& err) {
+        return unexpected(err.what());
     }
+    return {};
 }
 
 // =====================================================================================================================
@@ -170,34 +167,29 @@ Expected<void> NutProcess::run(commands::assets::Out& map) const
     }
 
     // clang-format off
-    std::vector<std::string> cmdLine = {
+    Process proc(driver.string(), {
         "-s", "discover",
         "-x", fmt::format("port={}:{}", m_cmd.address.value(), m_cmd.port.value()),
-        "-d", "1"
-    };
+        "-d", "1", "-D"
+    });
     // clang-format on
 
     if (m_cmd.protocol == "NUT_SNMP") {
         if (!m_cmd.settings.mib.empty()) {
-            cmdLine.push_back("-x");
-            cmdLine.push_back(fmt::format("mibs={}", fty::job::mapMibToLegacy(m_cmd.settings.mib)));
+            proc.setEnvVar("SU_VAR_MIBS", fty::job::mapMibToLegacy(m_cmd.settings.mib));
         }
 
         if (!m_cmd.settings.credentialId.empty()) {
-            fetchFromSecurityWallet(m_cmd.settings.credentialId, cmdLine);
+            if (auto ret = fetchFromSecurityWallet(m_cmd.settings.credentialId, proc); !ret) {
+                return unexpected(ret.error());
+            }
         } else if (!m_cmd.settings.community.empty()) {
-            cmdLine.push_back("-x");
-            cmdLine.push_back(fmt::format("community={}", m_cmd.settings.community.value()));
+            proc.setEnvVar("SU_VAR_COMMUNITY", m_cmd.settings.community);
         } else {
             return unexpected("Credentials or community is not set");
         }
     }
 
-    for(const auto& it: cmdLine) {
-        log_info("--- %s", it.c_str());
-    }
-
-    Process proc(driver.string(), cmdLine);
     proc.setEnvVar("NUT_STATEPATH", m_root.string());
     if (m_cmd.protocol == "NUT_SNMP") {
         proc.setEnvVar("MIBDIRS", Config::instance().mibDatabase);

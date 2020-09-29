@@ -40,10 +40,12 @@ public:
         Expected<void>        walk(std::function<void(const std::string&)>&& func) const;
 
     protected:
-        Session(const std::string& address, uint16_t port, const std::string& community);
+        Session(const std::string& address, uint16_t port);
 
     private:
         friend class Snmp;
+        friend class SessionCommunity;
+        friend class SessionWallet;
         class Impl;
         std::unique_ptr<Impl> m_impl;
     };
@@ -54,7 +56,8 @@ public:
 public:
     ~Snmp();
     static Snmp& instance();
-    SessionPtr   session(const std::string& address, uint16_t port, const std::string& community);
+    SessionPtr   sessionByCommunity(const std::string& address, uint16_t port, const std::string& community);
+    SessionPtr   sessionByWallet(const std::string& address, uint16_t port, const std::string& securityId);
     void         init(const std::string& mibsPath);
 
 private:
