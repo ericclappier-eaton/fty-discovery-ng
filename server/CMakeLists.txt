@@ -34,6 +34,9 @@ etn_target(static ${PROJECT_NAME}-static
         netsnmp
         neon
         stdc++fs
+        fty_security_wallet
+        cxxtools
+        fty_common_socket
     PRIVATE
 )
 

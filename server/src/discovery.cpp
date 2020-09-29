@@ -73,20 +73,19 @@ void Discovery::shutdown()
 
 int Discovery::run()
 {
-    log_error("Runned!!!");
     stop.wait();
     return 0;
 }
 
 void Discovery::discover(const Message& msg)
 {
-    log_info("Discovery: got message %s", msg.dump().c_str());
+    log_debug("Discovery: got message %s", msg.dump().c_str());
+    log_debug("Payload: %s", msg.userData.asString().c_str());
     if (msg.meta.subject == commands::protocols::Subject) {
         m_pool.pushWorker<job::Protocols>(msg, m_bus);
     } else if (msg.meta.subject == commands::mibs::Subject) {
         m_pool.pushWorker<job::Mibs>(msg, m_bus);
     } else if (msg.meta.subject == commands::assets::Subject) {
-        log_error("process assets");
         m_pool.pushWorker<job::Assets>(msg, m_bus);
     }
 }

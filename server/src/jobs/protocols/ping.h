@@ -30,6 +30,11 @@
 
 inline bool available(const std::string& address)
 {
+    std::string checkAddress = address;
+    if (checkAddress.find("http://") == 0) {
+        checkAddress = checkAddress.substr(7);
+    }
+
     addrinfo hints;
     memset(&hints, 0, sizeof(addrinfo));
 
@@ -39,7 +44,7 @@ inline bool available(const std::string& address)
     hints.ai_protocol = 0;
 
     addrinfo* result;
-    if (getaddrinfo(address.c_str(), nullptr, &hints, &result) != 0) {
+    if (getaddrinfo(checkAddress.c_str(), nullptr, &hints, &result) != 0) {
         return false;
     }
 

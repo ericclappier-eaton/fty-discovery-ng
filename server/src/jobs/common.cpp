@@ -22,9 +22,9 @@
 #include "common.h"
 #include "protocols/snmp.h"
 #include "src/config.h"
+#include <fty_log.h>
 #include <regex>
 #include <set>
-#include <fty_log.h>
 
 namespace fty::job {
 
@@ -121,43 +121,48 @@ const std::vector<std::string>& knownMibs()
 
 bool isSnmp(const std::string& mib)
 {
-    static std::set<std::string> mibs = {
-        "PowerNet-MIB::automaticXferSwitch", // apc_ats
-        "PowerNet-MIB::masterSwitchMSP",     // apc_pdu_rpdu
-        "PowerNet-MIB::masterSwitchrPDU",    // apc_pdu_rpdu2
-        "PowerNet-MIB::masterSwitchrPDU2",   // apc_pdu_msp
-        "PowerNet-MIB::smartUPS2200",        // apc
-        "PowerNet-MIB::smartUPS3000",        // apc
-        "PowerNet-MIB::smartUPS2",           // apc
-        "PowerNet-MIB::smartUPS450",         // apc
-        "PowerNet-MIB::smartUPS700",         // apc
-        "Baytech-MIB-503-1::baytech",        // baytech
-        "BESTPOWER-MIB::bestPower",          // bestpower
-        "CPQPOWER-MIB::ups",                 // compaq
-        "CPS-MIB::cps",                      // cyberpower
-        "DeltaUPS-MIB::upsv4",               // delta_ups
-        "MG-SNMP-UPS-MIB::upsmg",            // eaton_ats16, legacy
-        "EATON-ATS2-MIB::ats2",              // eaton_ats16, g2
-        "EATON-OIDS::sts",                   // eaton_ats30
-        "EATON-GENESIS-II-MIB::eaton",       // aphel_genesisII
-        "EATON-OIDS::pduAgent.6",            // aphel_revelation
-        "EATON-EPDU-MIB::eatonEpdu",         // eaton_marlin
-        "PM-MIB::pm3024",                    // emerson_avocent_pdu
-        "EATON-EPDU-PU-SW-MIB::pulizzi",     // pulizzi_switched1
-        "CPQPOWER-MIB::pdu2",                // hpe_pdu
-        "NET-SNMP-TC::linux",                // huawei
-        "MG-SNMP-UPS-MIB::upsmg",            // mge
-        "EATON-OIDS::xupsMIB",               // powerware
-        "EATON-OIDS::eatonPowerChainDevice", // pxgx_ups
-        "PDU2-MIB::raritan",                 // raritan
-        "PDU2-MIB::pdu2",                    // raritan_px2
-        "XPPC-MIB::ppc",                     // xppc
-        "SOCOMECUPS-MIB::netvision",         // netvision
-        "TRIPPUPS1-MIB::trippUPS1",          // tripplite_ietf
-        "UPS-MIB::upsMIB",                   // ietf
-    };
+    return !mapMibToLegacy(mib).empty();
+}
 
-    return mibs.count(mib) > 0;
+std::string mapMibToLegacy(const std::string& mib)
+{
+    static std::map<std::string, std::string> mibs = {
+        {"PowerNet-MIB::automaticXferSwitch", "apc_ats"},       // apc_ats
+        {"PowerNet-MIB::masterSwitchMSP", "apc_pdu"},           // apc_pdu_rpdu
+        {"PowerNet-MIB::masterSwitchrPDU", "apc_pdu"},          // apc_pdu_rpdu2
+        {"PowerNet-MIB::masterSwitchrPDU2", "apc_pdu"},         // apc_pdu_msp
+        {"PowerNet-MIB::smartUPS2200", "apc_ats"},              // apc
+        {"PowerNet-MIB::smartUPS3000", "apc_ats"},              // apc
+        {"PowerNet-MIB::smartUPS2", "apc_ats"},                 // apc
+        {"PowerNet-MIB::smartUPS450", "apc_ats"},               // apc
+        {"PowerNet-MIB::smartUPS700", "apc_ats"},               // apc
+        {"Baytech-MIB-503-1::baytech", "baytech"},              // baytech
+        {"BESTPOWER-MIB::bestPower", "bestpower"},              // bestpower
+        {"CPQPOWER-MIB::ups", "cpqpower"},                      // compaq
+        {"CPS-MIB::cps", "cyberpower"},                         // cyberpower
+        {"DeltaUPS-MIB::upsv4", "delta_ups"},                   // delta_ups
+        {"MG-SNMP-UPS-MIB::upsmg", "eaton_ats16"},              // eaton_ats16, legacy
+        {"EATON-ATS2-MIB::ats2", "eaton_ats16_g2"},             // eaton_ats16, g2
+        {"EATON-OIDS::sts", "eaton_ats30"},                     // eaton_ats30
+        {"EATON-GENESIS-II-MIB::eaton", "aphel_genesisII"},     // aphel_genesisII
+        {"EATON-OIDS::pduAgent.6", "aphel_revelation"},         // aphel_revelation
+        {"EATON-EPDU-MIB::eatonEpdu", "eaton_epdu"},            // eaton_marlin
+        {"PM-MIB::pm3024", "emerson_avocent_pdu"},              // emerson_avocent_pdu
+        {"EATON-EPDU-PU-SW-MIB::pulizzi", "pulizzi_switched1"}, // pulizzi_switched1
+        {"CPQPOWER-MIB::pdu2", "hpe_epdu"},                     // hpe_pdu
+        {"NET-SNMP-TC::linux", "huawei"},                       // huawei
+        {"MG-SNMP-UPS-MIB::upsmg", "mge"},                      // mge
+        {"EATON-OIDS::xupsMIB", "pw"},                          // powerware
+        {"EATON-OIDS::eatonPowerChainDevice", "pxgx_ups"},      // pxgx_ups
+        {"PDU2-MIB::raritan", "raritan"},                       // raritan
+        {"PDU2-MIB::pdu2", "raritan_px2"},                      // raritan_px2
+        {"XPPC-MIB::ppc", "xppc"},                              // xppc
+        {"SOCOMECUPS-MIB::netvision", "apc_ats"},               // netvision
+        {"TRIPPUPS1-MIB::trippUPS1", "tripplite"},              // tripplite_ietf
+        {"UPS-MIB::upsMIB", "ietf"},                            // ietf
+    };
+    auto it = mibs.find(mib);
+    return it != mibs.end() ? it->second : "";
 }
 
 

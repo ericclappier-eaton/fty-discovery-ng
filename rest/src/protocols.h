@@ -29,10 +29,8 @@ namespace fty {
 class Protocols : public rest::Runner
 {
 public:
-    static constexpr const char* NAME = "discovery/protocols";
+    INIT_REST("discovery/protocols");
 
-public:
-    using rest::Runner::Runner;
     unsigned run() override;
 
 private:

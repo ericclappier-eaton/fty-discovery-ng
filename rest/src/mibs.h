@@ -30,10 +30,7 @@ namespace fty {
 class Mibs : public rest::Runner
 {
 public:
-    static constexpr const char* NAME = "discovery/mibs";
-
-public:
-    using rest::Runner::Runner;
+    INIT_REST("discovery/mibs");
     unsigned run() override;
 
 private:

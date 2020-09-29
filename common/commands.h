@@ -36,7 +36,7 @@ namespace commands::mibs {
     public:
         pack::String address      = FIELD("address");
         pack::UInt32 port         = FIELD("port", 161);
-        pack::String credentialId = FIELD("credential-id");
+        pack::String credentialId = FIELD("secw_credential_id");
         pack::String community    = FIELD("community", "public");
 
     public:
@@ -55,16 +55,26 @@ namespace commands::assets {
     class In : public pack::Node
     {
     public:
-        pack::String address      = FIELD("address");
-        pack::UInt32 port         = FIELD("port", 161);
-        pack::String credentialId = FIELD("credential-id");
-        pack::String community    = FIELD("community", "public");
-        pack::String driver       = FIELD("driver");
-        pack::String mib          = FIELD("mib");
+        class Settings : public pack::Node
+        {
+        public:
+            pack::String credentialId = FIELD("secw_credential_id");
+            pack::String mib          = FIELD("MIB");
+            pack::String community    = FIELD("community");
+
+            using pack::Node::Node;
+            META(Settings, credentialId, mib, community);
+        };
+
+    public:
+        pack::String address  = FIELD("address");
+        pack::String protocol = FIELD("protocol");
+        pack::UInt32 port     = FIELD("port");
+        Settings     settings = FIELD("protocol_settings");
 
     public:
         using pack::Node::Node;
-        META(In, address, port, credentialId, community, driver, mib);
+        META(In, address, protocol, port, settings);
     };
 
     class Return : public pack::Node

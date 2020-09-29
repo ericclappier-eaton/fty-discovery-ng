@@ -49,46 +49,55 @@ TEST_CASE("Assets / Test output")
         fty::commands::assets::In in;
         in.address = "127.0.0.1";
         in.port    = 1161;
-        in.driver  = "snmp-ups";
+        in.protocol  = "NUT_SNMP";
 
         SECTION("Daisy device epdu.147")
         {
-            in.community = "epdu.147";
+            in.settings.mib = "EATON-EPDU-MIB::eatonEpdu";
+            in.settings.community = "epdu.147";
         }
 
         SECTION("MG device mge.125")
         {
-            in.community = "mge.125";
+            in.settings.mib = "MG-SNMP-UPS-MIB::upsmg";
+            in.settings.community = "mge.125";
         }
 
         SECTION("MG device mge.191")
         {
-            in.community = "mge.191";
+            in.settings.mib = "MG-SNMP-UPS-MIB::upsmg";
+            in.settings.community = "mge.191";
         }
 
         SECTION("HP device cpqpqwer.114")
         {
-            in.community = "cpqpqwer.114";
+            in.settings.mib = "CPQPOWER-MIB::ups";
+            in.settings.community = "cpqpqwer.114";
         }
 
         SECTION("Lenovo device lenovo.181")
         {
-            in.community = "lenovo.181";
+            in.settings.mib = "joint-iso-ccitt";
+            in.settings.community = "lenovo.181";
         }
 
         SECTION("Genapi device xups.238")
         {
-            in.community = "xups.238";
+            in.settings.mib = "EATON-OIDS::xupsMIB";
+            in.settings.community = "xups.238";
         }
 
         SECTION("Genapi device xups.159")
         {
-            in.community = "xups.159";
+            in.settings.mib = "EATON-OIDS::xupsMIB";
+            in.settings.community = "xups.159";
         }
 
         msg.userData.setString(*pack::json::serialize(in));
         fty::Expected<fty::Message> ret = Test::send(msg);
-        CHECK(ret);
+        if (!ret) {
+            FAIL(ret.error());
+        }
 
         proc.interrupt();
         proc.wait();

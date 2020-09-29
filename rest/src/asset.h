@@ -28,10 +28,7 @@ namespace fty {
 class Asset : public rest::Runner
 {
 public:
-    static constexpr const char* NAME = "discovery/assets";
-
-public:
-    using rest::Runner::Runner;
+    INIT_REST("discovery/assets");
     unsigned run() override;
 
 private:

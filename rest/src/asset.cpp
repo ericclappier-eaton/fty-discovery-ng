@@ -28,23 +28,19 @@ unsigned Asset::run()
 {
     auto user = global<UserInfo>("UserInfo user");
     if (auto ret = checkPermissions(**user, m_permissions); !ret) {
-        m_reply.out() << ret.error().message << "\n";
-        return ret.error().code;
+        throw rest::Error(ret.error());
     }
 
     commands::assets::In param;
     if (auto res = pack::json::deserialize(m_request.getBody(), param); !res) {
-        auto err = rest::error("bad-input", m_request.getArg(0));
-        m_reply.out() << err.message << "\n\n";
-        return err.code;
+        throw rest::Error("bad-input", m_request.getArg(0));
     }
 
     if (auto asset = assets(param)) {
         m_reply.out() << *pack::json::serialize(*asset) << "\n\n";
         return HTTP_OK;
     } else {
-        m_reply.out() << asset.error() << "\n\n";
-        return HTTP_INTERNAL_SERVER_ERROR;
+        throw rest::Error("internal-error", asset.error());
     }
 }
 

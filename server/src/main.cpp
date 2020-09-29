@@ -45,7 +45,6 @@ int main(int argc, char** argv)
     }
 
     if (auto res = dis.init()) {
-        log_debug("Run discovery");
         dis.run();
         dis.shutdown();
     } else {

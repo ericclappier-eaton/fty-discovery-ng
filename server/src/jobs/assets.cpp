@@ -77,7 +77,7 @@ void Assets::operator()()
         return;
     } else {
         std::string out = *pack::json::serialize(*res);
-        log_error("output %s", out.c_str());
+        log_debug("output %s", out.c_str());
 
         response.status = Message::Status::Ok;
         response.assets = *res;

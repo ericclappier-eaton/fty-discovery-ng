@@ -22,6 +22,7 @@
 #pragma once
 #include "message-bus.h"
 #include <fty/expected.h>
+#include <fty_log.h>
 #include <pack/pack.h>
 
 namespace fty::job {
@@ -64,6 +65,7 @@ public:
 public:
     void setError(const std::string& errMsg)
     {
+        log_error("Error: %s", errMsg.c_str());
         error  = errMsg;
         status = Message::Status::Error;
     }
@@ -87,6 +89,7 @@ bool                            filterMib(const std::string& mib);
 const std::vector<std::string>& knownMibs();
 Expected<BasicInfo>             readSnmp(const std::string& ipAddress, uint16_t port, const std::string& community);
 bool                            isSnmp(const std::string& mib);
+std::string                     mapMibToLegacy(const std::string& mib);
 
 // =====================================================================================================================
 
