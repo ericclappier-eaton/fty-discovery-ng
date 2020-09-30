@@ -1,5 +1,5 @@
 <mapping>
-    <target>discovery/NUT_SNMP/MIBs@lib${NAME}</target>
+    <target>discovery/NUT_SNMP/MIBS@lib${NAME}</target>
     <url>^/api/v1/admin/discovery/mibs$</url>
     <method>POST</method>
 </mapping>
