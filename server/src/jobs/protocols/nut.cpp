@@ -170,7 +170,7 @@ Expected<void> NutProcess::run(commands::assets::Out& map) const
     Process proc(driver.string(), {
         "-s", "discover",
         "-x", fmt::format("port={}:{}", m_cmd.address.value(), m_cmd.port.value()),
-        "-d", "1", "-D"
+        "-d", "1"
     });
     // clang-format on
 
