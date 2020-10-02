@@ -93,7 +93,7 @@ namespace commands::assets {
         };
 
     public:
-        pack::String subAddress = FIELD("sub_address");
+        pack::String subAddress = FIELD("sub_address", "-1");
         Asset        asset      = FIELD("asset");
 
     public:
