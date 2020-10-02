@@ -285,6 +285,7 @@ public:
                 log_error("Error generating Ku from authentication pass phrase.");
             }
         } else if (auto credV1 = secw::Snmpv1::tryToCast(secCred)) {
+            m_impl->m_sess.version = SNMP_VERSION_1;
             m_impl->m_sess.community =
                 const_cast<u_char*>(reinterpret_cast<const u_char*>(strdup(credV1->getCommunityName().c_str())));
             m_impl->m_sess.community_len = strlen(reinterpret_cast<const char*>(m_impl->m_sess.community));
