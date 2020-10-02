@@ -177,7 +177,20 @@ Expected<void> NutProcess::run(commands::assets::Out& map) const
         driver = std::filesystem::path("/lib/nut") / *dri;
     }
 
-    std::string address = fmt::format("{}:{}", m_cmd.address.value(), m_cmd.port.value());
+    uint32_t port = m_cmd.port;
+    if (!m_cmd.port.hasValue()) {
+        if (*dri == "netxml-ups") {
+            port = 80;
+        } else if (*dri == "snmp-ups") {
+            port = 161;
+        }
+    }
+
+    if (!port) {
+        return unexpected("Port is not specified");
+    }
+
+    std::string address = fmt::format("{}:{}", m_cmd.address.value(), port);
 
     if (*dri == "netxml-ups") {
         if (address.find("http://") != 0) {
@@ -250,12 +263,27 @@ void NutProcess::parseOutput(const std::string& cnt, commands::assets::Out& map)
         tmpMap.emplace(key, value);
     }
 
+    auto addAssetVal = [&](commands::assets::Return::Asset& asset, const std::string& nutKey, const std::string& val) {
+        if (auto key = mapKey(nutKey); !key.empty()) {
+            if (key == "model") {
+                asset.name = val;
+            }
+            if (key == "device.type") {
+                asset.subtype = val;
+            }
+            auto& ext = asset.ext.append();
+            ext.append(key, val);
+            ext.append("read_only", "true");
+        }
+    };
+
     int dcount = fty::convert<int>(value(tmpMap, "device.count"));
     if (dcount) {
         // daisychain
         for (int i = 0; i < dcount; ++i) {
             auto& asset      = map.append();
             asset.subAddress = std::to_string(i + 1);
+            asset.asset.type = "device";
 
             std::string prefix = "device." + std::to_string(i + 1) + ".";
             for (const auto& p : tmpMap) {
@@ -263,29 +291,18 @@ void NutProcess::parseOutput(const std::string& cnt, commands::assets::Out& map)
                     continue;
                 }
 
-                if (auto key = mapKey(p.first.substr(prefix.size())); !key.empty()) {
-                    auto& val = asset.asset.ext.append();
-                    val.append(key, p.second);
-                    val.append("read_only", "true");
-                }
+                auto nutKey = p.first.substr(prefix.size());
+                addAssetVal(asset.asset, nutKey, p.second);
             }
-            auto& val = asset.asset.ext.append();
-            val.append("type", "device");
-            val.append("read_only", "true");
         }
     } else {
         auto& asset      = map.append();
         asset.subAddress = "";
+        asset.asset.type = "device";
+
         for (const auto& p : tmpMap) {
-            if (auto key = mapKey(p.first); !key.empty()) {
-                auto& val = asset.asset.ext.append();
-                val.append(key, p.second);
-                val.append("read_only", "true");
-            }
+            addAssetVal(asset.asset, p.first, p.second);
         }
-        auto& val = asset.asset.ext.append();
-        val.append("type", "device");
-        val.append("read_only", "true");
     }
 }
 
@@ -302,7 +319,6 @@ std::string NutProcess::mapKey(const std::string& key) const
 {
     static Mappping mapping;
     if (!mapping.hasValue()) {
-        mapping.inventoryMapping.append("device.type", "subtype");
         std::ifstream fs("/usr/share/fty-common-nut/mapping.conf");
         std::string   mapCnt;
         // This config IS JSON WITH CPP COMMENTS! Remove it :(
