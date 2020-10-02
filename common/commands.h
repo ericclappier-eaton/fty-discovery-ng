@@ -37,11 +37,12 @@ namespace commands::mibs {
         pack::String address      = FIELD("address");
         pack::UInt32 port         = FIELD("port", 161);
         pack::String credentialId = FIELD("secw_credential_id");
-        pack::String community    = FIELD("community", "public");
+        pack::String community    = FIELD("community");
+        pack::UInt32 timeout      = FIELD("timeout", 1); // timeout in seconds
 
     public:
         using pack::Node::Node;
-        META(In, address, port, credentialId, community);
+        META(In, address, port, credentialId, community, timeout);
     };
 
     using Out = pack::StringList;
@@ -61,9 +62,10 @@ namespace commands::assets {
             pack::String credentialId = FIELD("secw_credential_id");
             pack::String mib          = FIELD("MIB");
             pack::String community    = FIELD("community");
+            pack::UInt32 timeout      = FIELD("timeout", 1); // timeout in seconds
 
             using pack::Node::Node;
-            META(Settings, credentialId, mib, community);
+            META(Settings, credentialId, mib, community, timeout);
         };
 
     public:

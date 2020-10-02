@@ -56,8 +56,8 @@ public:
 public:
     ~Snmp();
     static Snmp& instance();
-    SessionPtr   sessionByCommunity(const std::string& address, uint16_t port, const std::string& community);
-    SessionPtr   sessionByWallet(const std::string& address, uint16_t port, const std::string& securityId);
+    SessionPtr   sessionByCommunity(const std::string& address, uint16_t port, const std::string& community, uint32_t timeout);
+    SessionPtr   sessionByWallet(const std::string& address, uint16_t port, const std::string& securityId, uint32_t timeout);
     void         init(const std::string& mibsPath);
 
 private:

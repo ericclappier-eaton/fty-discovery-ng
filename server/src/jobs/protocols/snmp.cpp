@@ -183,7 +183,7 @@ private:
 class SessionCommunity : public Snmp::Session
 {
 public:
-    SessionCommunity(const std::string& addr, uint16_t port, const std::string& community)
+    SessionCommunity(const std::string& addr, uint16_t port, const std::string& community, uint32_t timeout)
         : Snmp::Session(addr, port)
     {
         snmp_sess_init(&m_impl->m_sess);
@@ -191,7 +191,7 @@ public:
         m_impl->m_sess.peername      = const_cast<char*>(m_impl->m_addr.c_str());
         m_impl->m_sess.version       = SNMP_VERSION_1;
         m_impl->m_sess.retries       = 1;
-        m_impl->m_sess.timeout       = 1000 * 1000;
+        m_impl->m_sess.timeout       = timeout * 1000 * 1000;
         m_impl->m_sess.community     = const_cast<u_char*>(reinterpret_cast<const u_char*>(community.c_str()));
         m_impl->m_sess.community_len = strlen(reinterpret_cast<const char*>(m_impl->m_sess.community));
     }
@@ -200,13 +200,13 @@ public:
 class SessionWallet : public Snmp::Session
 {
 public:
-    SessionWallet(const std::string& addr, uint16_t port, const std::string& securityId)
+    SessionWallet(const std::string& addr, uint16_t port, const std::string& securityId, uint32_t timeout)
         : Snmp::Session(addr, port)
     {
         snmp_sess_init(&m_impl->m_sess);
         m_impl->m_sess.peername = const_cast<char*>(m_impl->m_addr.c_str());
         m_impl->m_sess.retries  = 1;
-        m_impl->m_sess.timeout  = 1000 * 1000;
+        m_impl->m_sess.timeout  = timeout * 1000 * 1000;
 
         fty::SocketSyncClient secwSyncClient("/run/fty-security-wallet/secw.socket");
         auto                  client  = secw::ConsumerAccessor(secwSyncClient);
@@ -322,14 +322,14 @@ void Snmp::init(const std::string& mibsPath)
     read_all_mibs();
 }
 
-Snmp::SessionPtr Snmp::sessionByCommunity(const std::string& address, u_int16_t port, const std::string& community)
+Snmp::SessionPtr Snmp::sessionByCommunity(const std::string& address, u_int16_t port, const std::string& community, uint32_t timeout)
 {
-    return std::shared_ptr<Session>(new SessionCommunity(address, port, community));
+    return std::shared_ptr<Session>(new SessionCommunity(address, port, community, timeout));
 }
 
-Snmp::SessionPtr Snmp::sessionByWallet(const std::string& address, u_int16_t port, const std::string& securityId)
+Snmp::SessionPtr Snmp::sessionByWallet(const std::string& address, u_int16_t port, const std::string& securityId, uint32_t timeout)
 {
-    return std::shared_ptr<Session>(new SessionWallet(address, port, securityId));
+    return std::shared_ptr<Session>(new SessionWallet(address, port, securityId, timeout));
 }
 
 // =====================================================================================================================

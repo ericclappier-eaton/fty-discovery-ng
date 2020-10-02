@@ -69,28 +69,38 @@ static Expected<void> fetchFromSecurityWallet(const std::string& id, Process& nu
 
     auto levelStr = [](secw::Snmpv3SecurityLevel lvl) -> Expected<std::string> {
         switch (lvl) {
-        case secw::NO_AUTH_NO_PRIV: return std::string("noAuthNoPriv");
-        case secw::AUTH_NO_PRIV: return std::string("authNoPriv");
-        case secw::AUTH_PRIV: return std::string("authPriv");
-        case secw::MAX_SECURITY_LEVEL: return unexpected("No privs defined");
+            case secw::NO_AUTH_NO_PRIV:
+                return std::string("noAuthNoPriv");
+            case secw::AUTH_NO_PRIV:
+                return std::string("authNoPriv");
+            case secw::AUTH_PRIV:
+                return std::string("authPriv");
+            case secw::MAX_SECURITY_LEVEL:
+                return unexpected("No privs defined");
         }
         return unexpected("No privs defined");
     };
 
     auto authProtStr = [](secw::Snmpv3AuthProtocol proc) -> Expected<std::string> {
         switch (proc) {
-        case secw::MD5: return std::string("MD5");
-        case secw::SHA: return std::string("SHA");
-        case secw::MAX_AUTH_PROTOCOL: return unexpected("Wrong protocol");
+            case secw::MD5:
+                return std::string("MD5");
+            case secw::SHA:
+                return std::string("SHA");
+            case secw::MAX_AUTH_PROTOCOL:
+                return unexpected("Wrong protocol");
         }
         return unexpected("Wrong protocol");
     };
 
     auto authPrivStr = [](secw::Snmpv3PrivProtocol proc) -> Expected<std::string> {
         switch (proc) {
-        case secw::DES: return std::string("DES");
-        case secw::AES: return std::string("AES");
-        case secw::MAX_PRIV_PROTOCOL: return unexpected("Wrong protocol");
+            case secw::DES:
+                return std::string("DES");
+            case secw::AES:
+                return std::string("AES");
+            case secw::MAX_PRIV_PROTOCOL:
+                return unexpected("Wrong protocol");
         }
         return unexpected("Wrong protocol");
     };
@@ -98,7 +108,7 @@ static Expected<void> fetchFromSecurityWallet(const std::string& id, Process& nu
     try {
         auto secCred = client.getDocumentWithPrivateData("default", id);
 
-        if (auto credV3  = secw::Snmpv3::tryToCast(secCred)) {
+        if (auto credV3 = secw::Snmpv3::tryToCast(secCred)) {
             log_debug("Init from wallet for snmp v3");
             nutProc.setEnvVar("SU_VAR_VERSION", "v3");
             if (auto lvl = levelStr(credV3->getSecurityLevel())) {
@@ -110,10 +120,10 @@ static Expected<void> fetchFromSecurityWallet(const std::string& id, Process& nu
             if (auto prot = authProtStr(credV3->getAuthProtocol())) {
                 nutProc.setEnvVar("SU_VAR_AUTHPROT", *prot);
             }
-            if (auto prot = authPrivStr(credV3->getPrivProtocol())){
+            if (auto prot = authPrivStr(credV3->getPrivProtocol())) {
                 nutProc.setEnvVar("SU_VAR_PRIVPROT", *prot);
             }
-        } else if (auto credV1  = secw::Snmpv1::tryToCast(secCred)) {
+        } else if (auto credV1 = secw::Snmpv1::tryToCast(secCred)) {
             log_debug("Init from wallet for snmp v1");
             nutProc.setEnvVar("SU_VAR_VERSION", "v1");
             nutProc.setEnvVar("SU_VAR_COMMUNITY", credV1->getCommunityName());
@@ -137,7 +147,7 @@ static Expected<std::string> driverName(const commands::assets::In& cmd)
         }
         return std::string("snmp-ups");
     }
-    if (cmd.protocol == "XML_PDC") {
+    if (cmd.protocol == "NUT_XML_PDC") {
         return std::string("netxml-ups");
     }
     return unexpected("Protocol {} is not supported", cmd.protocol.value());
@@ -160,19 +170,36 @@ NutProcess::~NutProcess()
 Expected<void> NutProcess::run(commands::assets::Out& map) const
 {
     std::filesystem::path driver;
-    if (auto dri = driverName(m_cmd); !dri) {
+    auto                  dri = driverName(m_cmd);
+    if (!dri) {
         return unexpected(dri.error());
     } else {
         driver = std::filesystem::path("/lib/nut") / *dri;
     }
 
+    std::string address = fmt::format("{}:{}", m_cmd.address.value(), m_cmd.port.value());
+
+    if (*dri == "netxml-ups") {
+        if (address.find("http://") != 0) {
+            address = "http://" + address;
+        }
+    }
+
+    log_debug("connect address: %s", address.c_str());
+
     // clang-format off
-    Process proc(driver.string(), {
+    std::vector<std::string> args = {
         "-s", "discover",
-        "-x", fmt::format("port={}:{}", m_cmd.address.value(), m_cmd.port.value()),
+        "-x", fmt::format("port={}", address),
         "-d", "1"
-    });
+    };
     // clang-format on
+    if (m_cmd.settings.timeout.hasValue() && *dri == "snmp-ups") {
+        args.push_back("-x");
+        args.push_back(fmt::format("snmp_timeout={}", m_cmd.settings.timeout));
+    }
+
+    Process proc(driver.string(), args);
 
     if (m_cmd.protocol == "NUT_SNMP") {
         if (!m_cmd.settings.mib.empty()) {

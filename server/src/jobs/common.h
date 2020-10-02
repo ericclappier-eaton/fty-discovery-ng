@@ -87,10 +87,10 @@ public:
 
 bool                            filterMib(const std::string& mib);
 const std::vector<std::string>& knownMibs();
-Expected<BasicInfo>             readSnmp(
-                const std::string& ipAddress, uint16_t port, const std::string& community = {}, const std::string& secId = {});
-bool        isSnmp(const std::string& mib);
-std::string mapMibToLegacy(const std::string& mib);
+Expected<BasicInfo>             readSnmp(const std::string& ipAddress, uint16_t port, const std::string& community = {},
+                const std::string& secId = {}, uint32_t timeout = 1);
+bool                            isSnmp(const std::string& mib);
+std::string                     mapMibToLegacy(const std::string& mib);
 
 // =====================================================================================================================
 

@@ -30,14 +30,17 @@ namespace fty::job {
 
 
 Expected<BasicInfo> readSnmp(
-    const std::string& ipAddress, uint16_t port, const std::string& community, const std::string& secId)
+    const std::string& ipAddress, uint16_t port, const std::string& community, const std::string& secId, uint32_t timeout)
 {
     protocol::Snmp::SessionPtr session;
-    if (!community.empty()){
-        session = protocol::Snmp::instance().sessionByCommunity(ipAddress, port, community);
-    } else if (!secId.empty()){
-        session = protocol::Snmp::instance().sessionByWallet(ipAddress, port, secId);
+    if (!secId.empty()) {
+        session = protocol::Snmp::instance().sessionByWallet(ipAddress, port, secId, timeout);
+    } else if (!community.empty()) {
+        session = protocol::Snmp::instance().sessionByCommunity(ipAddress, port, community, timeout);
+    } else {
+        return unexpected("One of security credentions or community are expexted");
     }
+
     if (!session) {
         return unexpected("Session is wrong");
     }
