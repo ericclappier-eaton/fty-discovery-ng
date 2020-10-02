@@ -50,12 +50,16 @@ fty::Expected<std::string> Neon::get(const std::string& path) const
 
     do {
         int stat = ne_begin_request(request.get());
+        auto status = ne_get_status(request.get());
         if (stat != NE_OK) {
-            auto status = ne_get_status(request.get());
             if (!status->code) {
                 return fty::unexpected(ne_get_error(m_session.get()));
             }
             return fty::unexpected("{} {}", status->code, status->reason_phrase);
+        }
+
+        if (status->code != 200) {
+            return fty::unexpected("unsupported (status is not ok)");
         }
 
         body.clear();

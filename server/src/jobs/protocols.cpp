@@ -139,6 +139,10 @@ Expected<BasicInfo> Protocols::tryXmlPdc(const std::string& ipAddress) const
 {
     protocol::XmlPdc xml(ipAddress);
     if (auto prod = xml.get<protocol::ProductInfo>("product.xml")) {
+        if (prod->protocol == "XML.V4") {
+            return unexpected("unsupported XML.V4");
+        }
+
         if (auto props = xml.get<protocol::Properties>(prod->summary.summary.url)) {
             BasicInfo info;
             if (auto res = props->value("UPS.PowerSummary.iProduct")) {

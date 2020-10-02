@@ -80,14 +80,15 @@ public:
     };
 
 public:
-    pack::String name    = FIELD("a::name");
-    pack::String type    = FIELD("a::type");
-    pack::String version = FIELD("a::version");
-    Summary      summary = FIELD("SUMMARY");
+    pack::String name     = FIELD("a::name");
+    pack::String type     = FIELD("a::type");
+    pack::String version  = FIELD("a::version");
+    pack::String protocol = FIELD("a::protocol");
+    Summary      summary  = FIELD("SUMMARY");
 
 public:
     using pack::Node::Node;
-    META(ProductInfo, name, type, version, summary);
+    META(ProductInfo, name, type, version, protocol, summary);
 };
 
 // =====================================================================================================================
