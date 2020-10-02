@@ -242,6 +242,8 @@ void NutProcess::parseOutput(const std::string& cnt, commands::assets::Out& map)
 
     std::map<std::string, std::string> tmpMap;
 
+    log_debug(cnt.c_str());
+
     std::stringstream ss(cnt);
     for (std::string line; std::getline(ss, line);) {
         auto [key, value] = fty::split<std::string, std::string>(line, rex);
@@ -267,6 +269,9 @@ void NutProcess::parseOutput(const std::string& cnt, commands::assets::Out& map)
                     val.append("read_only", "true");
                 }
             }
+            auto& val = asset.asset.ext.append();
+            val.append("type", "device");
+            val.append("read_only", "true");
         }
     } else {
         auto& asset      = map.append();
@@ -278,6 +283,9 @@ void NutProcess::parseOutput(const std::string& cnt, commands::assets::Out& map)
                 val.append("read_only", "true");
             }
         }
+        auto& val = asset.asset.ext.append();
+        val.append("type", "device");
+        val.append("read_only", "true");
     }
 }
 
@@ -294,6 +302,7 @@ std::string NutProcess::mapKey(const std::string& key) const
 {
     static Mappping mapping;
     if (!mapping.hasValue()) {
+        mapping.inventoryMapping.append("device.type", "subtype");
         std::ifstream fs("/usr/share/fty-common-nut/mapping.conf");
         std::string   mapCnt;
         // This config IS JSON WITH CPP COMMENTS! Remove it :(
