@@ -265,9 +265,6 @@ void NutProcess::parseOutput(const std::string& cnt, commands::assets::Out& map)
 
     auto addAssetVal = [&](commands::assets::Return::Asset& asset, const std::string& nutKey, const std::string& val) {
         if (auto key = mapKey(nutKey); !key.empty()) {
-            if (key == "model") {
-                asset.name = val;
-            }
             if (key == "device.type") {
                 asset.subtype = val;
             }
