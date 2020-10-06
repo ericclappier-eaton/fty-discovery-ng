@@ -171,6 +171,9 @@ Expected<MibsReader::MibList> MibsReader::read() const
                 }
             }
         }
+        if (mibs.empty()) {
+            return unexpected("Cannot fetch mibs from endpoint. Host is not available or SNMP is not supported.");
+        }
     }
 
     return std::move(mibs);

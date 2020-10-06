@@ -223,9 +223,14 @@ Expected<void> NutProcess::run(commands::assets::Out& map) const
         "-d", "1"
     };
     // clang-format on
-    if (m_cmd.settings.timeout.hasValue() && *dri == "snmp-ups") {
-        args.push_back("-x");
-        args.push_back(fmt::format("snmp_timeout={}", m_cmd.settings.timeout));
+    if (m_cmd.protocol == "NUT_SNMP") {
+        if (m_cmd.settings.timeout.hasValue()) {
+            args.push_back("-x");
+            args.push_back(fmt::format("snmp_timeout={}", m_cmd.settings.timeout / 1000));
+        } else {
+            args.push_back("-x");
+            args.push_back(fmt::format("snmp_timeout={}", 1));
+        }
     }
 
     Process proc(driver.string(), args);
@@ -246,6 +251,11 @@ Expected<void> NutProcess::run(commands::assets::Out& map) const
         } else {
             return unexpected("Credentials or community is not set");
         }
+        if (m_cmd.settings.timeout.hasValue()) {
+            proc.setEnvVar("SU_VAR_TIMEOUT", std::to_string(m_cmd.settings.timeout / 1000));
+        } else {
+            proc.setEnvVar("SU_VAR_TIMEOUT", "1");
+        }
     }
 
     proc.setEnvVar("NUT_STATEPATH", m_root.string());
@@ -257,7 +267,6 @@ Expected<void> NutProcess::run(commands::assets::Out& map) const
         if (auto stat = proc.wait(); *stat == 0) {
             parseOutput(proc.readAllStandardOutput(), map);
         } else {
-            log_debug(proc.readAllStandardOutput().c_str());
             return unexpected(proc.readAllStandardError());
         }
     } else {

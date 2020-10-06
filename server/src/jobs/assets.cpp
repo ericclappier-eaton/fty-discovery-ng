@@ -17,6 +17,7 @@
 #include "assets.h"
 #include "impl/nut.h"
 #include "impl/ping.h"
+#include "impl/mibs.h"
 
 namespace fty::job {
 
@@ -24,6 +25,32 @@ void Assets::run(const commands::assets::In& in, commands::assets::Out& out)
 {
     if (!available(in.address)) {
         throw Error("Host is not available: {}", in.address.value());
+    }
+
+    // Workaround to check if snmp is available
+    if (in.protocol == "NUT_SNMP") {
+        uint32_t port = in.port;
+        if (!in.port.hasValue()) {
+            port = 161;
+        }
+
+        protocol::MibsReader reader(in.address, uint16_t(port));
+
+        if (in.settings.credentialId.hasValue()) {
+            if (auto res = reader.setCredentialId(in.settings.credentialId); !res) {
+                throw Error(res.error());
+            }
+        } else if (in.settings.community.hasValue()) {
+            if (auto res = reader.setCommunity(in.settings.community); !res) {
+                throw Error(res.error());
+            }
+        } else {
+            throw Error("Credential or community must be set");
+        }
+
+        if (auto mibs = reader.read(); !mibs) {
+            throw Error(mibs.error());
+        }
     }
 
     if (auto res = protocol::properties(in)) {

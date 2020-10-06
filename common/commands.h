@@ -38,7 +38,7 @@ namespace commands::mibs {
         pack::UInt32 port         = FIELD("port", 161);
         pack::String credentialId = FIELD("secw_credential_id");
         pack::String community    = FIELD("community");
-        pack::UInt32 timeout      = FIELD("timeout", 1); // timeout in seconds
+        pack::UInt32 timeout      = FIELD("timeout", 1000); // timeout in milliseconds
 
     public:
         using pack::Node::Node;
@@ -62,7 +62,7 @@ namespace commands::assets {
             pack::String credentialId = FIELD("secw_credential_id");
             pack::String mib          = FIELD("MIB");
             pack::String community    = FIELD("community");
-            pack::UInt32 timeout      = FIELD("timeout", 1); // timeout in seconds
+            pack::UInt32 timeout      = FIELD("timeout", 1000); // timeout in milliseconds
 
             using pack::Node::Node;
             META(Settings, credentialId, mib, community, timeout);

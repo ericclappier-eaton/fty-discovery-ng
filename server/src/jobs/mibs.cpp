@@ -77,7 +77,7 @@ void Mibs::run(const commands::mibs::In& in, commands::mibs::Out& out)
     if (auto name = reader.readName()) {
         assetName = *name;
     } else {
-        throw Error(name.error());
+        throw Error("Host is not available or SNMP is not supported. SNMP error: {}", name.error());
     }
 
     if (auto mibs = reader.read()) {
@@ -85,7 +85,7 @@ void Mibs::run(const commands::mibs::In& in, commands::mibs::Out& out)
         out.sort(sortMibs);
         log_info("Configure: '%s' mibs: [%s]", assetName.c_str(), implode(out, ", ").c_str());
     } else {
-        throw Error(mibs.error());
+        throw Error("Host is not available or SNMP is not supported. SNMP error: {}", mibs.error());
     }
 }
 

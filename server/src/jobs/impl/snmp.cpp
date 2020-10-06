@@ -89,7 +89,7 @@ public:
 
         m_sess.peername = const_cast<char*>(m_addr.c_str());
         m_sess.retries  = 1;
-        m_sess.timeout  = 100 * 1000;
+        m_sess.timeout  = 100 * 1000; // 100 ms
     }
 
     virtual ~Impl()
@@ -170,10 +170,13 @@ public:
     {
         m_handle = snmp_sess_open(&m_sess);
         if (!m_handle) {
-            log_error(snmp_api_errstring(snmp_errno));
+            log_error("Snmp error: %s", snmp_api_errstring(snmp_errno));
             return unexpected(snmp_api_errstring(snmp_errno));
         }
-        log_debug("session is opened");
+        if (!snmp_sess_session(m_handle)) {
+            log_error("Snmp error: %s", snmp_api_errstring(snmp_errno));
+            return unexpected(snmp_api_errstring(snmp_errno));
+        }
         return {};
     }
 
