@@ -58,9 +58,13 @@ void Mibs::run(const commands::mibs::In& in, commands::mibs::Out& out)
     protocol::MibsReader reader(in.address, uint16_t(in.port.value()));
 
     if (in.credentialId.hasValue()) {
-        reader.setCredentialId(in.credentialId);
+        if (auto res = reader.setCredentialId(in.credentialId); !res) {
+            throw Error(res.error());
+        }
     } else if (in.community.hasValue()) {
-        reader.setCommunity(in.community);
+        if (auto res = reader.setCommunity(in.community); !res) {
+            throw Error(res.error());
+        }
     } else {
         throw Error("Credential or community must be set");
     }

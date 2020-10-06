@@ -47,7 +47,7 @@ static  Expected<int> level(secw::Snmpv3SecurityLevel lvl)
             return unexpected("No privs defined");
     }
     return unexpected("No privs defined");
-};
+}
 
 static Expected<oid*> authProt(secw::Snmpv3AuthProtocol proc)
 {
@@ -60,7 +60,7 @@ static Expected<oid*> authProt(secw::Snmpv3AuthProtocol proc)
             return unexpected("Wrong protocol");
     }
     return unexpected("Wrong protocol");
-};
+}
 
 static Expected<oid*> authPriv(secw::Snmpv3PrivProtocol proc)
 {
@@ -73,7 +73,7 @@ static Expected<oid*> authPriv(secw::Snmpv3PrivProtocol proc)
             return unexpected("Wrong protocol");
     }
     return unexpected("Wrong protocol");
-};
+}
 
 // =====================================================================================================================
 // Session private implementation
@@ -99,64 +99,71 @@ public:
         }
     }
 
-    void setCommunity(const std::string& community)
+    Expected<void> setCommunity(const std::string& community)
     {
         m_sess.version       = SNMP_VERSION_1;
         m_sess.community     = const_cast<u_char*>(reinterpret_cast<const u_char*>(community.c_str()));
         m_sess.community_len = strlen(reinterpret_cast<const char*>(m_sess.community));
+        return {};
     }
 
-    void setCredentialId(const std::string& credId)
+    Expected<void> setCredentialId(const std::string& credId)
     {
-        fty::SocketSyncClient secwSyncClient("/run/fty-security-wallet/secw.socket");
-        auto                  client  = secw::ConsumerAccessor(secwSyncClient);
-        auto                  secCred = client.getDocumentWithPrivateData("default", credId);
+        try {
+            fty::SocketSyncClient secwSyncClient("/run/fty-security-wallet/secw.socket");
+            auto                  client  = secw::ConsumerAccessor(secwSyncClient);
+            auto                  secCred = client.getDocumentWithPrivateData("default", credId);
 
-        if (auto credV3 = secw::Snmpv3::tryToCast(secCred)) {
-            m_sess.version = SNMP_VERSION_3;
+            if (auto credV3 = secw::Snmpv3::tryToCast(secCred)) {
+                m_sess.version = SNMP_VERSION_3;
 
-            m_sess.securityName    = strdup(credV3->getSecurityName().c_str());
-            m_sess.securityNameLen = strlen(m_sess.securityName);
+                m_sess.securityName    = strdup(credV3->getSecurityName().c_str());
+                m_sess.securityNameLen = strlen(m_sess.securityName);
 
-            if (auto lvl = level(credV3->getSecurityLevel())) {
-                m_sess.securityLevel = *lvl;
+                if (auto lvl = level(credV3->getSecurityLevel())) {
+                    m_sess.securityLevel = *lvl;
+                }
+
+                if (auto prot = authProt(credV3->getAuthProtocol())) {
+                    m_sess.securityAuthProto    = *prot;
+                    m_sess.securityAuthProtoLen = sizeof(usmHMACMD5AuthProtocol) / sizeof(oid);
+                    m_sess.securityAuthKeyLen   = USM_AUTH_KU_LEN;
+                }
+
+                if (auto prot = authPriv(credV3->getPrivProtocol())) {
+                    m_sess.securityPrivProto    = *prot;
+                    m_sess.securityPrivProtoLen = sizeof(usmDESPrivProtocol) / sizeof(oid);
+                    m_sess.securityPrivKeyLen   = USM_AUTH_KU_LEN;
+                }
+
+                if (generate_Ku(m_sess.securityAuthProto, u_int(m_sess.securityAuthProtoLen),
+                        const_cast<u_char*>(reinterpret_cast<const u_char*>(credV3->getAuthPassword().c_str())),
+                        u_int(credV3->getAuthPassword().size()), m_sess.securityAuthKey,
+                        &m_sess.securityAuthKeyLen) != SNMPERR_SUCCESS) {
+                    log_error("Error generating Ku from authentication pass phrase.");
+                }
+                if (generate_Ku(m_sess.securityPrivProto, u_int(m_sess.securityPrivProtoLen),
+                        const_cast<u_char*>(reinterpret_cast<const u_char*>(credV3->getPrivPassword().c_str())),
+                        u_int(credV3->getPrivPassword().size()), m_sess.securityPrivKey,
+                        &m_sess.securityPrivKeyLen) != SNMPERR_SUCCESS) {
+                    log_error("Error generating Ku from authentication pass phrase.");
+                }
+            } else if (auto credV1 = secw::Snmpv1::tryToCast(secCred)) {
+                m_sess.version = SNMP_VERSION_1;
+                m_sess.community =
+                    const_cast<u_char*>(reinterpret_cast<const u_char*>(strdup(credV1->getCommunityName().c_str())));
+                m_sess.community_len = strlen(reinterpret_cast<const char*>(m_sess.community));
             }
-
-            if (auto prot = authProt(credV3->getAuthProtocol())) {
-                m_sess.securityAuthProto    = *prot;
-                m_sess.securityAuthProtoLen = sizeof(usmHMACMD5AuthProtocol) / sizeof(oid);
-                m_sess.securityAuthKeyLen   = USM_AUTH_KU_LEN;
-            }
-
-            if (auto prot = authPriv(credV3->getPrivProtocol())) {
-                m_sess.securityPrivProto    = *prot;
-                m_sess.securityPrivProtoLen = sizeof(usmDESPrivProtocol) / sizeof(oid);
-                m_sess.securityPrivKeyLen   = USM_AUTH_KU_LEN;
-            }
-
-            if (generate_Ku(m_sess.securityAuthProto, u_int(m_sess.securityAuthProtoLen),
-                    const_cast<u_char*>(reinterpret_cast<const u_char*>(credV3->getAuthPassword().c_str())),
-                    u_int(credV3->getAuthPassword().size()), m_sess.securityAuthKey,
-                    &m_sess.securityAuthKeyLen) != SNMPERR_SUCCESS) {
-                log_error("Error generating Ku from authentication pass phrase.");
-            }
-            if (generate_Ku(m_sess.securityPrivProto, u_int(m_sess.securityPrivProtoLen),
-                    const_cast<u_char*>(reinterpret_cast<const u_char*>(credV3->getPrivPassword().c_str())),
-                    u_int(credV3->getPrivPassword().size()), m_sess.securityPrivKey,
-                    &m_sess.securityPrivKeyLen) != SNMPERR_SUCCESS) {
-                log_error("Error generating Ku from authentication pass phrase.");
-            }
-        } else if (auto credV1 = secw::Snmpv1::tryToCast(secCred)) {
-            m_sess.version = SNMP_VERSION_1;
-            m_sess.community =
-                const_cast<u_char*>(reinterpret_cast<const u_char*>(strdup(credV1->getCommunityName().c_str())));
-            m_sess.community_len = strlen(reinterpret_cast<const char*>(m_sess.community));
+        } catch (const secw::SecwException& err) {
+            return unexpected(err.what());
         }
+        return {};
     }
 
-    void setTimeout(uint32_t milliseconds)
+    Expected<void> setTimeout(uint32_t milliseconds)
     {
         m_sess.timeout = milliseconds * 1000;
+        return {};
     }
 
     Expected<void> open()
@@ -166,6 +173,7 @@ public:
             log_error(snmp_api_errstring(snmp_errno));
             return unexpected(snmp_api_errstring(snmp_errno));
         }
+        log_debug("session is opened");
         return {};
     }
 
@@ -307,19 +315,19 @@ Expected<void> snmp::Session::walk(std::function<void(const std::string&)>&& fun
     return m_impl->walk(std::move(func));
 }
 
-void snmp::Session::setCommunity(const std::string& community)
+Expected<void> snmp::Session::setCommunity(const std::string& community)
 {
-    m_impl->setCommunity(community);
+    return m_impl->setCommunity(community);
 }
 
-void snmp::Session::setTimeout(uint32_t milliseconds)
+Expected<void> snmp::Session::setTimeout(uint32_t milliseconds)
 {
-    m_impl->setTimeout(milliseconds);
+    return m_impl->setTimeout(milliseconds);
 }
 
-void snmp::Session::setCredentialId(const std::string& credId)
+Expected<void> snmp::Session::setCredentialId(const std::string& credId)
 {
-    m_impl->setCredentialId(credId);
+    return m_impl->setCredentialId(credId);
 }
 
 // =====================================================================================================================

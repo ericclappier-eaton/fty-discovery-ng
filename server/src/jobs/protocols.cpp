@@ -114,9 +114,6 @@ void Protocols::run(const commands::protocols::In& in, commands::protocols::Out&
                 break;
         }
     }
-
-    std::string str = *pack::json::serialize(out);
-    log_debug("output %s", str.c_str());
 }
 
 Expected<BasicInfo> Protocols::tryXmlPdc(const commands::protocols::In& in) const
@@ -198,7 +195,7 @@ void Protocols::sortProtocols(std::vector<BasicInfo>& protocols)
         if (r.type == BasicInfo::Type::Snmp && (isMib(r, epdus) || isMib(r, atss))) {
             return true;
         }
-        return true;
+        return false;
     });
 }
 

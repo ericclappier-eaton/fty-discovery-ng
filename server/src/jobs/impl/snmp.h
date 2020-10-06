@@ -25,7 +25,7 @@ namespace fty::protocol {
 namespace snmp {
     class Session;
     using SessionPtr = std::shared_ptr<Session>;
-}
+} // namespace snmp
 
 // =====================================================================================================================
 
@@ -48,9 +48,9 @@ namespace snmp {
     class Session
     {
     public:
-        void setCommunity(const std::string& community);
-        void setCredentialId(const std::string& credId);
-        void setTimeout(uint32_t milliseconds);
+        Expected<void> setCommunity(const std::string& community);
+        Expected<void> setCredentialId(const std::string& credId);
+        Expected<void> setTimeout(uint32_t milliseconds);
 
         Expected<void>        open();
         Expected<std::string> read(const std::string& oid) const;

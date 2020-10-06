@@ -15,9 +15,10 @@
 */
 
 #include "mibs.h"
-#include <regex>
 #include "snmp.h"
 #include "src/config.h"
+#include <regex>
+#include <fty_log.h>
 
 
 namespace fty::protocol {
@@ -106,23 +107,24 @@ std::string mapMibToLegacy(const std::string& mib)
 
 // =====================================================================================================================
 
-MibsReader::MibsReader(const std::string& address, uint16_t port):
-    m_session(Snmp::instance().session(address, port))
-{}
-
-void MibsReader::setCredentialId(const std::string& credentialId)
+MibsReader::MibsReader(const std::string& address, uint16_t port)
+    : m_session(Snmp::instance().session(address, port))
 {
-    m_session->setCredentialId(credentialId);
 }
 
-void MibsReader::setCommunity(const std::string& community)
+Expected<void> MibsReader::setCredentialId(const std::string& credentialId)
 {
-    m_session->setCommunity(community);
+    return m_session->setCredentialId(credentialId);
 }
 
-void MibsReader::setTimeout(uint miliseconds)
+Expected<void> MibsReader::setCommunity(const std::string& community)
 {
-    m_session->setTimeout(miliseconds);
+    return m_session->setCommunity(community);
+}
+
+Expected<void> MibsReader::setTimeout(uint miliseconds)
+{
+    return m_session->setTimeout(miliseconds);
 }
 
 Expected<MibsReader::MibList> MibsReader::read() const
@@ -191,4 +193,4 @@ Expected<std::string> MibsReader::readName() const
 
 // =====================================================================================================================
 
-}
+} // namespace fty::protocol

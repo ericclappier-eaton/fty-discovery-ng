@@ -42,9 +42,9 @@ public:
     using MibList = std::set<std::string>;
 
     MibsReader(const std::string& address, uint16_t port);
-    void setCredentialId(const std::string& credentialId);
-    void setCommunity(const std::string& community);
-    void setTimeout(uint miliseconds);
+    Expected<void> setCredentialId(const std::string& credentialId);
+    Expected<void> setCommunity(const std::string& community);
+    Expected<void> setTimeout(uint miliseconds);
 
     Expected<MibList>     read() const;
     Expected<std::string> readName() const;
