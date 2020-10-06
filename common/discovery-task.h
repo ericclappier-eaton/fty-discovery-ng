@@ -48,7 +48,17 @@ public:
         Message msg;
         msg.meta.status = status;
         if (status == Message::Status::Ok) {
-            msg.userData.setString(*pack::json::serialize(out));
+            if (out.hasValue()) {
+                msg.userData.setString(*pack::json::serialize(out));
+            } else {
+                if constexpr (std::is_base_of_v<pack::IList, T>) {
+                    msg.userData.setString("[]");
+                } else if constexpr (std::is_base_of_v<pack::IMap, T> || std::is_base_of_v<pack::INode, T>) {
+                    msg.userData.setString("{}");
+                } else {
+                    msg.userData.setString("");
+                }
+            }
         } else {
             msg.userData.setString(error);
         }
@@ -62,7 +72,6 @@ template <typename T, typename InputT, typename ResponseT>
 class Task : public fty::Task<T>
 {
 public:
-    using Response = Response<ResponseT>;
     Task(const Message& in, MessageBus& bus)
         : m_in(in)
         , m_bus(&bus)
@@ -71,7 +80,7 @@ public:
 
     void operator()() override
     {
-        Response response;
+        Response<ResponseT> response;
         try {
             if (m_in.userData.empty()) {
                 throw Error("Wrong input data: payload is empty");

@@ -34,7 +34,7 @@ public:
     unsigned run() override;
 
 private:
-    Expected<pack::StringList> protocols(const commands::protocols::In& address);
+    Expected<std::string> protocols(const commands::protocols::In& address);
 
 private:
     // clang-format off

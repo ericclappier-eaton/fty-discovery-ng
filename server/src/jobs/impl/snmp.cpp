@@ -89,7 +89,7 @@ public:
 
         m_sess.peername = const_cast<char*>(m_addr.c_str());
         m_sess.retries  = 1;
-        m_sess.timeout  = 1000 * 1000;
+        m_sess.timeout  = 100 * 1000;
     }
 
     virtual ~Impl()

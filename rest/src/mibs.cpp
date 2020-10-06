@@ -39,14 +39,14 @@ unsigned Mibs::run()
     }
 
     if (auto list = mibs(param)) {
-        m_reply.out() << *pack::json::serialize(*list) << "\n\n";
+        m_reply.out() << *list << "\n\n";
         return HTTP_OK;
     } else {
         throw rest::Error("internal-error", list.error());
     }
 }
 
-Expected<pack::StringList> Mibs::mibs(const commands::mibs::In& param)
+Expected<std::string> Mibs::mibs(const commands::mibs::In& param)
 {
     fty::MessageBus bus;
     if (auto res = bus.init("discovery_rest"); !res) {
@@ -63,12 +63,7 @@ Expected<pack::StringList> Mibs::mibs(const commands::mibs::In& param)
         if (resp->meta.status == fty::Message::Status::Error) {
             return unexpected(resp->userData.asString());
         }
-
-        if (auto res = resp->userData.decode<commands::mibs::Out>()) {
-            return res.value();
-        } else {
-            return unexpected(res.error());
-        }
+        return resp->userData.asString();
     } else {
         return unexpected(resp.error());
     }

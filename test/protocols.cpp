@@ -24,23 +24,25 @@ TEST_CASE("Protocols / Unaviable host")
     fty::Message msg = Test::createMessage(fty::commands::protocols::Subject);
 
     fty::commands::protocols::In in;
-    in.address = "pointtosky";
+    in.address = "pointtosky.roz.lab.etn.com";
     msg.userData.setString(*pack::json::serialize(in));
     fty::Expected<fty::Message> ret = Test::send(msg);
     CHECK_FALSE(ret);
-    CHECK("Host is not available: pointtosky" == ret.error());
+    CHECK("Host is not available: pointtosky.roz.lab.etn.com" == ret.error());
 }
 
-TEST_CASE("Protocols / Unaviable ip")
+TEST_CASE("Protocols / Not asset")
 {
     fty::Message msg = Test::createMessage(fty::commands::protocols::Subject);
 
     fty::commands::protocols::In in;
-    in.address = "127.0.145.145";
+    in.address = "127.0.0.1";
     msg.userData.setString(*pack::json::serialize(in));
     fty::Expected<fty::Message> ret = Test::send(msg);
-    CHECK_FALSE(ret);
-    CHECK("Host is not available: 127.0.145.145" == ret.error());
+    CHECK(ret);
+    auto res = ret->userData.decode<fty::commands::protocols::Out>();
+    CHECK(res);
+    CHECK(0 == res->size());
 }
 
 TEST_CASE("Protocols / Invalid ip")
@@ -52,7 +54,7 @@ TEST_CASE("Protocols / Invalid ip")
     msg.userData.setString(*pack::json::serialize(in));
     fty::Expected<fty::Message> ret = Test::send(msg);
     CHECK_FALSE(ret);
-    CHECK("Host is not available: 145.145.145.256" == ret.error());
+    CHECK("Host is not available: 127.0.145.256" == ret.error());
 }
 
 TEST_CASE("Protocols / Fake request")

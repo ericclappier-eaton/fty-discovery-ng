@@ -23,7 +23,6 @@
 
 #include "commands.h"
 #include <fty/rest-support.h>
-#include <pack/pack.h>
 
 namespace fty {
 
@@ -34,7 +33,7 @@ public:
     unsigned run() override;
 
 private:
-    Expected<pack::StringList> mibs(const commands::mibs::In& param);
+    Expected<std::string> mibs(const commands::mibs::In& param);
 
 private:
     // clang-format off

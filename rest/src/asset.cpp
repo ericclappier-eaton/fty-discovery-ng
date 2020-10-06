@@ -37,14 +37,14 @@ unsigned Asset::run()
     }
 
     if (auto asset = assets(param)) {
-        m_reply.out() << *pack::json::serialize(*asset) << "\n\n";
+        m_reply.out() << *asset << "\n\n";
         return HTTP_OK;
     } else {
         throw rest::Error("internal-error", asset.error());
     }
 }
 
-Expected<commands::assets::Out> Asset::assets(const commands::assets::In& param)
+Expected<std::string> Asset::assets(const commands::assets::In& param)
 {
     fty::MessageBus bus;
     if (auto res = bus.init("discovery_rest"); !res) {
@@ -61,12 +61,7 @@ Expected<commands::assets::Out> Asset::assets(const commands::assets::In& param)
         if (resp->meta.status == fty::Message::Status::Error) {
             return unexpected(resp->userData.asString());
         }
-
-        if (auto res = resp->userData.decode<commands::assets::Out>()) {
-            return res.value();
-        } else {
-            return unexpected(res.error());
-        }
+        return resp->userData.asString();
     } else {
         return unexpected(resp.error());
     }

@@ -114,6 +114,9 @@ void Protocols::run(const commands::protocols::In& in, commands::protocols::Out&
                 break;
         }
     }
+
+    std::string str = *pack::json::serialize(out);
+    log_debug("output %s", str.c_str());
 }
 
 Expected<BasicInfo> Protocols::tryXmlPdc(const commands::protocols::In& in) const
@@ -176,7 +179,12 @@ void Protocols::sortProtocols(std::vector<BasicInfo>& protocols)
 
     auto isMib = [](const BasicInfo& info, const std::set<std::string>& mibs) {
         for (const auto& mib : info.mibs) {
-            if (mibs.count(mib)) {
+            std::string mibName = mib;
+            if (size_t pos = mibName.find("::"); pos != std::string::npos) {
+                mibName = mibName.substr(0, pos);
+            }
+            log_debug("find %s", mibName.c_str());
+            if (mibs.count(mibName)) {
                 return true;
             }
         }

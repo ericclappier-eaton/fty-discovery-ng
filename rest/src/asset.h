@@ -32,7 +32,7 @@ public:
     unsigned run() override;
 
 private:
-    Expected<commands::assets::Out> assets(const commands::assets::In& param);
+    Expected<std::string> assets(const commands::assets::In& param);
 
 private:
     // clang-format off
