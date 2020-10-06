@@ -41,13 +41,6 @@ Dependencies used in current version:
 * fty_common_socket
 * Catch2::Catch2 (in case if you want unit testing)
 
-If you want to use different build system, f.e. ninja
-```CMake
-    mkdir build
-    cd build
-    cmake -G Ninja ..
-    ninja
-```
 
 ## How to build and use unit tests
 To enable unit tests build just reconfigure your cmake build
