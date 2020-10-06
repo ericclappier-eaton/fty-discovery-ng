@@ -8,8 +8,6 @@ etn_target(static ${PROJECT_NAME}-static
         src/discovery.h
         src/config.h
 
-        src/jobs/common.h
-        src/jobs/common.cpp
         src/jobs/protocols.cpp
         src/jobs/protocols.h
         src/jobs/mibs.cpp
@@ -17,14 +15,17 @@ etn_target(static ${PROJECT_NAME}-static
         src/jobs/assets.cpp
         src/jobs/assets.h
 
-        src/jobs/protocols/snmp.cpp
-        src/jobs/protocols/snmp.h
-        src/jobs/protocols/xml-pdc.cpp
-        src/jobs/protocols/xml-pdc.h
-        src/jobs/protocols/neon.cpp
-        src/jobs/protocols/neon.h
-        src/jobs/protocols/nut.cpp
-        src/jobs/protocols/nut.h
+        src/jobs/impl/snmp.cpp
+        src/jobs/impl/snmp.h
+        src/jobs/impl/xml-pdc.cpp
+        src/jobs/impl/xml-pdc.h
+        src/jobs/impl/neon.cpp
+        src/jobs/impl/neon.h
+        src/jobs/impl/nut.cpp
+        src/jobs/impl/nut.h
+        src/jobs/impl/ping.h
+        src/jobs/impl/mibs.cpp
+        src/jobs/impl/mibs.h
     USES
         fty-utils
         fty_common_logging

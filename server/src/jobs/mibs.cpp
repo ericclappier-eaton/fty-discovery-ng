@@ -1,59 +1,27 @@
-/*  =========================================================================
-    configure.cpp - Mibs discovery job
-
-    Copyright (C) 2014 - 2020 Eaton
-
+/*  ====================================================================================================================
+    Copyright (C) 2020 Eaton
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
-
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-    =========================================================================
- */
+    ====================================================================================================================
+*/
 
 #include "mibs.h"
-#include "commands.h"
-#include "common.h"
-#include "message-bus.h"
-#include "protocols/ping.h"
-#include "protocols/snmp.h"
+#include "impl/mibs.h"
+#include "impl/ping.h"
 #include <fty/split.h>
-#include <fty_log.h>
 #include <set>
 
 
 namespace fty::job {
-
-// =====================================================================================================================
-
-namespace response {
-
-    /// Response wrapper
-    class Mibs : public BasicResponse<Mibs>
-    {
-    public:
-        commands::mibs::Out mibs = FIELD("mibs");
-
-    public:
-        using BasicResponse::BasicResponse;
-        META_BASE(Mibs, BasicResponse<Mibs>, mibs);
-
-    public:
-        const commands::mibs::Out& data()
-        {
-            return mibs;
-        }
-    };
-
-} // namespace response
 
 // =====================================================================================================================
 
@@ -81,58 +49,39 @@ static bool sortMibs(const std::string& l, const std::string& r)
 
 // =====================================================================================================================
 
-Mibs::Mibs(const Message& in, MessageBus& bus)
-    : m_in(in)
-    , m_bus(&bus)
+void Mibs::run(const commands::mibs::In& in, commands::mibs::Out& out)
 {
-}
-
-void Mibs::operator()()
-{
-    response::Mibs response;
-
-    if (m_in.userData.empty()) {
-        response.setError("Wrong input data");
-        if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
-            log_error(res.error().c_str());
-        }
-        return;
+    if (!available(in.address)) {
+        throw Error("Host is not available: {}", in.address.value());
     }
 
-    Expected<commands::mibs::In> cmd = m_in.userData.decode<commands::mibs::In>();
-    if (!cmd) {
-        response.setError("Wrong input data");
-        if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
-            log_error(res.error().c_str());
-        }
-        return;
+    protocol::MibsReader reader(in.address, uint16_t(in.port.value()));
+
+    if (in.credentialId.hasValue()) {
+        reader.setCredentialId(in.credentialId);
+    } else if (in.community.hasValue()) {
+        reader.setCommunity(in.community);
+    } else {
+        throw Error("Credential or community must be set");
     }
 
-    if (!available(cmd->address)) {
-        response.setError("Host is not available");
-        if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
-            log_error(res.error().c_str());
-        }
-        return;
+    if (in.timeout.hasValue()) {
+        reader.setTimeout(in.timeout);
     }
 
-    auto info = readSnmp(cmd->address, uint16_t(cmd->port.value()), cmd->community, cmd->credentialId);
-    if (!info) {
-        response.setError(info.error());
-        if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
-            log_error(res.error().c_str());
-        }
-        return;
+    std::string assetName;
+    if (auto name = reader.readName()) {
+        assetName = *name;
+    } else {
+        throw Error(name.error());
     }
 
-    response.mibs = info->mibs;
-    response.mibs.sort(sortMibs);
-
-    log_info("Configure: '%s' mibs: [%s]", info->name.value().c_str(), implode(response.mibs, ", ").c_str());
-
-    response.status = Message::Status::Ok;
-    if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
-        log_error(res.error().c_str());
+    if (auto mibs = reader.read()) {
+        out.setValue(std::vector<std::string>(mibs->begin(), mibs->end()));
+        out.sort(sortMibs);
+        log_info("Configure: '%s' mibs: [%s]", assetName.c_str(), implode(out, ", ").c_str());
+    } else {
+        throw Error(mibs.error());
     }
 }
 

@@ -1,89 +1,38 @@
+/*  ====================================================================================================================
+    Copyright (C) 2020 Eaton
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+    ====================================================================================================================
+*/
+
 #include "assets.h"
-#include "commands.h"
-#include "common.h"
-#include "message-bus.h"
-#include "protocols/snmp.h"
-#include <fty_log.h>
-#include "protocols/ping.h"
-#include "protocols/nut.h"
+#include "impl/nut.h"
+#include "impl/ping.h"
 
 namespace fty::job {
 
-// =====================================================================================================================
-
-namespace response {
-
-    /// Response wrapper
-    class Assets : public BasicResponse<Assets>
-    {
-    public:
-        commands::assets::Out assets = FIELD("assets");
-
-    public:
-        using BasicResponse::BasicResponse;
-        META_BASE(Assets, BasicResponse<Assets>, assets);
-
-    public:
-        const commands::assets::Out& data()
-        {
-            return assets;
-        }
-    };
-
-} // namespace response
-
-// =====================================================================================================================
-
-Assets::Assets(const Message& in, MessageBus& bus)
-    : m_in(in)
-    , m_bus(&bus)
+void Assets::run(const commands::assets::In& in, commands::assets::Out& out)
 {
-}
-
-void Assets::operator()()
-{
-    response::Assets response;
-
-    if (m_in.userData.empty()) {
-        response.setError("Wrong input data");
-        if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
-            log_error(res.error().c_str());
-        }
-        return;
+    if (!available(in.address)) {
+        throw Error("Host is not available: {}", in.address.value());
     }
 
-    auto cmd = m_in.userData.decode<commands::assets::In>();
-    if (!cmd) {
-        response.setError("Wrong input data");
-        if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
-            log_error(res.error().c_str());
-        }
-        return;
-    }
+    if (auto res = protocol::properties(in)) {
+        std::string str = *pack::json::serialize(*res);
+        log_debug("output %s", str.c_str());
 
-    if (!available(cmd->address)) {
-        response.setError("Host is not available");
-        if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
-            log_error(res.error().c_str());
-        }
-        return;
-    }
-
-    if (auto res = protocol::properties(*cmd); !res) {
-        response.setError(res.error());
-        if (auto answ = m_bus->reply(fty::Channel, m_in, response); !answ) {
-            log_error(answ.error().c_str());
-        }
-        return;
+        out = *res;
     } else {
-        std::string out = *pack::json::serialize(*res);
-        log_debug("output %s", out.c_str());
-
-        response.status = Message::Status::Ok;
-        response.assets = *res;
-        if (auto repl = m_bus->reply(fty::Channel, m_in, response); !res) {
-            log_error(res.error().c_str());
-        }
+        throw Error(res.error());
     }
 }
 

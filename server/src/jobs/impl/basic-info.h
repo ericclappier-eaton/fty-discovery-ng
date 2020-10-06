@@ -15,23 +15,8 @@
 */
 
 #pragma once
-#include "discovery-task.h"
+#include <pack/pack.h>
 
-// =====================================================================================================================
+namespace fty::protocol {
 
-namespace fty::job {
-
-/// Discover Assets from enpoint
-/// Returns @ref commands::assets::Out (something like a list of Assets)
-class Assets : public Task<Assets, commands::assets::In, commands::assets::Out>
-{
-public:
-    using Task::Task;
-
-    /// Runs discover job.
-    void run(const commands::assets::In& in, commands::assets::Out& out);
-};
-
-} // namespace fty::job
-
-// =====================================================================================================================
+}

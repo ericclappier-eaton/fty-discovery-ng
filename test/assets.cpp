@@ -6,7 +6,7 @@ TEST_CASE("Assets / Empty request")
     fty::Message                msg = Test::createMessage(fty::commands::assets::Subject);
     fty::Expected<fty::Message> ret = Test::send(msg);
     CHECK_FALSE(ret);
-    CHECK("Wrong input data" == ret.error());
+    CHECK("Wrong input data: payload is empty" == ret.error());
 }
 
 TEST_CASE("Assets / Wrong request")
@@ -16,7 +16,7 @@ TEST_CASE("Assets / Wrong request")
     msg.userData.setString("Some shit");
     fty::Expected<fty::Message> ret = Test::send(msg);
     CHECK_FALSE(ret);
-    CHECK("Wrong input data" == ret.error());
+    CHECK("Wrong input data: format of payload is incorrect" == ret.error());
 }
 
 TEST_CASE("Assets / Unaviable host")

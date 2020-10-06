@@ -1,6 +1,22 @@
+/*  ====================================================================================================================
+    Copyright (C) 2020 Eaton
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+    ====================================================================================================================
+*/
+
 #include "nut.h"
 #include "src/config.h"
-#include "src/jobs/common.h"
+#include "src/jobs/impl/mibs.h"
 #include <filesystem>
 #include <fmt/core.h>
 #include <fstream>
@@ -142,7 +158,7 @@ static Expected<void> fetchFromSecurityWallet(const std::string& id, Process& nu
 static Expected<std::string> driverName(const commands::assets::In& cmd)
 {
     if (cmd.protocol == "NUT_SNMP") {
-        if (!cmd.settings.mib.empty() && !fty::job::isSnmp(cmd.settings.mib)) {
+        if (!cmd.settings.mib.empty() && !fty::protocol::isSnmpSupported(cmd.settings.mib)) {
             log_error("Mib %s possible is not supported by snmp-ups", cmd.settings.mib.value().c_str());
         }
         return std::string("snmp-ups");
@@ -216,7 +232,7 @@ Expected<void> NutProcess::run(commands::assets::Out& map) const
 
     if (m_cmd.protocol == "NUT_SNMP") {
         if (!m_cmd.settings.mib.empty()) {
-            proc.setEnvVar("SU_VAR_MIBS", fty::job::mapMibToLegacy(m_cmd.settings.mib));
+            proc.setEnvVar("SU_VAR_MIBS", fty::protocol::mapMibToLegacy(m_cmd.settings.mib));
         }
 
         if (!m_cmd.settings.credentialId.empty()) {
@@ -225,6 +241,8 @@ Expected<void> NutProcess::run(commands::assets::Out& map) const
             }
         } else if (!m_cmd.settings.community.empty()) {
             proc.setEnvVar("SU_VAR_COMMUNITY", m_cmd.settings.community);
+            proc.addArgument("-x");
+            proc.addArgument(fmt::format("community={}", m_cmd.settings.community.value()));
         } else {
             return unexpected("Credentials or community is not set");
         }

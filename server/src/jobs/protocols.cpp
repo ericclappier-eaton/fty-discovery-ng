@@ -1,119 +1,105 @@
-/*  =========================================================================
-    discover.cpp - Protocols discovery job
-
-    Copyright (C) 2014 - 2020 Eaton
-
+/*  ====================================================================================================================
+    Copyright (C) 2020 Eaton
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
-
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-    =========================================================================
- */
+    ====================================================================================================================
+*/
 
 #include "protocols.h"
-#include "commands.h"
-#include "common.h"
-#include "message-bus.h"
-#include "protocols/ping.h"
-#include "protocols/xml-pdc.h"
+#include "impl/mibs.h"
+#include "impl/ping.h"
+#include "impl/xml-pdc.h"
 #include <fty/split.h>
-#include <fty_log.h>
 #include <set>
 
 namespace fty::job {
 
+
 // =====================================================================================================================
 
-namespace response {
-
-    /// Response wrapper
-    class Protocols : public BasicResponse<Protocols>
+/// Basic information for discovery
+class BasicInfo : public pack::Node
+{
+public:
+    enum class Type
     {
-    public:
-        commands::protocols::Out protocols = FIELD("protocols");
-
-    public:
-        using BasicResponse::BasicResponse;
-        META_BASE(Protocols, BasicResponse<Protocols>, protocols);
-
-    public:
-        const commands::protocols::Out& data()
-        {
-            return protocols;
-        }
+        Snmp,
+        Xml
     };
 
-} // namespace response
+    pack::String     name = FIELD("name");
+    pack::StringList mibs = FIELD("mibs");
+    pack::Enum<Type> type = FIELD("type");
+
+public:
+    using pack::Node::Node;
+    META(BasicInfo, name, mibs, type);
+};
+
 // =====================================================================================================================
 
-Protocols::Protocols(const Message& in, MessageBus& bus)
-    : m_in(in)
-    , m_bus(&bus)
+inline std::ostream& operator<<(std::ostream& ss, BasicInfo::Type type)
 {
+    switch (type) {
+        case BasicInfo::Type::Snmp:
+            ss << "Snmp";
+            break;
+        case BasicInfo::Type::Xml:
+            ss << "Xml";
+            break;
+    }
+    return ss;
 }
 
-void Protocols::operator()()
+inline std::istream& operator>>(std::istream& ss, BasicInfo::Type& type)
 {
-    response::Protocols response;
+    std::string str;
+    ss >> str;
+    if (str == "Snmp") {
+        type = BasicInfo::Type::Snmp;
+    } else if (str == "Xml") {
+        type = BasicInfo::Type::Xml;
+    }
+    return ss;
+}
 
-    if (m_in.userData.empty()) {
-        response.setError("Wrong input data");
-        if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
-            log_error(res.error().c_str());
-        }
+// =====================================================================================================================
+
+
+void Protocols::run(const commands::protocols::In& in, commands::protocols::Out& out)
+{
+    if (in.address == "__fake__") {
+        out.setValue({"NUT_SNMP", "NUT_XML_PDC"});
         return;
     }
 
-    Expected<commands::protocols::In> cmd = m_in.userData.decode<commands::protocols::In>();
-    if (!cmd) {
-        response.setError("Wrong input data");
-        if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
-            log_error(res.error().c_str());
-        }
-        return;
-    }
-
-    if (cmd->address == "__fake__") {
-        response.protocols.setValue({"NUT_SNMP", "NUT_XML_PDC"});
-        response.status = Message::Status::Ok;
-        if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
-            log_error(res.error().c_str());
-        }
-        return;
-    }
-
-    log_error("check addr %s", cmd->address.value().c_str());
-    if (!available(cmd->address)) {
-        response.setError("Host is not available");
-        if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
-            log_error(res.error().c_str());
-        }
-        return;
+    if (!available(in.address)) {
+        throw Error("Host is not available: {}", in.address.value());
     }
 
     std::vector<BasicInfo> protocols;
 
-    if (auto res = tryXmlPdc(cmd->address)) {
+    if (auto res = tryXmlPdc(in)) {
         protocols.emplace_back(*res);
         log_info("Found XML  device: '%s' mibs[]", res->name.value().c_str());
     } else {
-        log_error(res.error().c_str());
+        log_info("Skipped xml_pdc, reason: %s", res.error().c_str());
     }
 
-    if (auto res = trySnmp(cmd->address, 161, "public", "")) {
+    if (auto res = trySnmp(in)) {
         protocols.emplace_back(*res);
         log_info("Found SNMP device: '%s' mibs[%s]", res->name.value().c_str(), implode(res->mibs, ", ").c_str());
     } else {
-        log_error(res.error().c_str());
+        log_info("Skipped snmp, reason: %s", res.error().c_str());
     }
 
     sortProtocols(protocols);
@@ -121,23 +107,18 @@ void Protocols::operator()()
     for (const auto& prot : protocols) {
         switch (prot.type) {
             case BasicInfo::Type::Snmp:
-                response.protocols.append("NUT_SNMP");
+                out.append("NUT_SNMP");
                 break;
             case BasicInfo::Type::Xml:
-                response.protocols.append("NUT_XML_PDC");
+                out.append("NUT_XML_PDC");
                 break;
         }
     }
-
-    response.status = Message::Status::Ok;
-    if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
-        log_error(res.error().c_str());
-    }
 }
 
-Expected<BasicInfo> Protocols::tryXmlPdc(const std::string& ipAddress) const
+Expected<BasicInfo> Protocols::tryXmlPdc(const commands::protocols::In& in) const
 {
-    protocol::XmlPdc xml(ipAddress);
+    protocol::XmlPdc xml(in.address);
     if (auto prod = xml.get<protocol::ProductInfo>("product.xml")) {
         if (prod->protocol == "XML.V4") {
             return unexpected("unsupported XML.V4");
@@ -145,12 +126,15 @@ Expected<BasicInfo> Protocols::tryXmlPdc(const std::string& ipAddress) const
 
         if (auto props = xml.get<protocol::Properties>(prod->summary.summary.url)) {
             BasicInfo info;
+
             if (auto res = props->value("UPS.PowerSummary.iProduct")) {
                 info.name = *res;
             }
+
             if (auto res = props->value("UPS.PowerSummary.iModel")) {
                 info.name = info.name.value() + (info.name.empty() ? "" : " ") + *res;
             }
+
             info.type = BasicInfo::Type::Xml;
             return std::move(info);
         } else {
@@ -161,10 +145,26 @@ Expected<BasicInfo> Protocols::tryXmlPdc(const std::string& ipAddress) const
     }
 }
 
-Expected<BasicInfo> Protocols::trySnmp(
-    const std::string& ipAddress, uint16_t port, const std::string& community, const std::string& secId) const
+Expected<BasicInfo> Protocols::trySnmp(const commands::protocols::In& in) const
 {
-    return readSnmp(ipAddress, port, community, secId);
+    BasicInfo info;
+
+    protocol::MibsReader reader(in.address, 161);
+    reader.setCommunity("public");
+
+    if (auto mibs = reader.read(); !mibs) {
+        return unexpected(mibs.error());
+    } else {
+        info.mibs.setValue(std::vector<std::string>(mibs->begin(), mibs->end()));
+    }
+
+    if (auto name = reader.readName(); !name) {
+        return unexpected(name.error());
+    } else {
+        info.name = *name;
+    }
+
+    return std::move(info);
 }
 
 void Protocols::sortProtocols(std::vector<BasicInfo>& protocols)

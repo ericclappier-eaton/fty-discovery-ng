@@ -1,65 +1,50 @@
-/*  =========================================================================
-    discover.h - Protocols discovery job
-
-    Copyright (C) 2014 - 2020 Eaton
-
+/*  ====================================================================================================================
+    Copyright (C) 2020 Eaton
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
-
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-    =========================================================================
- */
+    ====================================================================================================================
+*/
 
 #pragma once
-#include "message.h"
-#include <fty/expected.h>
-#include <fty/thread-pool.h>
+#include "discovery-task.h"
 
 // =====================================================================================================================
 
-namespace fty {
-class MessageBus;
-} // namespace fty
-
 namespace fty::job {
+
+/// Forward declaration
 class BasicInfo;
-}
 
-// =====================================================================================================================
-
-namespace fty::job {
-
-// =====================================================================================================================
-
-class Protocols : public Task<Protocols>
+/// Discover supported protocols by endpoint
+/// Returns @ref commands::protocols::Out (list of protocols)
+class Protocols : public Task<Protocols, commands::protocols::In, commands::protocols::Out>
 {
 public:
-    Protocols(const Message& in, MessageBus& bus);
+    using Task::Task;
 
-    void operator()() override;
-
-private:
-    Expected<BasicInfo> tryXmlPdc(const std::string& ipAddress) const;
-    Expected<BasicInfo> trySnmp(
-        const std::string& ipAddress, uint16_t port, const std::string& community, const std::string& secId) const;
-    static bool                            filterMib(const std::string& mib);
-    static const std::vector<std::string>& knownMibs();
-    static void                            sortProtocols(std::vector<BasicInfo>& protocols);
+    /// Runs discover job.
+    void run(const commands::protocols::In& in, commands::protocols::Out& out);
 
 private:
-    Message     m_in;
-    MessageBus* m_bus;
+    /// Try out if endpoint support xml pdc protocol
+    Expected<BasicInfo> tryXmlPdc(const commands::protocols::In& in) const;
+
+    /// Try out if endpoint support xnmp protocol
+    Expected<BasicInfo> trySnmp(const commands::protocols::In& in) const;
+
+    /// Sorts protocols from most useful
+    static void sortProtocols(std::vector<BasicInfo>& protocols);
 };
 
-// =====================================================================================================================
-
 } // namespace fty::job
+
+// =====================================================================================================================

@@ -1,67 +1,57 @@
-/*  =========================================================================
-    snmp.h - SNMP simple implementation
-
-    Copyright (C) 2014 - 2020 Eaton
-
+/*  ====================================================================================================================
+    Copyright (C) 2020 Eaton
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
-
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-    =========================================================================
- */
+    ====================================================================================================================
+*/
 
 #pragma once
-
 #include <fty/expected.h>
-#include <functional>
 #include <memory>
+#include <set>
+#include <string>
 
 namespace fty::protocol {
 
 // =====================================================================================================================
 
-class Snmp
+bool        isSnmpSupported(const std::string& mib);
+std::string mapMibToLegacy(const std::string& mib);
+bool        filterMib(const std::string& mib);
+
+// =====================================================================================================================
+
+namespace snmp {
+    class Session;
+    using SessionPtr = std::shared_ptr<Session>;
+} // namespace snmp
+
+/// Reads list of mibs from endpoint
+class MibsReader
 {
 public:
-    class Session
-    {
-    public:
-        Expected<void>        open();
-        Expected<std::string> read(const std::string& oid) const;
-        Expected<void>        walk(std::function<void(const std::string&)>&& func) const;
+    using MibList = std::set<std::string>;
 
-    protected:
-        Session(const std::string& address, uint16_t port);
+    MibsReader(const std::string& address, uint16_t port);
+    void setCredentialId(const std::string& credentialId);
+    void setCommunity(const std::string& community);
+    void setTimeout(uint miliseconds);
 
-    private:
-        friend class Snmp;
-        friend class SessionCommunity;
-        friend class SessionWallet;
-        class Impl;
-        std::unique_ptr<Impl> m_impl;
-    };
-
-public:
-    using SessionPtr = std::shared_ptr<Session>;
-
-public:
-    ~Snmp();
-    static Snmp& instance();
-    SessionPtr   sessionByCommunity(const std::string& address, uint16_t port, const std::string& community, uint32_t timeout);
-    SessionPtr   sessionByWallet(const std::string& address, uint16_t port, const std::string& securityId, uint32_t timeout);
-    void         init(const std::string& mibsPath);
+    Expected<MibList>     read() const;
+    Expected<std::string> readName() const;
 
 private:
-    Snmp();
+    snmp::SessionPtr m_session;
+    mutable bool     m_isOpen = false;
 };
 
 // =====================================================================================================================

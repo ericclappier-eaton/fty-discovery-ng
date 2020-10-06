@@ -1,7 +1,7 @@
 #include "config.h"
 #include "daemon.h"
 #include "discovery.h"
-#include "jobs/protocols/snmp.h"
+#include "jobs/impl/snmp.h"
 #include <fty/command-line.h>
 #include <fty_log.h>
 

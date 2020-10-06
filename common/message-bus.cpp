@@ -55,7 +55,7 @@ Expected<Message> MessageBus::send(const std::string& queue, const Message& msg)
     }
     msg.meta.from = m_actorName;
     try {
-        Message m(m_bus->request(queue, msg.toMessageBus(), 1000));
+        Message m(m_bus->request(queue, msg.toMessageBus(), 1000000));
         if (m.meta.status == Message::Status::Error) {
             return unexpected(*m.userData.decode<std::string>());
         }

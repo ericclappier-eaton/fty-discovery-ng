@@ -6,7 +6,7 @@ TEST_CASE("Protocols/ Empty request")
 
     fty::Expected<fty::Message> ret = Test::send(msg);
     CHECK_FALSE(ret);
-    CHECK("Wrong input data" == ret.error());
+    CHECK("Wrong input data: payload is empty" == ret.error());
 }
 
 TEST_CASE("Protocols / Wrong request")
@@ -16,7 +16,7 @@ TEST_CASE("Protocols / Wrong request")
     msg.userData.setString("Some shit");
     fty::Expected<fty::Message> ret = Test::send(msg);
     CHECK_FALSE(ret);
-    CHECK("Wrong input data" == ret.error());
+    CHECK("Wrong input data: format of payload is incorrect" == ret.error());
 }
 
 TEST_CASE("Protocols / Unaviable host")
@@ -28,7 +28,31 @@ TEST_CASE("Protocols / Unaviable host")
     msg.userData.setString(*pack::json::serialize(in));
     fty::Expected<fty::Message> ret = Test::send(msg);
     CHECK_FALSE(ret);
-    CHECK("Host is not available" == ret.error());
+    CHECK("Host is not available: pointtosky" == ret.error());
+}
+
+TEST_CASE("Protocols / Unaviable ip")
+{
+    fty::Message msg = Test::createMessage(fty::commands::protocols::Subject);
+
+    fty::commands::protocols::In in;
+    in.address = "127.0.145.145";
+    msg.userData.setString(*pack::json::serialize(in));
+    fty::Expected<fty::Message> ret = Test::send(msg);
+    CHECK_FALSE(ret);
+    CHECK("Host is not available: 127.0.145.145" == ret.error());
+}
+
+TEST_CASE("Protocols / Invalid ip")
+{
+    fty::Message msg = Test::createMessage(fty::commands::protocols::Subject);
+
+    fty::commands::protocols::In in;
+    in.address = "127.0.145.256";
+    msg.userData.setString(*pack::json::serialize(in));
+    fty::Expected<fty::Message> ret = Test::send(msg);
+    CHECK_FALSE(ret);
+    CHECK("Host is not available: 145.145.145.256" == ret.error());
 }
 
 TEST_CASE("Protocols / Fake request")

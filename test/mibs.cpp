@@ -7,7 +7,7 @@ TEST_CASE("Mibs / Empty request")
 
     fty::Expected<fty::Message> ret = Test::send(msg);
     CHECK_FALSE(ret);
-    CHECK("Wrong input data" == ret.error());
+    CHECK("Wrong input data: payload is empty" == ret.error());
 }
 
 TEST_CASE("Mibs / Wrong request")
@@ -18,7 +18,7 @@ TEST_CASE("Mibs / Wrong request")
     fty::Expected<fty::Message> ret = Test::send(msg);
 
     CHECK_FALSE(ret);
-    CHECK("Wrong input data" == ret.error());
+    CHECK("Wrong input data: format of payload is incorrect" == ret.error());
 }
 
 TEST_CASE("Mibs / Unaviable host")
@@ -31,7 +31,7 @@ TEST_CASE("Mibs / Unaviable host")
 
     fty::Expected<fty::Message> ret = Test::send(msg);
     CHECK_FALSE(ret);
-    CHECK("Host is not available" == ret.error());
+    CHECK("Host is not available: pointtosky" == ret.error());
 }
 
 TEST_CASE("Mibs / get mibs")
@@ -41,8 +41,8 @@ TEST_CASE("Mibs / get mibs")
         "--data-dir=root",
         "--agent-udpv4-endpoint=127.0.0.1:1161",
         "--logging-method=file:.snmpsim.txt",
-        "--variation-modules-dir=root"//,
-        //"--log-level=error"
+        "--variation-modules-dir=root",
+        "--log-level=error"
     });
     // clang-format on
 
@@ -53,7 +53,7 @@ TEST_CASE("Mibs / get mibs")
         fty::Expected<fty::Message> ret = Test::send(msg);
         CHECK(ret);
 
-        fty::Expected<pack::StringList> res = ret->userData.decode<fty::commands::mibs::Out>();
+        fty::Expected<fty::commands::mibs::Out> res = ret->userData.decode<fty::commands::mibs::Out>();
         CHECK(res);
         CHECK(res->size());
         return *res;
