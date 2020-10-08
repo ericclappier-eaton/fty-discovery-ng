@@ -55,7 +55,7 @@ void Mibs::run(const commands::mibs::In& in, commands::mibs::Out& out)
         throw Error("Host is not available: {}", in.address.value());
     }
 
-    protocol::MibsReader reader(in.address, uint16_t(in.port.value()));
+    impl::MibsReader reader(in.address, uint16_t(in.port.value()));
 
     if (in.credentialId.hasValue()) {
         if (auto res = reader.setCredentialId(in.credentialId); !res) {

@@ -42,7 +42,7 @@ public:
             return fty::unexpected("Cannot load config");
         }
 
-        fty::protocol::Snmp::instance().init(fty::Config::instance().mibDatabase);
+        fty::impl::Snmp::instance().init(fty::Config::instance().mibDatabase);
         ManageFtyLog::setInstanceFtylog(fty::Config::instance().actorName, fty::Config::instance().logConfig);
 
         if (auto res = inst->m_dis.init(); !res) {

@@ -20,7 +20,7 @@
 #include <functional>
 #include <memory>
 
-namespace fty::protocol {
+namespace fty::impl {
 
 namespace snmp {
     class Session;
@@ -60,7 +60,7 @@ namespace snmp {
         Session(const std::string& address, uint16_t port);
 
     private:
-        friend class protocol::Snmp;
+        friend class impl::Snmp;
         class Impl;
         std::unique_ptr<Impl> m_impl;
     };

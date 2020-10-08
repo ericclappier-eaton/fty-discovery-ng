@@ -5,7 +5,7 @@ namespace fty {
 class Process;
 }
 
-namespace fty::protocol::nut {
+namespace fty::impl::nut {
 
 class Process
 {

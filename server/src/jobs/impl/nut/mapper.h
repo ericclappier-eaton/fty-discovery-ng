@@ -17,7 +17,7 @@
 #pragma once
 #include <string>
 
-namespace fty::protocol::nut {
+namespace fty::impl::nut {
 
 struct Mappping;
 

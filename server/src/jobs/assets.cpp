@@ -36,7 +36,7 @@ void Assets::run(const commands::assets::In& in, commands::assets::Out& out)
             m_params.port = 161;
         }
 
-        protocol::MibsReader reader(m_params.address, uint16_t(m_params.port.value()));
+        impl::MibsReader reader(m_params.address, uint16_t(m_params.port.value()));
 
         if (m_params.settings.credentialId.hasValue()) {
             if (auto res = reader.setCredentialId(m_params.settings.credentialId); !res) {
@@ -60,7 +60,7 @@ void Assets::run(const commands::assets::In& in, commands::assets::Out& out)
     }
 
     // Runs nut process
-    protocol::nut::Process proc(m_params.protocol);
+    impl::nut::Process proc(m_params.protocol);
     if (auto res = proc.init(m_params.address, uint16_t(m_params.port.value()))) {
         if (m_params.settings.credentialId.hasValue()) {
             if (auto set = proc.setCredentialId(m_params.settings.credentialId); !set) {
@@ -122,7 +122,7 @@ void Assets::parse(const std::string& cnt, commands::assets::Out& out)
                     continue;
                 }
 
-                if (auto key = protocol::nut::Mapper::mapKey(p.first.substr(prefix.size())); !key.empty()) {
+                if (auto key = impl::nut::Mapper::mapKey(p.first.substr(prefix.size())); !key.empty()) {
                     addAssetVal(asset.asset, key, p.second);
                 }
             }
@@ -134,7 +134,7 @@ void Assets::parse(const std::string& cnt, commands::assets::Out& out)
         asset.asset.type = "device";
 
         for (const auto& p : tmpMap) {
-            if (auto key = protocol::nut::Mapper::mapKey(p.first); !key.empty()) {
+            if (auto key = impl::nut::Mapper::mapKey(p.first); !key.empty()) {
                 addAssetVal(asset.asset, key, p.second);
             }
         }

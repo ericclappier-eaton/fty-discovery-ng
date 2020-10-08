@@ -118,13 +118,13 @@ void Protocols::run(const commands::protocols::In& in, commands::protocols::Out&
 
 Expected<BasicInfo> Protocols::tryXmlPdc(const commands::protocols::In& in) const
 {
-    protocol::XmlPdc xml(in.address);
-    if (auto prod = xml.get<protocol::ProductInfo>("product.xml")) {
+    impl::XmlPdc xml(in.address);
+    if (auto prod = xml.get<impl::ProductInfo>("product.xml")) {
         if (prod->protocol == "XML.V4") {
             return unexpected("unsupported XML.V4");
         }
 
-        if (auto props = xml.get<protocol::Properties>(prod->summary.summary.url)) {
+        if (auto props = xml.get<impl::Properties>(prod->summary.summary.url)) {
             BasicInfo info;
 
             if (auto res = props->value("UPS.PowerSummary.iProduct")) {
@@ -149,7 +149,7 @@ Expected<BasicInfo> Protocols::trySnmp(const commands::protocols::In& in) const
 {
     BasicInfo info;
 
-    protocol::MibsReader reader(in.address, 161);
+    impl::MibsReader reader(in.address, 161);
     reader.setCommunity("public");
 
     if (auto mibs = reader.read(); !mibs) {

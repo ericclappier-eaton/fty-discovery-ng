@@ -28,7 +28,7 @@
 #include <regex>
 #include <set>
 
-namespace fty::protocol {
+namespace fty::impl {
 
 // =====================================================================================================================
 // Wallet to snmp values conversion

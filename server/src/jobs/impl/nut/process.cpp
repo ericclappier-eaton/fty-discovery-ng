@@ -6,7 +6,7 @@
 #include "src/jobs/impl/mibs.h"
 #include "src/config.h"
 
-namespace fty::protocol::nut {
+namespace fty::impl::nut {
 Process::Process(const std::string& protocol)
     : m_protocol(protocol)
 {

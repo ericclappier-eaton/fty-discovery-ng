@@ -36,7 +36,7 @@ int main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    fty::protocol::Snmp::instance().init(fty::Config::instance().mibDatabase);
+    fty::impl::Snmp::instance().init(fty::Config::instance().mibDatabase);
     ManageFtyLog::setInstanceFtylog(fty::Config::instance().actorName, fty::Config::instance().logConfig);
 
     if (daemon) {

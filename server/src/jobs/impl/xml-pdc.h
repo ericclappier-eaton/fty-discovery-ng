@@ -19,7 +19,7 @@
 #include <fty/expected.h>
 #include <pack/pack.h>
 
-namespace fty::protocol {
+namespace fty::impl {
 
 // =====================================================================================================================
 
