@@ -96,7 +96,7 @@ std::string mapMibToLegacy(const std::string& mib)
         {"PDU2-MIB::raritan",                   "raritan"},             // raritan
         {"PDU2-MIB::pdu2",                      "raritan_px2"},         // raritan_px2
         {"XPPC-MIB::ppc",                       "xppc"},                // xppc
-        {"SOCOMECUPS-MIB::netvision",           "apc_ats"},             // netvision
+        {"SOCOMECUPS-MIB::netvision",           "netvision"},           // netvision
         {"TRIPPUPS1-MIB::trippUPS1",            "tripplite"},           // tripplite_ietf
         {"UPS-MIB::upsMIB",                     "ietf"},                // ietf
     };

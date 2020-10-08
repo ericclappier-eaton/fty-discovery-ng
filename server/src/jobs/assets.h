@@ -30,6 +30,13 @@ public:
 
     /// Runs discover job.
     void run(const commands::assets::In& in, commands::assets::Out& out);
+private:
+    void parse(const std::string& cnt, commands::assets::Out& out);
+    void addAssetVal(commands::assets::Return::Asset& asset, const std::string& key, const std::string& val);
+    void enrichAsset(commands::assets::Return& asset);
+
+private:
+    commands::assets::In m_params;
 };
 
 } // namespace fty::job

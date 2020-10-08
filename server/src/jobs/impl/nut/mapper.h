@@ -15,11 +15,22 @@
 */
 
 #pragma once
-#include <pack/pack.h>
-#include "commands.h"
+#include <string>
 
-namespace fty::protocol {
+namespace fty::protocol::nut {
 
-fty::Expected<commands::assets::Out> properties(const commands::assets::In& cmd);
+struct Mappping;
 
-}
+class Mapper
+{
+    static constexpr const char* mapFile = "/usr/share/fty-common-nut/mapping.conf";
+
+public:
+    static std::string mapKey(const std::string& key);
+
+private:
+    static const Mappping& mapping();
+};
+
+
+} // namespace fty::protocol::nut

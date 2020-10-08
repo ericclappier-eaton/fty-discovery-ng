@@ -21,11 +21,14 @@ etn_target(static ${PROJECT_NAME}-static
         src/jobs/impl/xml-pdc.h
         src/jobs/impl/neon.cpp
         src/jobs/impl/neon.h
-        src/jobs/impl/nut.cpp
-        src/jobs/impl/nut.h
         src/jobs/impl/ping.h
         src/jobs/impl/mibs.cpp
         src/jobs/impl/mibs.h
+
+        src/jobs/impl/nut/mapper.cpp
+        src/jobs/impl/nut/mapper.h
+        src/jobs/impl/nut/process.cpp
+        src/jobs/impl/nut/process.h
     USES
         fty-utils
         fty_common_logging
