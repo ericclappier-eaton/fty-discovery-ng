@@ -74,3 +74,21 @@ TEST_CASE("Protocols / Fake request")
     CHECK("NUT_SNMP" == (*res)[0]);
     CHECK("NUT_XML_PDC" == (*res)[1]);
 }
+
+TEST_CASE("Protocols / resolve")
+{
+    fty::Message msg = Test::createMessage(fty::commands::protocols::Subject);
+
+    fty::commands::protocols::In in;
+    in.address = "127.0.0.1";
+    msg.userData.setString(*pack::json::serialize(in));
+
+    fty::Expected<fty::Message> ret = Test::send(msg);
+
+    fty::commands::protocols::In in2;
+    in2.address = "10.130.33.178";
+    msg.userData.setString(*pack::json::serialize(in2));
+
+    fty::Expected<fty::Message> ret2 = Test::send(msg);
+}
+

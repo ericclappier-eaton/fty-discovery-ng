@@ -19,55 +19,34 @@
 #include "impl/ping.h"
 #include "impl/xml-pdc.h"
 #include <fty/split.h>
+#include <netdb.h>
+#include <netinet/ip_icmp.h>
+#include <poll.h>
 #include <set>
+#include <unistd.h>
 
 namespace fty::job {
 
 
 // =====================================================================================================================
 
-/// Basic information for discovery
-class BasicInfo : public pack::Node
+enum class Type
 {
-public:
-    enum class Type
-    {
-        Snmp,
-        Xml
-    };
-
-    pack::String     name = FIELD("name");
-    pack::StringList mibs = FIELD("mibs");
-    pack::Enum<Type> type = FIELD("type");
-
-public:
-    using pack::Node::Node;
-    META(BasicInfo, name, mibs, type);
+    Xml  = 1,
+    Snmp = 2
 };
 
 // =====================================================================================================================
 
-inline std::ostream& operator<<(std::ostream& ss, BasicInfo::Type type)
+inline std::ostream& operator<<(std::ostream& ss, Type type)
 {
     switch (type) {
-        case BasicInfo::Type::Snmp:
+        case Type::Snmp:
             ss << "Snmp";
             break;
-        case BasicInfo::Type::Xml:
+        case Type::Xml:
             ss << "Xml";
             break;
-    }
-    return ss;
-}
-
-inline std::istream& operator>>(std::istream& ss, BasicInfo::Type& type)
-{
-    std::string str;
-    ss >> str;
-    if (str == "Snmp") {
-        type = BasicInfo::Type::Snmp;
-    } else if (str == "Xml") {
-        type = BasicInfo::Type::Xml;
     }
     return ss;
 }
@@ -86,18 +65,18 @@ void Protocols::run(const commands::protocols::In& in, commands::protocols::Out&
         throw Error("Host is not available: {}", in.address.value());
     }
 
-    std::vector<BasicInfo> protocols;
+    std::vector<Type> protocols;
 
     if (auto res = tryXmlPdc(in)) {
-        protocols.emplace_back(*res);
-        log_info("Found XML  device: '%s' mibs[]", res->name.value().c_str());
+        protocols.emplace_back(Type::Xml);
+        log_info("Found XML device");
     } else {
         log_info("Skipped xml_pdc, reason: %s", res.error().c_str());
     }
 
     if (auto res = trySnmp(in)) {
-        protocols.emplace_back(*res);
-        log_info("Found SNMP device: '%s' mibs[%s]", res->name.value().c_str(), implode(res->mibs, ", ").c_str());
+        protocols.emplace_back(Type::Snmp);
+        log_info("Found SNMP device");
     } else {
         log_info("Skipped snmp, reason: %s", res.error().c_str());
     }
@@ -105,18 +84,20 @@ void Protocols::run(const commands::protocols::In& in, commands::protocols::Out&
     sortProtocols(protocols);
 
     for (const auto& prot : protocols) {
-        switch (prot.type) {
-            case BasicInfo::Type::Snmp:
+        switch (prot) {
+            case Type::Snmp:
                 out.append("NUT_SNMP");
                 break;
-            case BasicInfo::Type::Xml:
+            case Type::Xml:
                 out.append("NUT_XML_PDC");
                 break;
         }
     }
+    std::string resp = *pack::json::serialize(out);
+    log_info("Return %s", resp.c_str());
 }
 
-Expected<BasicInfo> Protocols::tryXmlPdc(const commands::protocols::In& in) const
+Expected<void> Protocols::tryXmlPdc(const commands::protocols::In& in) const
 {
     impl::XmlPdc xml(in.address);
     if (auto prod = xml.get<impl::ProductInfo>("product.xml")) {
@@ -125,18 +106,7 @@ Expected<BasicInfo> Protocols::tryXmlPdc(const commands::protocols::In& in) cons
         }
 
         if (auto props = xml.get<impl::Properties>(prod->summary.summary.url)) {
-            BasicInfo info;
-
-            if (auto res = props->value("UPS.PowerSummary.iProduct")) {
-                info.name = *res;
-            }
-
-            if (auto res = props->value("UPS.PowerSummary.iModel")) {
-                info.name = info.name.value() + (info.name.empty() ? "" : " ") + *res;
-            }
-
-            info.type = BasicInfo::Type::Xml;
-            return std::move(info);
+            return {};
         } else {
             return unexpected(props.error());
         }
@@ -145,58 +115,99 @@ Expected<BasicInfo> Protocols::tryXmlPdc(const commands::protocols::In& in) cons
     }
 }
 
-Expected<BasicInfo> Protocols::trySnmp(const commands::protocols::In& in) const
+static Expected<void> timeoutConnect(int sock, const struct sockaddr* name, socklen_t namelen)
 {
-    BasicInfo info;
+    pollfd    pfd;
+    socklen_t optlen;
+    int       optval;
+    int       ret;
 
-    impl::MibsReader reader(in.address, 161);
-    reader.setCommunity("public");
-
-    if (auto mibs = reader.read(); !mibs) {
-        return unexpected(mibs.error());
-    } else {
-        info.mibs.setValue(std::vector<std::string>(mibs->begin(), mibs->end()));
+    if ((ret = connect(sock, name, namelen)) != 0 && errno == EINPROGRESS) {
+        pfd.fd     = sock;
+        pfd.events = POLLOUT;
+        if ((ret = poll(&pfd, 1, 1000)) == 1) {
+            optlen = sizeof(optval);
+            if ((ret = getsockopt(sock, SOL_SOCKET, SO_ERROR, &optval, &optlen)) == 0) {
+                errno = optval;
+                ret   = optval == 0 ? 0 : -1;
+            }
+        } else if (ret == 0) {
+            errno = ETIMEDOUT;
+            ret   = -1;
+        } else {
+            return unexpected("poll failed");
+        }
     }
 
-    if (auto name = reader.readName(); !name) {
-        return unexpected(name.error());
-    } else {
-        info.name = *name;
-    }
-
-    return std::move(info);
+    return {};
 }
 
-void Protocols::sortProtocols(std::vector<BasicInfo>& protocols)
+struct AutoRemove
 {
-    static std::set<std::string> epdus = {
-        "EATON-EPDU-MIB", "EATON-OIDS", "EATON-GENESIS-II-MIB", "EATON-EPDU-PU-SW-MIB", "ACS-MIB"};
+    template <typename T, typename Func>
+    AutoRemove(T& val, Func&& deleter)
+        : m_deleter([&]() {
+            deleter(val);
+            val = {};
+        })
+    {
+    }
 
-    static std::set<std::string> atss = {"EATON-OIDS", "PowerNet-MIB"};
+    ~AutoRemove()
+    {
+        m_deleter();
+    }
+    std::function<void()> m_deleter;
+};
 
-    auto isMib = [](const BasicInfo& info, const std::set<std::string>& mibs) {
-        for (const auto& mib : info.mibs) {
-            std::string mibName = mib;
-            if (size_t pos = mibName.find("::"); pos != std::string::npos) {
-                mibName = mibName.substr(0, pos);
-            }
-            log_debug("find %s", mibName.c_str());
-            if (mibs.count(mibName)) {
-                return true;
-            }
-        }
-        return false;
-    };
+Expected<void> Protocols::trySnmp(const commands::protocols::In& in) const
+{
+    std::string portStr = "161";
 
-    std::sort(protocols.begin(), protocols.end(), [&](const BasicInfo& l, const BasicInfo& r) {
-        if (l.type == BasicInfo::Type::Snmp && (isMib(l, epdus) || isMib(l, atss))) {
-            return false;
+    addrinfo hints;
+    memset(&hints, 0, sizeof(addrinfo));
+
+    hints.ai_family   = AF_UNSPEC;
+    hints.ai_socktype = SOCK_DGRAM;
+    hints.ai_protocol = IPPROTO_UDP;
+
+    addrinfo* addrInfo;
+    if (int ret = getaddrinfo(in.address.value().c_str(), portStr.c_str(), &hints, &addrInfo); ret != 0) {
+        return unexpected(gai_strerror(ret));
+    }
+    AutoRemove addInfoRem(addrInfo, &freeaddrinfo);
+
+    int sock = 0;
+
+    if ((sock = socket(addrInfo->ai_family, addrInfo->ai_socktype | SOCK_NONBLOCK, addrInfo->ai_protocol)) == -1) {
+        return unexpected(strerror(errno));
+    }
+    AutoRemove sockRem(sock, &close);
+
+    if (timeoutConnect(sock, addrInfo->ai_addr, addrInfo->ai_addrlen) == 0) {
+        return unexpected(strerror(errno));
+    }
+
+    int ret = 1;
+    for (int i = 0; i <= 3; i++) {
+        if (write(sock, "X", 1) == 1) {
+            ret = 1;
+        } else {
+            ret = -1;
         }
-        if (r.type == BasicInfo::Type::Snmp && (isMib(r, epdus) || isMib(r, atss))) {
-            return true;
-        }
-        return false;
-    });
+    }
+
+    if (ret == -1) {
+        return unexpected("cannot write");
+    }
+
+    return {};
+}
+
+void Protocols::sortProtocols(std::vector<Type>& protocols)
+{
+    // Just prefer XML_PDC
+    std::sort(protocols.begin(), protocols.end());
 }
 
 

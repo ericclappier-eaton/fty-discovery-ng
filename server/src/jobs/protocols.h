@@ -22,7 +22,7 @@
 namespace fty::job {
 
 /// Forward declaration
-class BasicInfo;
+enum class Type;
 
 /// Discover supported protocols by endpoint
 /// Returns @ref commands::protocols::Out (list of protocols)
@@ -36,13 +36,13 @@ public:
 
 private:
     /// Try out if endpoint support xml pdc protocol
-    Expected<BasicInfo> tryXmlPdc(const commands::protocols::In& in) const;
+    Expected<void> tryXmlPdc(const commands::protocols::In& in) const;
 
     /// Try out if endpoint support xnmp protocol
-    Expected<BasicInfo> trySnmp(const commands::protocols::In& in) const;
+    Expected<void> trySnmp(const commands::protocols::In& in) const;
 
     /// Sorts protocols from most useful
-    static void sortProtocols(std::vector<BasicInfo>& protocols);
+    static void sortProtocols(std::vector<Type>& protocols);
 };
 
 } // namespace fty::job
