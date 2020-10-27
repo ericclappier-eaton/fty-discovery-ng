@@ -182,6 +182,8 @@ void Assets::enrichAsset(commands::assets::Return& asset)
     addAssetVal(asset.asset, "endpoint.1.status.operating", "IN_SERVICE", false);
     addAssetVal(asset.asset, "endpoint.1.status.error_msg", "", false);
 
+
+
     if (m_params.protocol == "NUT_SNMP") {
         if (m_params.settings.credentialId.hasValue()) {
             addAssetVal(asset.asset, "endpoint.1.NUT_SNMP.secw_credential_id", m_params.settings.credentialId, false);
@@ -193,6 +195,17 @@ void Assets::enrichAsset(commands::assets::Return& asset)
             addAssetVal(asset.asset, "endpoint.1.NUT_SNMP.MIB", m_params.settings.mib, false);
         }
     }
+
+    //epdu daisy_chaine attribut
+    if(asset.asset.subtype == "epdu") {
+
+        std::string daisyChain = "0";
+        if(!asset.subAddress.empty()){
+            daisyChain = asset.subAddress;
+        }
+        addAssetVal(asset.asset, "daisy_chain", daisyChain);
+    }
+
 }
 
 
