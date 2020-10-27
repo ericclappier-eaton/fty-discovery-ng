@@ -164,47 +164,23 @@ void Assets::enrichAsset(commands::assets::Return& asset)
         asset.asset.subtype = "sts";
     }
 
-    addAssetVal(asset.asset, "ip.1", m_params.address);
-    addAssetVal(asset.asset, "endpoint.1.protocol", m_params.protocol);
-    addAssetVal(asset.asset, "endpoint.1.port", std::to_string(m_params.port));
-    addAssetVal(asset.asset, "endpoint.1.sub_address", asset.subAddress);
+    addAssetVal(asset.asset, "ip.1", m_params.address, false);
+    addAssetVal(asset.asset, "endpoint.1.protocol", m_params.protocol, false);
+    addAssetVal(asset.asset, "endpoint.1.port", std::to_string(m_params.port), false);
+    addAssetVal(asset.asset, "endpoint.1.sub_address", asset.subAddress, false);
+    addAssetVal(asset.asset, "endpoint.1.status.operating", "IN_SERVICE", false);
+    addAssetVal(asset.asset, "endpoint.1.status.error_msg", "", false);
 
     if (m_params.protocol == "NUT_SNMP") {
         if (m_params.settings.credentialId.hasValue()) {
-            addAssetVal(asset.asset, "endpoint.1.NUT_SNMP.secw_credential_id", m_params.settings.credentialId);
+            addAssetVal(asset.asset, "endpoint.1.NUT_SNMP.secw_credential_id", m_params.settings.credentialId, false);
         }
         if (m_params.settings.community.hasValue()) {
-            addAssetVal(asset.asset, "endpoint.1.NUT_SNMP.community", m_params.settings.community);
+            addAssetVal(asset.asset, "endpoint.1.NUT_SNMP.community", m_params.settings.community, false);
         }
         if (m_params.settings.mib.hasValue()) {
-            addAssetVal(asset.asset, "endpoint.1.NUT_SNMP.MIB", m_params.settings.mib);
+            addAssetVal(asset.asset, "endpoint.1.NUT_SNMP.MIB", m_params.settings.mib, false);
         }
-    }
-
-    auto status = asset.asset.ext.find([](const pack::StringMap& info) {
-        return info.contains("status.ups");
-    });
-    if (status != std::nullopt) {
-        auto sts = fty::split((*status)["status.ups"], " ");
-        std::vector<std::string> st;
-        for(const auto& it: sts) {
-            if (it == "OL") {
-                st.push_back("ONLINE");
-            } else if (it == "OB"){
-                st.push_back("ONBATTERY");
-            } else if (it == "BOOST"){
-                st.push_back("ONBOOST");
-            } else if (it == "OFF"){
-                st.push_back("SLEEPING");
-            } else if (it == "BYPASS"){
-                st.push_back("ONBYPASS");
-            } else if (it == "TRIM"){
-                st.push_back("ONBUCK");
-            }
-        }
-        addAssetVal(asset.asset, "endpoint.1.status.operating", implode(st, "|"));
-    } else {
-        addAssetVal(asset.asset, "endpoint.1.status.operating", "UNKNOWN");
     }
 }
 
