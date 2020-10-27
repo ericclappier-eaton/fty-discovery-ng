@@ -108,7 +108,7 @@ void Assets::parse(const std::string& cnt, commands::assets::Out& out)
 
     //Get the device type
     auto it = tmpMap.find("device.type");
-    std::string deviceType = it != tmpMap.end() ? fty::convert<std::sring>(it->second) : "";
+    std::string deviceType = it != tmpMap.end() ? fty::convert<std::string>(it->second) : "";
 
     it = tmpMap.find("device.count");
 
@@ -132,7 +132,7 @@ void Assets::parse(const std::string& cnt, commands::assets::Out& out)
                 }
             }
             enrichAsset(asset);
-            
+
         }
     } else {
         auto& asset      = out.append();
