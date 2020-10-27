@@ -146,9 +146,8 @@ struct AutoRemove
 {
     template <typename T, typename Func>
     AutoRemove(T& val, Func&& deleter)
-        : m_deleter([&]() {
+        : m_deleter([=]() {
             deleter(val);
-            val = {};
         })
     {
     }
