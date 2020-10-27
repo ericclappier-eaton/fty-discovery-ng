@@ -71,8 +71,8 @@ TEST_CASE("Protocols / Fake request")
     auto res = ret->userData.decode<fty::commands::protocols::Out>();
     CHECK(res);
     CHECK(2 == res->size());
-    CHECK("NUT_SNMP" == (*res)[0]);
-    CHECK("NUT_XML_PDC" == (*res)[1]);
+    CHECK("nut_snmp" == (*res)[0]);
+    CHECK("nut_xml_pdc" == (*res)[1]);
 }
 
 TEST_CASE("Protocols / resolve")

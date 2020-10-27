@@ -60,7 +60,7 @@ namespace commands::assets {
         {
         public:
             pack::String credentialId = FIELD("secw_credential_id");
-            pack::String mib          = FIELD("MIB");
+            pack::String mib          = FIELD("mib");
             pack::String community    = FIELD("community");
             pack::UInt32 timeout      = FIELD("timeout", 1000); // timeout in milliseconds
 

@@ -49,7 +49,7 @@ TEST_CASE("Assets / Test output")
         fty::commands::assets::In in;
         in.address = "127.0.0.1";
         in.port    = 1161;
-        in.protocol  = "NUT_SNMP";
+        in.protocol  = "nut_snmp";
 
         SECTION("Daisy device epdu.147")
         {

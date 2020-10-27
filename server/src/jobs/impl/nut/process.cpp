@@ -24,10 +24,10 @@ Process::~Process()
 Expected<void> Process::init(const std::string& address, uint16_t port)
 {
     std::string driver;
-    if (m_protocol == "NUT_SNMP") {
+    if (m_protocol == "nut_snmp") {
         driver = "snmp-ups";
     }
-    if (m_protocol == "NUT_XML_PDC") {
+    if (m_protocol == "nut_xml_pdc") {
         driver = "netxml-ups";
     }
 
@@ -36,16 +36,16 @@ Expected<void> Process::init(const std::string& address, uint16_t port)
     }
 
     if (!port) {
-        if (m_protocol == "NUT_XML_PDC") {
+        if (m_protocol == "nut_xml_pdc") {
             port = 80;
-        } else if (m_protocol == "NUT_SNMP") {
+        } else if (m_protocol == "nut_snmp") {
             port = 161;
         }
     }
 
     std::string toconnect = fmt::format("{}:{}", address, port);
 
-    if (m_protocol == "NUT_XML_PDC") {
+    if (m_protocol == "nut_xml_pdc") {
         if (address.find("http://") != 0) {
             toconnect = "http://" + toconnect;
         }
@@ -60,7 +60,7 @@ Expected<void> Process::init(const std::string& address, uint16_t port)
             "-d", "1"
         }));
         m_process->setEnvVar("NUT_STATEPATH", m_root);
-        if (m_protocol == "NUT_SNMP") {
+        if (m_protocol == "nut_snmp") {
             m_process->setEnvVar("MIBDIRS", Config::instance().mibDatabase);
         }
         return {};
@@ -89,7 +89,7 @@ Expected<void> Process::setCredentialId(const std::string& credential)
         return unexpected("uninitialized");
     }
 
-    if (m_protocol != "NUT_SNMP") {
+    if (m_protocol != "nut_snmp") {
         return unexpected("unsupported");
     }
 
@@ -170,7 +170,7 @@ Expected<void> Process::setCommunity(const std::string& community)
         return unexpected("uninitialized");
     }
 
-    if (m_protocol != "NUT_SNMP") {
+    if (m_protocol != "nut_snmp") {
         return unexpected("unsupported");
     }
 
@@ -199,7 +199,7 @@ Expected<void> Process::setMib(const std::string& mib)
         return unexpected("uninitialized");
     }
 
-    if (m_protocol != "NUT_SNMP") {
+    if (m_protocol != "nut_snmp") {
         return unexpected("unsupported");
     }
 

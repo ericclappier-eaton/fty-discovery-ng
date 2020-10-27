@@ -57,7 +57,7 @@ inline std::ostream& operator<<(std::ostream& ss, Type type)
 void Protocols::run(const commands::protocols::In& in, commands::protocols::Out& out)
 {
     if (in.address == "__fake__") {
-        out.setValue({"NUT_SNMP", "NUT_XML_PDC"});
+        out.setValue({"nut_snmp", "nut_xml_pdc"});
         return;
     }
 
@@ -86,10 +86,10 @@ void Protocols::run(const commands::protocols::In& in, commands::protocols::Out&
     for (const auto& prot : protocols) {
         switch (prot) {
             case Type::Snmp:
-                out.append("NUT_SNMP");
+                out.append("nut_snmp");
                 break;
             case Type::Xml:
-                out.append("NUT_XML_PDC");
+                out.append("nut_xml_pdc");
                 break;
         }
     }

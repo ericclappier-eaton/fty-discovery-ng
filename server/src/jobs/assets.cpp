@@ -31,7 +31,7 @@ void Assets::run(const commands::assets::In& in, commands::assets::Out& out)
 
     m_params = in;
     // Workaround to check if snmp is available. Read mibs from asset
-    if (m_params.protocol == "NUT_SNMP") {
+    if (m_params.protocol == "nut_snmp") {
         if (!m_params.port.hasValue()) {
             m_params.port = 161;
         }
@@ -184,15 +184,15 @@ void Assets::enrichAsset(commands::assets::Return& asset)
 
 
 
-    if (m_params.protocol == "NUT_SNMP") {
+    if (m_params.protocol == "nut_snmp") {
         if (m_params.settings.credentialId.hasValue()) {
-            addAssetVal(asset.asset, "endpoint.1.NUT_SNMP.secw_credential_id", m_params.settings.credentialId, false);
+            addAssetVal(asset.asset, "endpoint.1.nut_snmp.secw_credential_id", m_params.settings.credentialId, false);
         }
         if (m_params.settings.community.hasValue()) {
-            addAssetVal(asset.asset, "endpoint.1.NUT_SNMP.community", m_params.settings.community, false);
+            addAssetVal(asset.asset, "endpoint.1.nut_snmp.community", m_params.settings.community, false);
         }
         if (m_params.settings.mib.hasValue()) {
-            addAssetVal(asset.asset, "endpoint.1.NUT_SNMP.MIB", m_params.settings.mib, false);
+            addAssetVal(asset.asset, "endpoint.1.nut_snmp.MIB", m_params.settings.mib, false);
         }
     }
 
