@@ -106,7 +106,11 @@ void Assets::parse(const std::string& cnt, commands::assets::Out& out)
         tmpMap.emplace(key, value);
     }
 
-    auto it = tmpMap.find("device.count");
+    //Get the device type
+    auto it = tmpMap.find("device.type");
+    std::string deviceType = it != tmpMap.end() ? fty::convert<std::sring>(it->second) : "";
+
+    it = tmpMap.find("device.count");
 
     int dcount = it != tmpMap.end() ? fty::convert<int>(it->second) : 0;
     if (dcount) {
@@ -115,6 +119,7 @@ void Assets::parse(const std::string& cnt, commands::assets::Out& out)
             auto& asset      = out.append();
             asset.subAddress = std::to_string(i + 1);
             asset.asset.type = "device";
+            asset.asset.subtype = deviceType;
 
             std::string prefix = "device." + std::to_string(i + 1) + ".";
             for (const auto& p : tmpMap) {
@@ -127,11 +132,13 @@ void Assets::parse(const std::string& cnt, commands::assets::Out& out)
                 }
             }
             enrichAsset(asset);
+            
         }
     } else {
         auto& asset      = out.append();
         asset.subAddress = "";
         asset.asset.type = "device";
+        asset.asset.subtype = deviceType;
 
         for (const auto& p : tmpMap) {
             if (auto key = impl::nut::Mapper::mapKey(p.first); !key.empty()) {
@@ -151,12 +158,16 @@ void Assets::addAssetVal(commands::assets::Return::Asset& asset, const std::stri
 
 void Assets::enrichAsset(commands::assets::Return& asset)
 {
-    auto type = asset.asset.ext.find([](const pack::StringMap& info) {
-        return info.contains("device.type");
-    });
-    if (type != std::nullopt) {
-        asset.asset.subtype = (*type)["device.type"];
+    if(asset.asset.subtype.empty()) {
+        auto type = asset.asset.ext.find([](const pack::StringMap& info) {
+            return info.contains("device.type");
+        });
+
+        if (type != std::nullopt) {
+            asset.asset.subtype = (*type)["device.type"];
+        }
     }
+
     if (asset.asset.subtype == "pdu") {
         asset.asset.subtype = "epdu";
     }
