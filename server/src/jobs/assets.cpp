@@ -142,11 +142,11 @@ void Assets::parse(const std::string& cnt, commands::assets::Out& out)
     }
 }
 
-void Assets::addAssetVal(commands::assets::Return::Asset& asset, const std::string& key, const std::string& val)
+void Assets::addAssetVal(commands::assets::Return::Asset& asset, const std::string& key, const std::string& val, bool readOnly)
 {
     auto& ext = asset.ext.append();
     ext.append(key, val);
-    ext.append("read_only", "true");
+    ext.append("read_only", (readOnly ? "true" : "false"));
 }
 
 void Assets::enrichAsset(commands::assets::Return& asset)

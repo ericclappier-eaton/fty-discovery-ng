@@ -32,7 +32,7 @@ public:
     void run(const commands::assets::In& in, commands::assets::Out& out);
 private:
     void parse(const std::string& cnt, commands::assets::Out& out);
-    void addAssetVal(commands::assets::Return::Asset& asset, const std::string& key, const std::string& val);
+    void addAssetVal(commands::assets::Return::Asset& asset, const std::string& key, const std::string& val, bool readOnly = true);
     void enrichAsset(commands::assets::Return& asset);
 
 private:
