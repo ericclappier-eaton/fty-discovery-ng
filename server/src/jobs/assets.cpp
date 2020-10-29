@@ -70,8 +70,6 @@ void Assets::run(const commands::assets::In& in, commands::assets::Out& out)
             if (auto set = proc.setCommunity(m_params.settings.community); !set) {
                 throw Error(set.error());
             }
-        } else {
-            throw Error("Credentials or community is not set");
         }
 
         if (m_params.settings.timeout.hasValue()) {
