@@ -196,6 +196,8 @@ void Assets::enrichAsset(commands::assets::Return& asset)
     if (manufacturer != std::nullopt && model != std::nullopt && serial != std::nullopt) {
         addAssetVal(asset.asset, "uuid",
             fty::impl::generateUUID((*manufacturer)["manufacturer"], (*model)["model"], (*serial)["serial"]), false);
+    } else {
+        addAssetVal(asset.asset, "uuid", "", false);
     }
 
     if (m_params.protocol == "nut_snmp") {
