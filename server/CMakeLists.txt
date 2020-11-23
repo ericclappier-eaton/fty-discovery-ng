@@ -24,6 +24,8 @@ etn_target(static ${PROJECT_NAME}-static
         src/jobs/impl/ping.h
         src/jobs/impl/mibs.cpp
         src/jobs/impl/mibs.h
+        src/jobs/impl/uuid.cpp
+        src/jobs/impl/uuid.h
 
         src/jobs/impl/nut/mapper.cpp
         src/jobs/impl/nut/mapper.h
@@ -41,6 +43,8 @@ etn_target(static ${PROJECT_NAME}-static
         fty_security_wallet
         cxxtools
         fty_common_socket
+        crypto
+        uuid
     PRIVATE
 )
 
