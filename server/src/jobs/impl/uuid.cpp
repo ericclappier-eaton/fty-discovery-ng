@@ -15,6 +15,8 @@
 */
 
 #include "uuid.h"
+
+#include <array>
 #include <fty_log.h>
 #include <openssl/sha.h>
 #include <uuid/uuid.h>
@@ -31,9 +33,8 @@ std::string generateUUID(const std::string& manufacturer, const std::string& mod
 
         std::string src = ns + manufacturer + model + serial;
         // hash must be zeroed first
-        unsigned char* hash = static_cast<unsigned char*>(calloc(SHA_DIGEST_LENGTH, sizeof(unsigned char)));
-
-        SHA1(reinterpret_cast<const unsigned char*>(src.c_str()), src.length(), hash);
+        std::array<unsigned char, SHA_DIGEST_LENGTH> hash;
+        SHA1(reinterpret_cast<const unsigned char*>(src.c_str()), src.length(), hash.data());
 
         hash[6] &= 0x0F;
         hash[6] |= 0x50;
@@ -41,7 +42,7 @@ std::string generateUUID(const std::string& manufacturer, const std::string& mod
         hash[8] |= 0x80;
 
         char uuid_char[37];
-        uuid_unparse_lower(hash, uuid_char);
+        uuid_unparse_lower(hash.data(), uuid_char);
 
         uuid = uuid_char;
     } else {
