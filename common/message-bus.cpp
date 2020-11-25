@@ -55,11 +55,11 @@ Expected<Message> MessageBus::send(const std::string& queue, const Message& msg)
     }
     msg.meta.from = m_actorName;
     try {
-        Message m(m_bus->request(queue, msg.toMessageBus(), 1000));
+        Message m(m_bus->request(queue, msg.toMessageBus(), 10000));
         if (m.meta.status == Message::Status::Error) {
             return unexpected(*m.userData.decode<std::string>());
         }
-        return m;
+        return Expected<Message>(m);
     } catch (messagebus::MessageBusException& ex) {
         return unexpected(ex.what());
     }
@@ -89,7 +89,7 @@ Expected<Message> MessageBus::recieve(const std::string& queue)
         m_bus->receive(queue, [&ret](const messagebus::Message& msg) {
             ret = Message(msg);
         });
-        return ret;
+        return Expected<Message>(ret);
     } catch (messagebus::MessageBusException& ex) {
         return unexpected(ex.what());
     }

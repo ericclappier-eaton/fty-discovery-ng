@@ -1,0 +1,15 @@
+<mapping>
+    <target>discovery/mibs@lib${NAME}</target>
+    <url>^/api/v1/admin/discovery/nut_snmp/mib$</url>
+    <method>POST</method>
+</mapping>
+<mapping>
+    <target>discovery/protocols@lib${NAME}</target>
+    <url>^/api/v1/admin/discovery/protocols$</url>
+    <method>POST</method>
+</mapping>
+<mapping>
+    <target>discovery/assets@lib${NAME}</target>
+    <url>^/api/v1/admin/discovery/assets$</url>
+    <method>POST</method>
+</mapping>

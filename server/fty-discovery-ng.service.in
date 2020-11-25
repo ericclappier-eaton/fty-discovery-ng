@@ -1,0 +1,24 @@
+[Unit]
+Description=FTY discovery service
+After=malamute.service network.target fty-db.target
+Requires=malamute.service network.target fty-db.target
+
+After=fty-asset.service
+Requires=fty-asset.service
+BindsTo=fty-asset.service
+
+PartOf=bios.target
+
+After=fty-security-wallet.service
+Requires=fty-security-wallet.service
+BindsTo=fty-security-wallet.service
+
+[Service]
+Type=simple
+ExecStart=${INSTALL_DIR}/${NAME} --config=${CONFIG_DIR}/discovery.conf --daemon
+User=discovery-monitoring-daemon
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+
+[Install]
+WantedBy=bios.target

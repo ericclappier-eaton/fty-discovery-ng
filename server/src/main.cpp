@@ -1,7 +1,7 @@
 #include "config.h"
 #include "daemon.h"
 #include "discovery.h"
-#include "jobs/protocols/snmp.h"
+#include "jobs/impl/snmp.h"
 #include <fty/command-line.h>
 #include <fty_log.h>
 
@@ -15,7 +15,7 @@ int main(int argc, char** argv)
     fty::CommandLine cmd("New discovery service", {
         {"--config", config, "Configuration file"},
         {"--daemon", daemon, "Daemonize this application"},
-        {"--help", help, "Show this help"}
+        {"--help",   help,   "Show this help"}
     });
     // clang-format on
 
@@ -36,7 +36,7 @@ int main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    fty::protocol::Snmp::instance().init(fty::Config::instance().mibDatabase);
+    fty::impl::Snmp::instance().init(fty::Config::instance().mibDatabase);
     ManageFtyLog::setInstanceFtylog(fty::Config::instance().actorName, fty::Config::instance().logConfig);
 
     if (daemon) {
@@ -45,7 +45,6 @@ int main(int argc, char** argv)
     }
 
     if (auto res = dis.init()) {
-        log_debug("Run discovery");
         dis.run();
         dis.shutdown();
     } else {

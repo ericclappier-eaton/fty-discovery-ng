@@ -9,6 +9,7 @@ etn_target(static ${PROJECT_NAME}-common
         message.h
         message.cpp
         commands.h
+        discovery-task.h
     USES
         fty-utils
         fty-pack
