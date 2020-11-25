@@ -21,26 +21,27 @@
 
 #include "asset.h"
 #include "message-bus.h"
+#include <fty/rest/component.h>
 
 namespace fty {
 
 unsigned Asset::run()
 {
-    auto user = global<UserInfo>("UserInfo user");
-    if (auto ret = checkPermissions(**user, m_permissions); !ret) {
+    rest::User user(m_request);
+    if (auto ret = checkPermissions(user.profile(), m_permissions); !ret) {
         throw rest::Error(ret.error());
     }
 
     commands::assets::In param;
-    if (auto res = pack::json::deserialize(m_request.getBody(), param); !res) {
-        throw rest::Error("bad-input", m_request.getArg(0));
+    if (auto res = pack::json::deserialize(m_request.body(), param); !res) {
+        throw rest::errors::BadRequestDocument(res.error());
     }
 
     if (auto asset = assets(param)) {
-        m_reply.out() << *asset << "\n\n";
+        m_reply << *asset << "\n\n";
         return HTTP_OK;
     } else {
-        throw rest::Error("internal-error", asset.error());
+        throw rest::errors::Internal(asset.error());
     }
 }
 

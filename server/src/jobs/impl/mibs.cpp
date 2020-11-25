@@ -176,7 +176,7 @@ Expected<MibsReader::MibList> MibsReader::read() const
         }
     }
 
-    return std::move(mibs);
+    return mibs;
 }
 
 Expected<std::string> MibsReader::readName() const
