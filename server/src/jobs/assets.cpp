@@ -19,6 +19,7 @@
 #include "impl/nut/mapper.h"
 #include "impl/nut/process.h"
 #include "impl/ping.h"
+#include "impl/uuid.h"
 #include <fty/split.h>
 
 namespace fty::job {
@@ -180,7 +181,24 @@ void Assets::enrichAsset(commands::assets::Return& asset)
     addAssetVal(asset.asset, "endpoint.1.status.operating", "IN_SERVICE", false);
     addAssetVal(asset.asset, "endpoint.1.status.error_msg", "", false);
 
+    auto manufacturer = asset.asset.ext.find([](const pack::StringMap& info) {
+        return info.contains("manufacturer");
+    });
 
+    auto model = asset.asset.ext.find([](const pack::StringMap& info) {
+        return info.contains("model");
+    });
+
+    auto serial = asset.asset.ext.find([](const pack::StringMap& info) {
+        return info.contains("serial_no");
+    });
+
+    if (manufacturer != std::nullopt && model != std::nullopt && serial != std::nullopt) {
+        addAssetVal(asset.asset, "uuid",
+            fty::impl::generateUUID((*manufacturer)["manufacturer"], (*model)["model"], (*serial)["serial"]), false);
+    } else {
+        addAssetVal(asset.asset, "uuid", "", false);
+    }
 
     if (m_params.protocol == "nut_snmp") {
         if (m_params.settings.credentialId.hasValue()) {
@@ -203,7 +221,6 @@ void Assets::enrichAsset(commands::assets::Return& asset)
         }
         addAssetVal(asset.asset, "daisy_chain", daisyChain);
     }
-
 }
 
 
