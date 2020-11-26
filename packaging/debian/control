@@ -15,7 +15,8 @@ Build-Depends:
     fty-cmake-rest-dev,
     libfty-security-wallet-dev,
     libfty-common-socket-dev,
-    libcxxtools-dev
+    libcxxtools-dev,
+    uuid-dev
 Standards-Version: 1.0.0
 Section: devel
 Priority: extra
