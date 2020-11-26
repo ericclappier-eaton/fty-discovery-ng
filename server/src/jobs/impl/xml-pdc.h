@@ -103,7 +103,7 @@ public:
         }
         T info;
         neon::deserialize(*cnt, info);
-        return std::move(info);
+        return info;
     }
 
 private:

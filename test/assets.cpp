@@ -28,7 +28,7 @@ TEST_CASE("Assets / Unaviable host")
     msg.userData.setString(*pack::json::serialize(in));
     fty::Expected<fty::Message> ret = Test::send(msg);
     CHECK_FALSE(ret);
-    CHECK("Host is not available" == ret.error());
+    CHECK("Host is not available: pointtosky" == ret.error());
 }
 
 TEST_CASE("Assets / Test output")
@@ -38,8 +38,8 @@ TEST_CASE("Assets / Test output")
         "--data-dir=assets",
         "--agent-udpv4-endpoint=127.0.0.1:1161",
         "--logging-method=file:.snmpsim.txt",
-        "--variation-modules-dir=assets",
-        "--log-level=error"
+        "--variation-modules-dir=assets"/*,
+        "--log-level=error"*/
     });
     // clang-format on
 

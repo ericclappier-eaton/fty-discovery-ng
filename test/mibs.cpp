@@ -37,12 +37,13 @@ TEST_CASE("Mibs / Unaviable host")
 TEST_CASE("Mibs / get mibs")
 {
     // clang-format off
-    fty::Process proc("snmpsimd",  {
+    fty::Process proc("/usr/bin/python3",  {
+        "/usr/bin/snmpsimd",
         "--data-dir=root",
         "--agent-udpv4-endpoint=127.0.0.1:1161",
         "--logging-method=file:.snmpsim.txt",
-        "--variation-modules-dir=root",
-        "--log-level=error"
+        "--variation-modules-dir=root"/*,
+        "--log-level=error"*/
     });
     // clang-format on
 
@@ -51,7 +52,10 @@ TEST_CASE("Mibs / get mibs")
         msg.userData.setString(*pack::json::serialize(in));
 
         fty::Expected<fty::Message> ret = Test::send(msg);
-        CHECK(ret);
+        if (!ret) {
+            FAIL(ret.error());
+        }
+        REQUIRE(ret);
 
         fty::Expected<fty::commands::mibs::Out> res = ret->userData.decode<fty::commands::mibs::Out>();
         CHECK(res);
@@ -60,7 +64,6 @@ TEST_CASE("Mibs / get mibs")
     };
 
     if (auto pid = proc.run()) {
-
         fty::commands::mibs::In in;
         in.address = "127.0.0.1";
         in.port    = 1161;
@@ -116,6 +119,7 @@ TEST_CASE("Mibs / get mibs")
 
         proc.interrupt();
         proc.wait();
+        //std::cerr << proc.readAllStandardError() << std::endl;
     } else {
         FAIL(pid.error());
     }
