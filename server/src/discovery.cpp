@@ -58,7 +58,7 @@ Expected<void> Discovery::init()
         if (auto sub = m_bus.subsribe(fty::Channel, &Discovery::discover, this)) {
             return {};
         } else {
-            return unexpected(res.error());
+            return unexpected(sub.error());
         }
     } else {
         return unexpected(res.error());
