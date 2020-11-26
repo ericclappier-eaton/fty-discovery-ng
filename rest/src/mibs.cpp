@@ -23,26 +23,27 @@
 #include "commands.h"
 #include "message-bus.h"
 #include <fty_common_rest_utils_web.h>
+#include <fty/rest/component.h>
 
 namespace fty {
 
 unsigned Mibs::run()
 {
-    auto user = global<UserInfo>("UserInfo user");
-    if (auto ret = checkPermissions(**user, m_permissions); !ret) {
+    rest::User user(m_request);
+    if (auto ret = checkPermissions(user.profile(), m_permissions); !ret) {
         throw rest::Error(ret.error());
     }
 
     commands::mibs::In param;
-    if (auto res = pack::json::deserialize(m_request.getBody(), param); !res) {
-        throw rest::Error("bad-input", m_request.getArg(0));
+    if (auto res = pack::json::deserialize(m_request.body(), param); !res) {
+        throw rest::errors::BadRequestDocument(res.error());
     }
 
     if (auto list = mibs(param)) {
-        m_reply.out() << *list << "\n\n";
+        m_reply << *list << "\n\n";
         return HTTP_OK;
     } else {
-        throw rest::Error("internal-error", list.error());
+        throw rest::errors::Internal(list.error());
     }
 }
 

@@ -22,7 +22,7 @@
 #pragma once
 
 #include "commands.h"
-#include <fty/rest-support.h>
+#include <fty/rest/runner.h>
 
 namespace fty {
 
@@ -38,7 +38,7 @@ private:
 private:
     // clang-format off
     Permissions m_permissions = {
-        { BiosProfile::Admin, rest::Access::Edit }
+        { rest::User::Profile::Admin, rest::Access::Edit }
     };
     // clang-format on
 };
