@@ -195,7 +195,7 @@ void Assets::enrichAsset(commands::assets::Return& asset)
 
     if (manufacturer != std::nullopt && model != std::nullopt && serial != std::nullopt) {
         addAssetVal(asset.asset, "uuid",
-            fty::impl::generateUUID((*manufacturer)["manufacturer"], (*model)["model"], (*serial)["serial"]), false);
+            fty::impl::generateUUID((*manufacturer)["manufacturer"], (*model)["model"], (*serial)["serial_no"]), false);
     } else {
         addAssetVal(asset.asset, "uuid", "", false);
     }

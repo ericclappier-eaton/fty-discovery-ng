@@ -37,13 +37,12 @@ TEST_CASE("Mibs / Unaviable host")
 TEST_CASE("Mibs / get mibs")
 {
     // clang-format off
-    fty::Process proc("/usr/bin/python3",  {
-        "/usr/bin/snmpsimd",
+    fty::Process proc("snmpsimd", {
         "--data-dir=root",
         "--agent-udpv4-endpoint=127.0.0.1:1161",
         "--logging-method=file:.snmpsim.txt",
-        "--variation-modules-dir=root"/*,
-        "--log-level=error"*/
+        "--variation-modules-dir=root",
+        "--log-level=error"
     });
     // clang-format on
 
@@ -64,9 +63,11 @@ TEST_CASE("Mibs / get mibs")
     };
 
     if (auto pid = proc.run()) {
+std::cerr << *pid << std::endl;
         fty::commands::mibs::In in;
         in.address = "127.0.0.1";
         in.port    = 1161;
+        in.timeout = 5000;
 
         SECTION("Daisy device epdu.147")
         {
@@ -117,9 +118,9 @@ TEST_CASE("Mibs / get mibs")
             CHECK("EATON-OIDS::xupsMIB" == res[0]);
         }
 
+        //std::cerr << proc.readAllStandardError() << std::endl;
         proc.interrupt();
         proc.wait();
-        //std::cerr << proc.readAllStandardError() << std::endl;
     } else {
         FAIL(pid.error());
     }

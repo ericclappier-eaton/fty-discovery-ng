@@ -19,6 +19,7 @@
 #include "src/config.h"
 #include <regex>
 #include <fty_log.h>
+#include <iostream>
 
 
 namespace fty::impl {

@@ -38,8 +38,8 @@ TEST_CASE("Assets / Test output")
         "--data-dir=assets",
         "--agent-udpv4-endpoint=127.0.0.1:1161",
         "--logging-method=file:.snmpsim.txt",
-        "--variation-modules-dir=assets"/*,
-        "--log-level=error"*/
+        "--variation-modules-dir=assets",
+        "--log-level=error"
     });
     // clang-format on
 
@@ -50,6 +50,7 @@ TEST_CASE("Assets / Test output")
         in.address = "127.0.0.1";
         in.port    = 1161;
         in.protocol  = "nut_snmp";
+        in.settings.timeout = 10000;
 
         SECTION("Daisy device epdu.147")
         {
@@ -69,17 +70,17 @@ TEST_CASE("Assets / Test output")
             in.settings.community = "mge.191";
         }
 
-        SECTION("HP device cpqpqwer.114")
+        /*SECTION("HP device cpqpqwer.114")
         {
             in.settings.mib = "CPQPOWER-MIB::ups";
             in.settings.community = "cpqpqwer.114";
-        }
+        }*/
 
-        SECTION("Lenovo device lenovo.181")
+        /*SECTION("Lenovo device lenovo.181")
         {
             in.settings.mib = "joint-iso-ccitt";
             in.settings.community = "lenovo.181";
-        }
+        }*/
 
         SECTION("Genapi device xups.238")
         {
