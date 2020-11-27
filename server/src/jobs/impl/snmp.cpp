@@ -118,7 +118,7 @@ public:
                 m_sess.version = SNMP_VERSION_3;
 
                 m_sess.securityName    = strdup(credV3->getSecurityName().c_str());
-                m_sess.securityNameLen = strlen(m_sess.securityName);
+                m_sess.securityNameLen = credV3->getSecurityName().size();
 
                 if (auto lvl = level(credV3->getSecurityLevel())) {
                     m_sess.securityLevel = *lvl;
@@ -152,7 +152,7 @@ public:
                 m_sess.version = SNMP_VERSION_1;
                 m_sess.community =
                     const_cast<u_char*>(reinterpret_cast<const u_char*>(strdup(credV1->getCommunityName().c_str())));
-                m_sess.community_len = strlen(reinterpret_cast<const char*>(m_sess.community));
+                m_sess.community_len = credV1->getCommunityName().size();
             }
         } catch (const secw::SecwException& err) {
             return unexpected(err.what());
@@ -162,7 +162,7 @@ public:
 
     Expected<void> setTimeout(uint32_t milliseconds)
     {
-        m_sess.timeout = long(milliseconds * 1000);
+        m_sess.timeout = long(milliseconds) * 1000;
         return {};
     }
 

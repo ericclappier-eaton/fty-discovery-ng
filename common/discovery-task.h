@@ -103,7 +103,11 @@ public:
                 throw Error("Wrong input data: format of payload is incorrect");
             }
 
-            dynamic_cast<T*>(this)->run(cmd, response.out);
+            if (auto it = dynamic_cast<T*>(this)){
+                it->run(cmd, response.out);
+            } else {
+                throw Error("Not a correct task");
+            }
 
             response.status = Message::Status::Ok;
             if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {

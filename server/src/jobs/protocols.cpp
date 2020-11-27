@@ -125,7 +125,8 @@ static Expected<void> timeoutConnect(int sock, const struct sockaddr* name, sock
     if ((ret = connect(sock, name, namelen)) != 0 && errno == EINPROGRESS) {
         pfd.fd     = sock;
         pfd.events = POLLOUT;
-        if (poll(&pfd, 1, 1000) == 1) {
+        ret        = poll(&pfd, 1, 1000);
+        if (ret == 1) {
             optlen = sizeof(optval);
             if (getsockopt(sock, SOL_SOCKET, SO_ERROR, &optval, &optlen) == 0) {
                 errno = optval;
