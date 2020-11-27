@@ -85,6 +85,7 @@ public:
     Impl(const std::string& addr, uint16_t port)
         : m_addr(addr + ":" + std::to_string(port))
     {
+        memset(&m_sess, 0, sizeof(m_sess));
         snmp_sess_init(&m_sess);
 
         m_sess.peername = const_cast<char*>(m_addr.c_str());

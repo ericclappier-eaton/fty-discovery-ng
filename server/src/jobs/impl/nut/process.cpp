@@ -11,7 +11,11 @@ Process::Process(const std::string& protocol)
     : m_protocol(protocol)
 {
     char tmpl[] = "/tmp/nutXXXXXX";
-    m_root      = mkdtemp(tmpl);
+    if (auto temp = mkdtemp(tmpl)) {
+        m_root = temp;
+    } else {
+        m_root = "/tmp/nut";
+    }
 }
 
 Process::~Process()
