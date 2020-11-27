@@ -125,15 +125,13 @@ static Expected<void> timeoutConnect(int sock, const struct sockaddr* name, sock
     if ((ret = connect(sock, name, namelen)) != 0 && errno == EINPROGRESS) {
         pfd.fd     = sock;
         pfd.events = POLLOUT;
-        if ((ret = poll(&pfd, 1, 1000)) == 1) {
+        if (poll(&pfd, 1, 1000) == 1) {
             optlen = sizeof(optval);
-            if ((ret = getsockopt(sock, SOL_SOCKET, SO_ERROR, &optval, &optlen)) == 0) {
+            if (getsockopt(sock, SOL_SOCKET, SO_ERROR, &optval, &optlen) == 0) {
                 errno = optval;
-                ret   = optval == 0 ? 0 : -1;
             }
         } else if (ret == 0) {
             errno = ETIMEDOUT;
-            ret   = -1;
         } else {
             return unexpected("poll failed");
         }

@@ -19,6 +19,7 @@
 #include <netdb.h>
 #include <string>
 #include <string.h>
+#include <unistd.h>
 
 // =====================================================================================================================
 
@@ -53,6 +54,7 @@ inline bool available(const std::string& address)
         if (connect(sock, rp->ai_addr, rp->ai_addrlen) != -1) {
             ret = true;
         }
+        close(sock);
     }
     freeaddrinfo(result);
 

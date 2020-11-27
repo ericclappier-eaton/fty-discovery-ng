@@ -27,24 +27,28 @@ namespace fty::job {
 
 static bool sortMibs(const std::string& l, const std::string& r)
 {
-    // clang-format off
-    static const std::vector<std::regex> snmpMibPriority = {
-        std::regex("XUPS-MIB"),
-        std::regex("MG-SNMP-UPS-MIB"),
-        std::regex(".+")
-    };
-    // clang-format on
+    try {
+        // clang-format off
+        static const std::vector<std::regex> snmpMibPriority = {
+            std::regex("XUPS-MIB"),
+            std::regex("MG-SNMP-UPS-MIB"),
+            std::regex(".+")
+        };
+        // clang-format on
 
-    auto index = [&](const std::string& mib) -> size_t {
-        for (size_t i = 0; i < snmpMibPriority.size(); ++i) {
-            if (std::regex_match(mib, snmpMibPriority[i])) {
-                return i;
+        auto index = [&](const std::string& mib) -> size_t {
+            for (size_t i = 0; i < snmpMibPriority.size(); ++i) {
+                if (std::regex_match(mib, snmpMibPriority[i])) {
+                    return i;
+                }
             }
-        }
-        return 999;
-    };
+            return 999;
+        };
 
-    return index(l) < index(r);
+        return index(l) < index(r);
+    } catch (...) {
+        return false;
+    }
 }
 
 // =====================================================================================================================

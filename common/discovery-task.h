@@ -10,13 +10,23 @@ namespace fty::job {
 
 // =====================================================================================================================
 
+template <typename... Args>
+static std::string formatString(const std::string& msg, const Args&... args)
+{
+    try {
+        return fmt::format(msg, args...);
+    }  catch (const fmt::format_error&) {
+        return msg;
+    }
+}
+
 class Error : public std::runtime_error
 {
 public:
     using std::runtime_error::runtime_error;
     template <typename... Args>
     Error(const std::string& fmt, const Args&... args)
-        : std::runtime_error(fmt::format(fmt, args...))
+        : std::runtime_error(formatString(fmt, args...))
     {
     }
 };

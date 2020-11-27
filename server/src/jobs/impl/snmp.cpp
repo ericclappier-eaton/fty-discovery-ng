@@ -162,7 +162,7 @@ public:
 
     Expected<void> setTimeout(uint32_t milliseconds)
     {
-        m_sess.timeout = milliseconds * 1000;
+        m_sess.timeout = long(milliseconds * 1000);
         return {};
     }
 

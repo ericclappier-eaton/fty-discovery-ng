@@ -1,4 +1,5 @@
 #define CATCH_CONFIG_RUNNER
+#define CATCH_CONFIG_DISABLE_EXCEPTIONS
 
 #include "test-common.h"
 #include <catch2/catch.hpp>
