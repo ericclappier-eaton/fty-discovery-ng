@@ -112,7 +112,7 @@ void Assets::parse(const std::string& cnt, commands::assets::Out& out)
     it = tmpMap.find("device.count");
 
     int dcount = it != tmpMap.end() ? fty::convert<int>(it->second) : 0;
-    if (dcount) {
+    if (dcount > 1) { //daisy chain is always bigger than one
         // daisychain
         for (int i = 0; i < dcount; ++i) {
             auto& asset      = out.append();
