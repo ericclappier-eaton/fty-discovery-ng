@@ -16,7 +16,7 @@ etn_target(shared ${PROJECT_NAME}-rest
         tntnet
         fty_common_logging
         fty_common_rest
-    TARGET_DESTINATION /usr/lib/tntnet
+    TARGET_DESTINATION /usr/lib/bios
 )
 
 ########################################################################################################################
