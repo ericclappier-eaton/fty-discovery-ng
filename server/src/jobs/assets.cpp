@@ -72,6 +72,9 @@ void Assets::run(const commands::assets::In& in, commands::assets::Out& out)
                 throw Error(set.error());
             }
         }
+        if (m_params.settings.username.hasValue() && m_params.settings.password.hasValue()) {
+            proc.setCredential(m_params.settings.username, m_params.settings.password);
+        }
 
         if (m_params.settings.timeout.hasValue()) {
             proc.setTimeout(m_params.settings.timeout);

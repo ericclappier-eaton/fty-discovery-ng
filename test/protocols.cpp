@@ -92,3 +92,19 @@ TEST_CASE("Protocols / resolve")
     fty::Expected<fty::Message> ret2 = Test::send(msg);
 }
 
+/*TEST_CASE("Protocols / powercom")
+{
+    fty::Message msg = Test::createMessage(fty::commands::protocols::Subject);
+
+    fty::commands::protocols::In in;
+    in.address = "10.130.33.34";
+    msg.userData.setString(*pack::json::serialize(in));
+
+    fty::Expected<fty::Message> ret = Test::send(msg);
+
+    CHECK(ret);
+    auto res = ret->userData.decode<fty::commands::protocols::Out>();
+    CHECK(res);
+    CHECK(2 == res->size());
+    CHECK("nut_powercom" == (*res)[0]);
+}*/

@@ -15,6 +15,7 @@ public:
 
     Expected<void>        init(const std::string& address, uint16_t port = 0);
     Expected<void>        setCredentialId(const std::string& credential);
+    Expected<void>        setCredential(const std::string& userName, const std::string& password);
     Expected<void>        setCommunity(const std::string& community);
     Expected<void>        setTimeout(uint milliseconds);
     Expected<void>        setMib(const std::string& mib);
@@ -22,6 +23,9 @@ public:
 
 private:
     Expected<std::string> findExecutable(const std::string& name) const;
+    Expected<void> setupSnmp(const std::string& address, uint16_t port);
+    Expected<void> setupXmlPdc(const std::string& address, uint16_t port);
+    Expected<void> setupPowercom(const std::string& address);
 
 private:
     std::string                   m_protocol;
