@@ -41,6 +41,9 @@ private:
     /// Try out if endpoint support xnmp protocol
     Expected<void> trySnmp(const commands::protocols::In& in) const;
 
+    /// Try out if endpoint support genapi protocol
+    Expected<void> tryPowercom(const commands::protocols::In& in) const;
+
     /// Sorts protocols from most useful
     static void sortProtocols(std::vector<Type>& protocols);
 };

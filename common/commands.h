@@ -63,9 +63,11 @@ namespace commands::assets {
             pack::String mib          = FIELD("mib");
             pack::String community    = FIELD("community");
             pack::UInt32 timeout      = FIELD("timeout", 1000); // timeout in milliseconds
+            pack::String username     = FIELD("username");
+            pack::String password     = FIELD("password");
 
             using pack::Node::Node;
-            META(Settings, credentialId, mib, community, timeout);
+            META(Settings, credentialId, mib, community, timeout, username, password);
         };
 
     public:

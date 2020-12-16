@@ -11,7 +11,7 @@ namespace fty::job {
 // =====================================================================================================================
 
 template <typename... Args>
-static std::string formatString(const std::string& msg, const Args&... args)
+[[maybe_unused]] static std::string formatString(const std::string& msg, const Args&... args)
 {
     try {
         return fmt::format(msg, args...);
