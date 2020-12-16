@@ -16,6 +16,7 @@ Build-Depends:
     libfty-security-wallet-dev,
     libfty-common-socket-dev,
     libcxxtools-dev,
+    libyaml-cpp-dev,
     uuid-dev
 Standards-Version: 1.0.0
 Section: devel
