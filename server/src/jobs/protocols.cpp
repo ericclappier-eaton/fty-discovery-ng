@@ -24,6 +24,7 @@
 #include <poll.h>
 #include <set>
 #include <unistd.h>
+#include <yaml-cpp/yaml.h>
 
 namespace fty::job {
 
@@ -32,8 +33,9 @@ namespace fty::job {
 
 enum class Type
 {
-    Xml  = 1,
-    Snmp = 2
+    Powercom = 1,
+    Xml      = 2,
+    Snmp     = 3,
 };
 
 // =====================================================================================================================
@@ -46,6 +48,9 @@ inline std::ostream& operator<<(std::ostream& ss, Type type)
             break;
         case Type::Xml:
             ss << "Xml";
+            break;
+        case Type::Powercom:
+            ss << "GenApi";
             break;
     }
     return ss;
@@ -81,6 +86,13 @@ void Protocols::run(const commands::protocols::In& in, commands::protocols::Out&
         log_info("Skipped snmp, reason: %s", res.error().c_str());
     }
 
+    if (auto res = tryPowercom(in)) {
+        protocols.emplace_back(Type::Powercom);
+        log_info("Found Powercon device");
+    } else {
+        log_info("Skipped GenApi, reason: %s", res.error().c_str());
+    }
+
     sortProtocols(protocols);
 
     for (const auto& prot : protocols) {
@@ -90,6 +102,9 @@ void Protocols::run(const commands::protocols::In& in, commands::protocols::Out&
                 break;
             case Type::Xml:
                 out.append("nut_xml_pdc");
+                break;
+            case Type::Powercom:
+                out.append("nut_powercom");
                 break;
         }
     }
@@ -112,6 +127,26 @@ Expected<void> Protocols::tryXmlPdc(const commands::protocols::In& in) const
         }
     } else {
         return unexpected(prod.error());
+    }
+}
+
+Expected<void> Protocols::tryPowercom(const commands::protocols::In& in) const
+{
+    neon::Neon ne(in.address);
+    if (auto content = ne.get("etn/v1/comm")) {
+        try {
+            YAML::Node yaml = YAML::Load(*content);
+            for(const auto& node: yaml["services"]["members"]) {
+                if (node["path"].as<std::string>() == "/etn/v1/comm/services/powerdistributions1") {
+                    return {};
+                }
+            }
+            return unexpected("not supported device");
+        } catch (const std::exception&) {
+            return unexpected("not supported device");
+        }
+    } else {
+        return unexpected(content.error());
     }
 }
 

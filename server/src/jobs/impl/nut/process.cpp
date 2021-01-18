@@ -1,10 +1,10 @@
 #include "process.h"
+#include "src/config.h"
+#include "src/jobs/impl/mibs.h"
 #include <filesystem>
 #include <fty/process.h>
 #include <fty_security_wallet.h>
 #include <unistd.h>
-#include "src/jobs/impl/mibs.h"
-#include "src/config.h"
 
 namespace fty::impl::nut {
 Process::Process(const std::string& protocol)
@@ -25,52 +25,92 @@ Process::~Process()
     }
 }
 
-Expected<void> Process::init(const std::string& address, uint16_t port)
+Expected<void> Process::setupSnmp(const std::string& address, uint16_t port)
 {
-    std::string driver;
-    if (m_protocol == "nut_snmp") {
-        driver = "snmp-ups";
-    }
-    if (m_protocol == "nut_xml_pdc") {
-        driver = "netxml-ups";
-    }
-
-    if (driver.empty()) {
-        return unexpected("Protocol {} is not supported", m_protocol);
-    }
-
     if (!port) {
-        if (m_protocol == "nut_xml_pdc") {
-            port = 80;
-        } else if (m_protocol == "nut_snmp") {
-            port = 161;
-        }
+        port = 161;
     }
 
     std::string toconnect = fmt::format("{}:{}", address, port);
 
-    if (m_protocol == "nut_xml_pdc") {
-        if (address.find("http://") != 0) {
-            toconnect = "http://" + toconnect;
-        }
-    }
-
-    log_debug("connect address: %s", toconnect.c_str());
-
-    if (auto path = findExecutable(driver)) {
+    if (auto path = findExecutable("snmp-ups")) {
+        // clang-format off
         m_process = std::unique_ptr<fty::Process>(new fty::Process(*path, {
             "-s", "discover",
             "-x", fmt::format("port={}", toconnect),
             "-d", "1"
         }));
+        // clang-format on
         m_process->setEnvVar("NUT_STATEPATH", m_root);
-        if (m_protocol == "nut_snmp") {
-            m_process->setEnvVar("MIBDIRS", Config::instance().mibDatabase);
-        }
+        m_process->setEnvVar("MIBDIRS", Config::instance().mibDatabase);
         return {};
     } else {
         return unexpected(path.error());
     }
+}
+
+Expected<void> Process::setupXmlPdc(const std::string& address, uint16_t port)
+{
+    if (!port) {
+        port = 80;
+    }
+
+    std::string toconnect = fmt::format("{}:{}", address, port);
+
+    if (address.find("http://") != 0) {
+        toconnect = "http://" + toconnect;
+    }
+
+    if (auto path = findExecutable("netxml-ups")) {
+        // clang-format off
+        m_process = std::unique_ptr<fty::Process>(new fty::Process(*path, {
+            "-s", "discover",
+            "-x", fmt::format("port={}", toconnect),
+            "-d", "1"
+        }));
+        // clang-format on
+        m_process->setEnvVar("NUT_STATEPATH", m_root);
+        return {};
+    } else {
+        return unexpected(path.error());
+    }
+}
+
+Expected<void> Process::setupPowercom(const std::string& address)
+{
+    if (auto path = findExecutable("etn-nut-powerconnect")) {
+        // clang-format off
+        m_process = std::unique_ptr<fty::Process>(new fty::Process(*path, {
+            "-x", fmt::format("port={}", address),
+            "-d", "1"
+        }));
+        // clang-format on
+        return {};
+    } else {
+        return unexpected(path.error());
+    }
+}
+
+Expected<void> Process::init(const std::string& address, uint16_t port)
+{
+    std::string driver;
+    if (m_protocol == "nut_snmp") {
+        if (auto ret = setupSnmp(address, port); !ret) {
+            return unexpected(ret.error());
+        }
+    } else if (m_protocol == "nut_xml_pdc") {
+        if (auto ret = setupXmlPdc(address, port); !ret) {
+            return unexpected(ret.error());
+        }
+    } else if (m_protocol == "nut_powercom") {
+        if (auto ret = setupPowercom(address); !ret) {
+            return unexpected(ret.error());
+        }
+    } else {
+        return unexpected("Protocol {} is not supported", m_protocol);
+    }
+
+    return {};
 }
 
 Expected<std::string> Process::findExecutable(const std::string& name) const
@@ -93,77 +133,105 @@ Expected<void> Process::setCredentialId(const std::string& credential)
         return unexpected("uninitialized");
     }
 
-    if (m_protocol != "nut_snmp") {
-        return unexpected("unsupported");
+    if (m_protocol == "nut_snmp") {
+        fty::SocketSyncClient secwSyncClient("/run/fty-security-wallet/secw.socket");
+        auto                  client = secw::ConsumerAccessor(secwSyncClient);
+
+        auto levelStr = [](secw::Snmpv3SecurityLevel lvl) -> Expected<std::string> {
+            switch (lvl) {
+                case secw::NO_AUTH_NO_PRIV:
+                    return std::string("noAuthNoPriv");
+                case secw::AUTH_NO_PRIV:
+                    return std::string("authNoPriv");
+                case secw::AUTH_PRIV:
+                    return std::string("authPriv");
+                case secw::MAX_SECURITY_LEVEL:
+                    return unexpected("No privs defined");
+            }
+            return unexpected("No privs defined");
+        };
+
+        auto authProtStr = [](secw::Snmpv3AuthProtocol proc) -> Expected<std::string> {
+            switch (proc) {
+                case secw::MD5:
+                    return std::string("MD5");
+                case secw::SHA:
+                    return std::string("SHA");
+                case secw::MAX_AUTH_PROTOCOL:
+                    return unexpected("Wrong protocol");
+            }
+            return unexpected("Wrong protocol");
+        };
+
+        auto authPrivStr = [](secw::Snmpv3PrivProtocol proc) -> Expected<std::string> {
+            switch (proc) {
+                case secw::DES:
+                    return std::string("DES");
+                case secw::AES:
+                    return std::string("AES");
+                case secw::MAX_PRIV_PROTOCOL:
+                    return unexpected("Wrong protocol");
+            }
+            return unexpected("Wrong protocol");
+        };
+
+        try {
+            auto secCred = client.getDocumentWithPrivateData("default", credential);
+
+            if (auto credV3 = secw::Snmpv3::tryToCast(secCred)) {
+                log_debug("Init from wallet for snmp v3");
+                m_process->setEnvVar("SU_VAR_VERSION", "v3");
+                if (auto lvl = levelStr(credV3->getSecurityLevel())) {
+                    m_process->setEnvVar("SU_VAR_SECLEVEL", *lvl);
+                }
+                m_process->setEnvVar("SU_VAR_SECNAME", credV3->getSecurityName());
+                m_process->setEnvVar("SU_VAR_AUTHPASSWD", credV3->getAuthPassword());
+                m_process->setEnvVar("SU_VAR_PRIVPASSWD", credV3->getPrivPassword());
+                if (auto prot = authProtStr(credV3->getAuthProtocol())) {
+                    m_process->setEnvVar("SU_VAR_AUTHPROT", *prot);
+                }
+                if (auto prot = authPrivStr(credV3->getPrivProtocol())) {
+                    m_process->setEnvVar("SU_VAR_PRIVPROT", *prot);
+                }
+            } else if (auto credV1 = secw::Snmpv1::tryToCast(secCred)) {
+                log_debug("Init from wallet for snmp v1");
+                setCommunity(credV1->getCommunityName());
+            } else {
+                return unexpected("Wrong wallet configuratoion");
+            }
+        } catch (const secw::SecwException& err) {
+            return unexpected(err.what());
+        }
+    } else if (m_protocol == "nut_powercom") {
+        fty::SocketSyncClient secwSyncClient("/run/fty-security-wallet/secw.socket");
+        auto                  client = secw::ConsumerAccessor(secwSyncClient);
+
+        try {
+            auto secCred = client.getDocumentWithPrivateData("default", credential);
+            if (auto cred = secw::UserAndPassword::tryToCast(secCred)) {
+                m_process->addArgument("-x");
+                m_process->addArgument(fmt::format("username={}", cred->getUsername()));
+
+                m_process->addArgument("-x");
+                m_process->addArgument(fmt::format("password={}", cred->getPassword()));
+            }
+        } catch (const std::runtime_error& err) {
+            return unexpected(err.what());
+        } catch (const secw::SecwException& err) {
+            return unexpected(err.what());
+        }
     }
+    return {};
+}
 
-    fty::SocketSyncClient secwSyncClient("/run/fty-security-wallet/secw.socket");
-    auto                  client = secw::ConsumerAccessor(secwSyncClient);
+Expected<void> Process::setCredential(const std::string& userName, const std::string& password)
+{
+    if (m_protocol == "nut_powercom") {
+        m_process->addArgument("-x");
+        m_process->addArgument(fmt::format("username={}", userName));
 
-    auto levelStr = [](secw::Snmpv3SecurityLevel lvl) -> Expected<std::string> {
-        switch (lvl) {
-            case secw::NO_AUTH_NO_PRIV:
-                return std::string("noAuthNoPriv");
-            case secw::AUTH_NO_PRIV:
-                return std::string("authNoPriv");
-            case secw::AUTH_PRIV:
-                return std::string("authPriv");
-            case secw::MAX_SECURITY_LEVEL:
-                return unexpected("No privs defined");
-        }
-        return unexpected("No privs defined");
-    };
-
-    auto authProtStr = [](secw::Snmpv3AuthProtocol proc) -> Expected<std::string> {
-        switch (proc) {
-            case secw::MD5:
-                return std::string("MD5");
-            case secw::SHA:
-                return std::string("SHA");
-            case secw::MAX_AUTH_PROTOCOL:
-                return unexpected("Wrong protocol");
-        }
-        return unexpected("Wrong protocol");
-    };
-
-    auto authPrivStr = [](secw::Snmpv3PrivProtocol proc) -> Expected<std::string> {
-        switch (proc) {
-            case secw::DES:
-                return std::string("DES");
-            case secw::AES:
-                return std::string("AES");
-            case secw::MAX_PRIV_PROTOCOL:
-                return unexpected("Wrong protocol");
-        }
-        return unexpected("Wrong protocol");
-    };
-
-    try {
-        auto secCred = client.getDocumentWithPrivateData("default", credential);
-
-        if (auto credV3 = secw::Snmpv3::tryToCast(secCred)) {
-            log_debug("Init from wallet for snmp v3");
-            m_process->setEnvVar("SU_VAR_VERSION", "v3");
-            if (auto lvl = levelStr(credV3->getSecurityLevel())) {
-                m_process->setEnvVar("SU_VAR_SECLEVEL", *lvl);
-            }
-            m_process->setEnvVar("SU_VAR_SECNAME", credV3->getSecurityName());
-            m_process->setEnvVar("SU_VAR_AUTHPASSWD", credV3->getAuthPassword());
-            m_process->setEnvVar("SU_VAR_PRIVPASSWD", credV3->getPrivPassword());
-            if (auto prot = authProtStr(credV3->getAuthProtocol())) {
-                m_process->setEnvVar("SU_VAR_AUTHPROT", *prot);
-            }
-            if (auto prot = authPrivStr(credV3->getPrivProtocol())) {
-                m_process->setEnvVar("SU_VAR_PRIVPROT", *prot);
-            }
-        } else if (auto credV1 = secw::Snmpv1::tryToCast(secCred)) {
-            log_debug("Init from wallet for snmp v1");
-            setCommunity(credV1->getCommunityName());
-        } else {
-            return unexpected("Wrong wallet configuratoion");
-        }
-    } catch (const secw::SecwException& err) {
-        return unexpected(err.what());
+        m_process->addArgument("-x");
+        m_process->addArgument(fmt::format("password={}", password));
     }
     return {};
 }
@@ -189,6 +257,10 @@ Expected<void> Process::setTimeout(uint milliseconds)
 {
     if (!m_process) {
         return unexpected("uninitialized");
+    }
+
+    if (m_protocol != "nut_snmp") {
+        return unexpected("unsupported");
     }
 
     m_process->setEnvVar("SU_VAR_TIMEOUT", std::to_string(milliseconds / 1000));
@@ -226,4 +298,4 @@ Expected<std::string> Process::run() const
     }
 }
 
-} // namespace fty::protocol::nut
+} // namespace fty::impl::nut

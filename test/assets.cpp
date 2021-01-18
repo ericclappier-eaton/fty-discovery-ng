@@ -106,3 +106,20 @@ TEST_CASE("Assets / Test output")
         FAIL(pid.error());
     }
 }
+
+/*TEST_CASE("Assets / Powercom")
+{
+    fty::Message msg = Test::createMessage(fty::commands::assets::Subject);
+
+    fty::commands::assets::In in;
+    in.address = "10.130.33.34";
+    in.protocol  = "nut_powercom";
+    in.settings.timeout = 10000;
+    in.settings.credentialId = "basic";
+
+    msg.userData.setString(*pack::json::serialize(in));
+    fty::Expected<fty::Message> ret = Test::send(msg);
+    if (!ret) {
+        FAIL(ret.error());
+    }
+}*/

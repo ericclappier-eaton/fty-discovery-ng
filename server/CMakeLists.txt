@@ -45,6 +45,7 @@ etn_target(static ${PROJECT_NAME}-static
         fty_common_socket
         crypto
         uuid
+        yaml-cpp
     PRIVATE
 )
 
