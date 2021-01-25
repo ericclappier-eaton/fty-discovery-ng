@@ -116,6 +116,10 @@ Expected<void> Protocols::tryXmlPdc(const commands::protocols::In& in) const
 {
     impl::XmlPdc xml(in.address);
     if (auto prod = xml.get<impl::ProductInfo>("product.xml")) {
+        if(!(prod->name == "Network Management Card" || prod->name == "HPE UPS Network Module")) {
+            return unexpected("unsupported card type");
+        }
+
         if (prod->protocol == "XML.V4") {
             return unexpected("unsupported XML.V4");
         }
