@@ -14,7 +14,7 @@ Requires=fty-security-wallet.service
 BindsTo=fty-security-wallet.service
 
 [Service]
-Type=simple
+Type=forking
 ExecStart=${INSTALL_DIR}/${NAME} --config=${CONFIG_DIR}/discovery.conf --daemon
 User=discovery-monitoring-daemon
 ExecReload=/bin/kill -HUP $MAINPID
