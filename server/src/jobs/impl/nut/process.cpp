@@ -290,7 +290,15 @@ Expected<std::string> Process::run() const
         if (auto stat = m_process->wait(); *stat == 0) {
             return m_process->readAllStandardOutput();
         } else {
-            return unexpected(m_process->readAllStandardError());
+            std::string stdError = m_process->readAllStandardError();
+            // workaround with nut_powercom: Test first if the credentials are correct
+            if (m_protocol == "nut_powercom" &&
+                stdError.find("Error when get client token on") != std::string::npos) {
+                return unexpected("Bad login or password");
+            }
+            else {
+                return unexpected(stdError);
+            }
         }
     } else {
         log_error("Run error: %s", pid.error().c_str());
