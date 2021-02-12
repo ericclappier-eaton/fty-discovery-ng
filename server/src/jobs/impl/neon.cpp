@@ -169,6 +169,10 @@ public:
     static void unpackValue(pack::IProtoMap& /*map*/, const NeonNode& /*neon*/)
     {
     }
+
+    static void unpackValue(pack::IVariant& /*var*/, const NeonNode& /*neon*/)
+    {
+    }
 };
 
 // =====================================================================================================================
