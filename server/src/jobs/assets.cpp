@@ -203,6 +203,28 @@ void Assets::enrichAsset(commands::assets::Return& asset)
         addAssetVal(asset.asset, "uuid", "", false);
     }
 
+    //try to get realpower.nominal fro max_power
+    auto realpower_nominal = asset.asset.ext.find([](const pack::StringMap& info) {
+        return info.contains("realpower.nominal");
+    });
+
+    if( realpower_nominal !=  std::nullopt) {
+        addAssetVal(asset.asset, "max_power", (*realpower_nominal)["realpower.nominal"] , false);
+    } else {
+        //try to get realpower.default.nominal fro max_power
+        auto realpower_default_nominal = asset.asset.ext.find([](const pack::StringMap& info) {
+            return info.contains("realpower.default.nominal");
+        });
+
+        if( realpower_default_nominal !=  std::nullopt) {
+            addAssetVal(asset.asset, "max_power", (*realpower_default_nominal)["realpower.default.nominal"] , false);
+        } 
+    }
+
+    auto serial = asset.asset.ext.find([](const pack::StringMap& info) {
+        return info.contains("serial_no");
+    });
+
     if (m_params.protocol == "nut_snmp") {
         if (m_params.settings.credentialId.hasValue()) {
             addAssetVal(asset.asset, "endpoint.1.nut_snmp.secw_credential_id", m_params.settings.credentialId, false);
