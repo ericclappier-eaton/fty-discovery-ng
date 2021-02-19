@@ -221,10 +221,6 @@ void Assets::enrichAsset(commands::assets::Return& asset)
         } 
     }
 
-    auto serial = asset.asset.ext.find([](const pack::StringMap& info) {
-        return info.contains("serial_no");
-    });
-
     if (m_params.protocol == "nut_snmp") {
         if (m_params.settings.credentialId.hasValue()) {
             addAssetVal(asset.asset, "endpoint.1.nut_snmp.secw_credential_id", m_params.settings.credentialId, false);
