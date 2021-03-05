@@ -74,7 +74,7 @@ void Mibs::run(const commands::mibs::In& in, commands::mibs::Out& out)
     }
 
     if (in.timeout.hasValue()) {
-        reader.setTimeout(in.timeout);
+        reader.setTimeout(in.timeout.value());
     }
 
     std::string assetName;

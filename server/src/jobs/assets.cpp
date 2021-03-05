@@ -77,7 +77,7 @@ void Assets::run(const commands::assets::In& in, commands::assets::Out& out)
         }
 
         if (m_params.settings.timeout.hasValue()) {
-            proc.setTimeout(m_params.settings.timeout);
+            proc.setTimeout(m_params.settings.timeout.value());
         }
 
         if (m_params.settings.mib.hasValue()) {
