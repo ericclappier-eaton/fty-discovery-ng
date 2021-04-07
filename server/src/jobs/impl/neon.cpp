@@ -24,11 +24,11 @@
 
 namespace neon {
 
-Neon::Neon(const std::string& address, uint16_t port)
+Neon::Neon(const std::string& address, uint16_t port, uint16_t timeout)
     : m_session(ne_session_create("http", address.c_str(), port), &closeSession)
 {
-    ne_set_connect_timeout(m_session.get(), 60);
-    ne_set_read_timeout(m_session.get(), 60);
+    ne_set_connect_timeout(m_session.get(), timeout);
+    ne_set_read_timeout(m_session.get(), timeout);
 }
 
 Neon::~Neon()
