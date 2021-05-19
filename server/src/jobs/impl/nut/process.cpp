@@ -82,7 +82,7 @@ Expected<void> Process::setupPowercom(const std::string& address)
         // clang-format off
         m_process = std::unique_ptr<fty::Process>(new fty::Process(*path, {
             "-x", fmt::format("port={}", address),
-            "-d", "2"
+            "-d", "1"
         }));
         // clang-format on
         return {};
