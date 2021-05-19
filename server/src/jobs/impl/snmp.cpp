@@ -127,14 +127,21 @@ public:
 
                 if (auto prot = authProt(credV3->getAuthProtocol())) {
                     m_sess.securityAuthProto    = *prot;
-                    m_sess.securityAuthProtoLen = sizeof(usmHMACMD5AuthProtocol) / sizeof(oid);
                     m_sess.securityAuthKeyLen   = USM_AUTH_KU_LEN;
+			        if (m_sess.securityAuthProto == usmHMACMD5AuthProtocol)
+                        m_sess.securityAuthProtoLen = sizeof(usmHMACMD5AuthProtocol) / sizeof(oid);
+                    else
+                        m_sess.securityAuthProtoLen = sizeof(usmHMACSHA1AuthProtocol) / sizeof(oid);
                 }
 
                 if (auto prot = authPriv(credV3->getPrivProtocol())) {
                     m_sess.securityPrivProto    = *prot;
-                    m_sess.securityPrivProtoLen = sizeof(usmDESPrivProtocol) / sizeof(oid);
-                    m_sess.securityPrivKeyLen   = USM_AUTH_KU_LEN;
+                    m_sess.securityPrivKeyLen   = USM_PRIV_KU_LEN;
+                    /* FIXME: see https://github.com/42ity/nut/blob/FTY/drivers/snmp-ups.c#L79 */
+			        if (m_sess.securityPrivProto == usmDESPrivProtocol)
+                        m_sess.securityPrivProtoLen = sizeof(usmDESPrivProtocol) / sizeof(oid);
+                    else
+                        m_sess.securityPrivProtoLen = sizeof(usmAESPrivProtocol) / sizeof(oid);
                 }
 
                 if (generate_Ku(m_sess.securityAuthProto, u_int(m_sess.securityAuthProtoLen),
@@ -143,11 +150,11 @@ public:
                         &m_sess.securityAuthKeyLen) != SNMPERR_SUCCESS) {
                     log_error("Error generating Ku from authentication pass phrase.");
                 }
-                if (generate_Ku(m_sess.securityPrivProto, u_int(m_sess.securityPrivProtoLen),
+                if (generate_Ku(m_sess.securityAuthProto, u_int(m_sess.securityAuthProtoLen),
                         const_cast<u_char*>(reinterpret_cast<const u_char*>(credV3->getPrivPassword().c_str())),
                         u_int(credV3->getPrivPassword().size()), m_sess.securityPrivKey,
                         &m_sess.securityPrivKeyLen) != SNMPERR_SUCCESS) {
-                    log_error("Error generating Ku from authentication pass phrase.");
+                    log_error("Error generating Ku from privacy pass phrase.");
                 }
             } else if (auto credV1 = secw::Snmpv1::tryToCast(secCred)) {
                 m_sess.version = SNMP_VERSION_1;
