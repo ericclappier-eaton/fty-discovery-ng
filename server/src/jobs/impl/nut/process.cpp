@@ -38,7 +38,7 @@ Expected<void> Process::setupSnmp(const std::string& address, uint16_t port)
         m_process = std::unique_ptr<fty::Process>(new fty::Process(*path, {
             "-s", "discover",
             "-x", fmt::format("port={}", toconnect),
-            "-d", "1"
+            "-d", "2"
         }));
         // clang-format on
         m_process->setEnvVar("NUT_STATEPATH", m_root);
@@ -66,7 +66,7 @@ Expected<void> Process::setupXmlPdc(const std::string& address, uint16_t port)
         m_process = std::unique_ptr<fty::Process>(new fty::Process(*path, {
             "-s", "discover",
             "-x", fmt::format("port={}", toconnect),
-            "-d", "1"
+            "-d", "2"
         }));
         // clang-format on
         m_process->setEnvVar("NUT_STATEPATH", m_root);
@@ -82,7 +82,7 @@ Expected<void> Process::setupPowercom(const std::string& address)
         // clang-format off
         m_process = std::unique_ptr<fty::Process>(new fty::Process(*path, {
             "-x", fmt::format("port={}", address),
-            "-d", "1"
+            "-d", "2"
         }));
         // clang-format on
         return {};
