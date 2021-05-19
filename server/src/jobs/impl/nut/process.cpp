@@ -66,7 +66,7 @@ Expected<void> Process::setupXmlPdc(const std::string& address, uint16_t port)
         m_process = std::unique_ptr<fty::Process>(new fty::Process(*path, {
             "-s", "discover",
             "-x", fmt::format("port={}", toconnect),
-            "-d", "2"
+            "-d", "1"
         }));
         // clang-format on
         m_process->setEnvVar("NUT_STATEPATH", m_root);
