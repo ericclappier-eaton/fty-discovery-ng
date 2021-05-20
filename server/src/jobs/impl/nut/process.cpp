@@ -180,18 +180,37 @@ Expected<void> Process::setCredentialId(const std::string& credential)
 
             if (auto credV3 = secw::Snmpv3::tryToCast(secCred)) {
                 log_debug("Init from wallet for snmp v3");
+                
                 m_process->setEnvVar("SU_VAR_VERSION", "v3");
+                m_process->addArgument("-x");
+                m_process->addArgument(fmt::format("snmp_version={}", "v3"));
+                
                 if (auto lvl = levelStr(credV3->getSecurityLevel())) {
                     m_process->setEnvVar("SU_VAR_SECLEVEL", *lvl);
+                    m_process->addArgument("-x");
+                    m_process->addArgument(fmt::format("secLevel={}", *lvl));
                 }
                 m_process->setEnvVar("SU_VAR_SECNAME", credV3->getSecurityName());
+                m_process->addArgument("-x");
+                m_process->addArgument(fmt::format("secName={}", credV3->getSecurityName()));
+                
                 m_process->setEnvVar("SU_VAR_AUTHPASSWD", credV3->getAuthPassword());
+                m_process->addArgument("-x");
+                m_process->addArgument(fmt::format("authPassword={}", credV3->getAuthPassword()));
+                
                 m_process->setEnvVar("SU_VAR_PRIVPASSWD", credV3->getPrivPassword());
+                m_process->addArgument("-x");
+                m_process->addArgument(fmt::format("privPassword={}", credV3->getPrivPassword()));
+                
                 if (auto prot = authProtStr(credV3->getAuthProtocol())) {
                     m_process->setEnvVar("SU_VAR_AUTHPROT", *prot);
+                    m_process->addArgument("-x");
+                    m_process->addArgument(fmt::format("authProtocol={}", *prot));
                 }
                 if (auto prot = authPrivStr(credV3->getPrivProtocol())) {
                     m_process->setEnvVar("SU_VAR_PRIVPROT", *prot);
+                    m_process->addArgument("-x");
+                    m_process->addArgument(fmt::format("privProtocol={}", *prot));
                 }
             } else if (auto credV1 = secw::Snmpv1::tryToCast(secCred)) {
                 log_debug("Init from wallet for snmp v1");
