@@ -20,7 +20,7 @@
 #include "impl/nut/process.h"
 #include "impl/ping.h"
 #include "impl/uuid.h"
-#include <fty/split.h>
+#include <fty/string-utils.h>
 
 namespace fty::job {
 

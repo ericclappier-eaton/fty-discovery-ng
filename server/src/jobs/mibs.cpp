@@ -17,7 +17,7 @@
 #include "mibs.h"
 #include "impl/mibs.h"
 #include "impl/ping.h"
-#include <fty/split.h>
+#include <fty/string-utils.h>
 #include <set>
 
 

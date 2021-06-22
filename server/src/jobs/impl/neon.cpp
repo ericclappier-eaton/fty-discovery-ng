@@ -15,7 +15,7 @@
 */
 
 #include "neon.h"
-#include <fty/split.h>
+#include <fty/string-utils.h>
 #include <neon/ne_request.h>
 #include <neon/ne_session.h>
 #include <neon/ne_xml.h>

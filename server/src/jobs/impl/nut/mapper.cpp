@@ -16,7 +16,7 @@
 
 #include "mapper.h"
 #include <fstream>
-#include <fty/split.h>
+#include <fty/string-utils.h>
 #include <fty_log.h>
 #include <pack/pack.h>
 #include <regex>

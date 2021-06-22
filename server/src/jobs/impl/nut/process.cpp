@@ -3,6 +3,8 @@
 #include "src/jobs/impl/mibs.h"
 #include <filesystem>
 #include <fty/process.h>
+#include <fty_common_socket_sync_client.h>
+#include <fty_log.h>
 #include <fty_security_wallet.h>
 #include <unistd.h>
 
@@ -115,7 +117,7 @@ Expected<void> Process::init(const std::string& address, uint16_t port)
 
 Expected<std::string> Process::findExecutable(const std::string& name) const
 {
-    static std::vector<std::filesystem::path> paths = {"/usr/lib/nut", "/lib/nut"};
+    static std::vector<std::filesystem::path> paths = {"/usr/lib/nut", "/lib/nut", "/home/jes/workspace/fty/build/Debug/deps-runtime/bin"};
 
     for (const auto& path : paths) {
         auto check = path / name;
@@ -311,11 +313,9 @@ Expected<std::string> Process::run() const
         } else {
             std::string stdError = m_process->readAllStandardError();
             // workaround with nut_powercom: Test first if the credentials are correct
-            if (m_protocol == "nut_powercom" &&
-                stdError.find("Error when get client token on") != std::string::npos) {
+            if (m_protocol == "nut_powercom" && stdError.find("Error when get client token on") != std::string::npos) {
                 return unexpected("Bad login or password");
-            }
-            else {
+            } else {
                 return unexpected(stdError);
             }
         }

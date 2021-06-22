@@ -14,7 +14,9 @@ etn_target(shared ${PROJECT_NAME}-rest
         ${PROJECT_NAME}-common
         fty-cmake-rest
         tntnet
+        cxxtools
         fty_common_logging
+        fty_common
         fty_common_rest
     TARGET_DESTINATION /usr/lib/bios
 )

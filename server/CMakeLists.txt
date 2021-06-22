@@ -41,7 +41,8 @@ etn_target(static ${PROJECT_NAME}-static
         neon
         stdc++fs
         fty_security_wallet
-        cxxtools
+        czmq
+        fty_common
         fty_common_socket
         crypto
         uuid

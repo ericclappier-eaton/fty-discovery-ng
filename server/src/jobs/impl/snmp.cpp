@@ -23,6 +23,8 @@
 #include <net-snmp/snmpv3_api.h>
 // Other
 #include <fty/expected.h>
+#include <fty_common_socket_sync_client.h>
+#include <fty_log.h>
 #include <fty_security_wallet.h>
 #include <iostream>
 #include <regex>
@@ -34,7 +36,7 @@ namespace fty::impl {
 // Wallet to snmp values conversion
 // =====================================================================================================================
 
-static  Expected<int> level(secw::Snmpv3SecurityLevel lvl)
+static Expected<int> level(secw::Snmpv3SecurityLevel lvl)
 {
     switch (lvl) {
         case secw::NO_AUTH_NO_PRIV:
@@ -126,19 +128,19 @@ public:
                 }
 
                 if (auto prot = authProt(credV3->getAuthProtocol())) {
-                    m_sess.securityAuthProto    = *prot;
-                    m_sess.securityAuthKeyLen   = USM_AUTH_KU_LEN;
-			        if (m_sess.securityAuthProto == usmHMACMD5AuthProtocol)
+                    m_sess.securityAuthProto  = *prot;
+                    m_sess.securityAuthKeyLen = USM_AUTH_KU_LEN;
+                    if (m_sess.securityAuthProto == usmHMACMD5AuthProtocol)
                         m_sess.securityAuthProtoLen = sizeof(usmHMACMD5AuthProtocol) / sizeof(oid);
                     else
                         m_sess.securityAuthProtoLen = sizeof(usmHMACSHA1AuthProtocol) / sizeof(oid);
                 }
 
                 if (auto prot = authPriv(credV3->getPrivProtocol())) {
-                    m_sess.securityPrivProto    = *prot;
-                    m_sess.securityPrivKeyLen   = USM_PRIV_KU_LEN;
+                    m_sess.securityPrivProto  = *prot;
+                    m_sess.securityPrivKeyLen = USM_PRIV_KU_LEN;
                     /* FIXME: see https://github.com/42ity/nut/blob/FTY/drivers/snmp-ups.c#L79 */
-			        if (m_sess.securityPrivProto == usmDESPrivProtocol)
+                    if (m_sess.securityPrivProto == usmDESPrivProtocol)
                         m_sess.securityPrivProtoLen = sizeof(usmDESPrivProtocol) / sizeof(oid);
                     else
                         m_sess.securityPrivProtoLen = sizeof(usmAESPrivProtocol) / sizeof(oid);
@@ -378,4 +380,4 @@ snmp::SessionPtr Snmp::session(const std::string& address, uint16_t port)
     return std::shared_ptr<snmp::Session>(new snmp::Session(address, port));
 }
 
-} // namespace fty::protocol
+} // namespace fty::impl

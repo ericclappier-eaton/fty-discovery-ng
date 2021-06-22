@@ -18,7 +18,7 @@
 #include "impl/mibs.h"
 #include "impl/ping.h"
 #include "impl/xml-pdc.h"
-#include <fty/split.h>
+#include <fty/string-utils.h>
 #include <netdb.h>
 #include <netinet/ip_icmp.h>
 #include <poll.h>
