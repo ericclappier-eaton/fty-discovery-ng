@@ -25,7 +25,7 @@
 
 namespace fty {
 
-class Asset : public rest::Runner
+class AssetRest : public rest::Runner
 {
 public:
     INIT_REST("discovery/assets");

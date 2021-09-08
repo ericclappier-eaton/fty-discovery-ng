@@ -25,7 +25,7 @@
 
 namespace fty {
 
-unsigned Asset::run()
+unsigned AssetRest::run()
 {
     rest::User user(m_request);
     if (auto ret = checkPermissions(user.profile(), m_permissions); !ret) {
@@ -45,7 +45,7 @@ unsigned Asset::run()
     }
 }
 
-Expected<std::string> Asset::assets(const commands::assets::In& param)
+Expected<std::string> AssetRest::assets(const commands::assets::In& param)
 {
     fty::MessageBus bus;
     if (auto res = bus.init("discovery_rest"); !res) {
@@ -70,4 +70,4 @@ Expected<std::string> Asset::assets(const commands::assets::In& param)
 
 } // namespace fty
 
-registerHandler(fty::Asset)
+registerHandler(fty::AssetRest)
