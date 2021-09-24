@@ -150,6 +150,10 @@ public:
     {
     }
 
+    static void unpackValue(pack::IObjectMap& /*list*/, const NeonNode& /*neon*/)
+    {
+    }
+
     static void unpackValue(pack::IObjectList& list, const NeonNode& neon)
     {
         NeonNode* parent = neon.parent;
