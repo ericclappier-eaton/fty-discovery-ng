@@ -36,9 +36,10 @@ struct Mappping : public pack::Node
 
     std::string map(const std::string& key) const
     {
-        if (physicsMapping.contains(key)) {
+        //We do not need physics mapping for discovery
+        /*if (physicsMapping.contains(key)) {
             return physicsMapping[key];
-        }
+        }*/ 
         if (inventoryMapping.contains(key)) {
             return inventoryMapping[key];
         }
