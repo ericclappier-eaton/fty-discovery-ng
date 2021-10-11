@@ -3,19 +3,19 @@
 
 TEST_CASE("Mibs / Empty request")
 {
-    fty::Message msg = Test::createMessage(fty::commands::mibs::Subject);
+    fty::disco::Message msg = Test::createMessage(fty::commands::mibs::Subject);
 
-    fty::Expected<fty::Message> ret = Test::send(msg);
+    fty::Expected<fty::disco::Message> ret = Test::send(msg);
     CHECK_FALSE(ret);
     CHECK("Wrong input data: payload is empty" == ret.error());
 }
 
 TEST_CASE("Mibs / Wrong request")
 {
-    fty::Message msg = Test::createMessage(fty::commands::mibs::Subject);
+    fty::disco::Message msg = Test::createMessage(fty::commands::mibs::Subject);
 
     msg.userData.setString("Some shit");
-    fty::Expected<fty::Message> ret = Test::send(msg);
+    fty::Expected<fty::disco::Message> ret = Test::send(msg);
 
     CHECK_FALSE(ret);
     CHECK("Wrong input data: format of payload is incorrect" == ret.error());
@@ -23,13 +23,13 @@ TEST_CASE("Mibs / Wrong request")
 
 TEST_CASE("Mibs / Unaviable host")
 {
-    fty::Message msg = Test::createMessage(fty::commands::mibs::Subject);
+    fty::disco::Message msg = Test::createMessage(fty::commands::mibs::Subject);
 
     fty::commands::protocols::In in;
     in.address = "pointtosky";
     msg.userData.setString(*pack::json::serialize(in));
 
-    fty::Expected<fty::Message> ret = Test::send(msg);
+    fty::Expected<fty::disco::Message> ret = Test::send(msg);
     CHECK_FALSE(ret);
     CHECK("Host is not available: pointtosky" == ret.error());
 }
@@ -47,10 +47,10 @@ TEST_CASE("Mibs / get mibs")
     // clang-format on
 
     auto getResponse = [](const fty::commands::mibs::In& in) {
-        fty::Message msg = Test::createMessage(fty::commands::mibs::Subject);
+        fty::disco::Message msg = Test::createMessage(fty::commands::mibs::Subject);
         msg.userData.setString(*pack::json::serialize(in));
 
-        fty::Expected<fty::Message> ret = Test::send(msg);
+        fty::Expected<fty::disco::Message> ret = Test::send(msg);
         if (!ret) {
             FAIL(ret.error());
         }
@@ -63,7 +63,6 @@ TEST_CASE("Mibs / get mibs")
     };
 
     if (auto pid = proc.run()) {
-std::cerr << *pid << std::endl;
         fty::commands::mibs::In in;
         in.address = "127.0.0.1";
         in.port    = 1161;

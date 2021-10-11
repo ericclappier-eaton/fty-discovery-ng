@@ -21,16 +21,16 @@ public:
     {
     }
 
-    static fty::Message createMessage(const char* subject)
+    static fty::disco::Message createMessage(const char* subject)
     {
-        fty::Message msg;
+        fty::disco::Message msg;
         msg.meta.to      = fty::Config::instance().actorName;
         msg.meta.subject = subject;
         msg.meta.from    = "unit-test";
         return msg;
     }
 
-    static fty::Expected<fty::Message> send(const fty::Message& msg)
+    static fty::Expected<fty::disco::Message> send(const fty::disco::Message& msg)
     {
         return inst->m_bus.send(fty::Channel, msg);
     }
@@ -65,6 +65,7 @@ public:
         inst->m_th.join();
         delete inst;
     }
+
 private:
     Test()
         : m_dis("conf/discovery.conf")
@@ -72,7 +73,7 @@ private:
     }
 
 private:
-    fty::Discovery  m_dis;
-    std::thread     m_th;
-    fty::MessageBus m_bus;
+    fty::Discovery         m_dis;
+    std::thread            m_th;
+    fty::disco::MessageBus m_bus;
 };

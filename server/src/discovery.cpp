@@ -77,7 +77,7 @@ int Discovery::run()
     return 0;
 }
 
-void Discovery::discover(const Message& msg)
+void Discovery::discover(const disco::Message& msg)
 {
     log_debug("Discovery: got message %s", msg.dump().c_str());
     log_debug("Payload: %s", msg.userData.asString().c_str());

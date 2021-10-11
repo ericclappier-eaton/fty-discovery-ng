@@ -22,7 +22,7 @@
 #include "message.h"
 #include <fty_common_messagebus_message.h>
 
-namespace fty {
+namespace fty::disco {
 
 // ===========================================================================================================
 

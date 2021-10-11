@@ -49,19 +49,19 @@ unsigned Mibs::run()
 
 Expected<std::string> Mibs::mibs(const commands::mibs::In& param)
 {
-    fty::MessageBus bus;
+    disco::MessageBus bus;
     if (auto res = bus.init("discovery_rest"); !res) {
         return unexpected(res.error());
     }
 
-    fty::Message msg;
+    disco::Message msg;
     msg.userData.setString(*pack::json::serialize(param));
     msg.meta.to      = "discovery-ng";
     msg.meta.subject = commands::mibs::Subject;
     msg.meta.from    = "discovery_rest";
 
-    if (Expected<fty::Message> resp = bus.send(fty::Channel, msg)) {
-        if (resp->meta.status == fty::Message::Status::Error) {
+    if (Expected<disco::Message> resp = bus.send(fty::Channel, msg)) {
+        if (resp->meta.status == disco::Message::Status::Error) {
             return unexpected(resp->userData.asString());
         }
         return resp->userData.asString();

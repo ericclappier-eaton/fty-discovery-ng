@@ -22,8 +22,8 @@
 #pragma once
 #include "message-bus.h"
 #include <fty/event.h>
-#include <string>
 #include <fty/thread-pool.h>
+#include <string>
 
 namespace fty {
 
@@ -37,7 +37,7 @@ public:
     bool loadConfig();
 
     /// Runs message dispatcher
-    int  run();
+    int run();
 
     /// Inits discovery instance
     [[nodiscard]] Expected<void> init();
@@ -49,17 +49,17 @@ public:
     Event<> stop;
 
 private:
-    void discover(const Message& msg);
+    void discover(const disco::Message& msg);
     void doStop();
 
 private:
-    std::string m_configPath;
-    MessageBus  m_bus;
-    ThreadPool  m_pool;
+    std::string       m_configPath;
+    disco::MessageBus m_bus;
+    ThreadPool        m_pool;
 
-    Slot<>               m_stopSlot       = {&Discovery::doStop, this};
-    Slot<>               m_loadConfigSlot = {&Discovery::loadConfig, this};
-    Slot<const Message&> m_discoverSlot   = {&Discovery::discover, this};
+    Slot<>                      m_stopSlot       = {&Discovery::doStop, this};
+    Slot<>                      m_loadConfigSlot = {&Discovery::loadConfig, this};
+    Slot<const disco::Message&> m_discoverSlot   = {&Discovery::discover, this};
 };
 
 } // namespace fty
