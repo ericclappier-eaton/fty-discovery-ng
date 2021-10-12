@@ -26,7 +26,7 @@
 #include <fty_common_messagebus_interface.h>
 #include <fty_common_messagebus_message.h>
 
-namespace fty {
+namespace fty::disco {
 
 MessageBus::MessageBus() = default;
 

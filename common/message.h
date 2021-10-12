@@ -30,7 +30,7 @@ class Message;
 
 // =====================================================================================================================
 
-namespace fty {
+namespace fty::disco {
 
 /// Common message bus message temporary wrapper
 class Message : public pack::Node

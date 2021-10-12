@@ -34,7 +34,7 @@ class Message;
 
 // =====================================================================================================================
 
-namespace fty {
+namespace fty::disco {
 
 /// Common message bus temporary wrapper
 class MessageBus

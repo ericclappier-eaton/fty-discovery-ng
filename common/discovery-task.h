@@ -15,7 +15,7 @@ template <typename... Args>
 {
     try {
         return fmt::format(msg, args...);
-    }  catch (const fmt::format_error&) {
+    } catch (const fmt::format_error&) {
         return msg;
     }
 }
@@ -38,9 +38,9 @@ template <typename T>
 class Response : public pack::Node
 {
 public:
-    pack::String                error  = FIELD("error");
-    pack::Enum<Message::Status> status = FIELD("status");
-    T                           out    = FIELD("out");
+    pack::String                       error  = FIELD("error");
+    pack::Enum<disco::Message::Status> status = FIELD("status");
+    T                                  out    = FIELD("out");
 
 public:
     using pack::Node::Node;
@@ -50,14 +50,14 @@ public:
     void setError(const std::string& errMsg)
     {
         error  = errMsg;
-        status = Message::Status::Error;
+        status = disco::Message::Status::Error;
     }
 
-    operator Message()
+    operator disco::Message()
     {
-        Message msg;
+        disco::Message msg;
         msg.meta.status = status;
-        if (status == Message::Status::Ok) {
+        if (status == disco::Message::Status::Ok) {
             if (out.hasValue()) {
                 msg.userData.setString(*pack::json::serialize(out));
             } else {
@@ -82,7 +82,7 @@ template <typename T, typename InputT, typename ResponseT>
 class Task : public fty::Task<T>
 {
 public:
-    Task(const Message& in, MessageBus& bus)
+    Task(const disco::Message& in, disco::MessageBus& bus)
         : m_in(in)
         , m_bus(&bus)
     {
@@ -103,13 +103,13 @@ public:
                 throw Error("Wrong input data: format of payload is incorrect");
             }
 
-            if (auto it = dynamic_cast<T*>(this)){
+            if (auto it = dynamic_cast<T*>(this)) {
                 it->run(cmd, response.out);
             } else {
                 throw Error("Not a correct task");
             }
 
-            response.status = Message::Status::Ok;
+            response.status = disco::Message::Status::Ok;
             if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
                 log_error(res.error().c_str());
             }
@@ -123,8 +123,8 @@ public:
     }
 
 protected:
-    Message     m_in;
-    MessageBus* m_bus;
+    disco::Message     m_in;
+    disco::MessageBus* m_bus;
 };
 
 } // namespace fty::job
