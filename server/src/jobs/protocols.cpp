@@ -137,14 +137,14 @@ Expected<void> Protocols::tryXmlPdc(const commands::protocols::In& in) const
 Expected<void> Protocols::tryPowercom(const commands::protocols::In& in) const
 {
     neon::Neon ne(in.address);
-    if (auto content = ne.get("etn/v1/comm")) {
+    if (auto content = ne.get("/etn/v1/comm/services/powerdistributions1")) {
         try {
-            YAML::Node yaml = YAML::Load(*content);
-            for(const auto& node: yaml["services"]["members"]) {
-                if (node["path"].as<std::string>() == "/etn/v1/comm/services/powerdistributions1") {
-                    return {};
-                }
+            YAML::Node node = YAML::Load(*content);
+            
+            if (node["device-type"].as<std::string>() == "ups") {
+                return {};
             }
+
             return unexpected("not supported device");
         } catch (const std::exception&) {
             return unexpected("not supported device");
