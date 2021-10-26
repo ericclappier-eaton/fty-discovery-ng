@@ -137,7 +137,7 @@ Expected<void> Protocols::tryXmlPdc(const commands::protocols::In& in) const
 Expected<void> Protocols::tryPowercom(const commands::protocols::In& in) const
 {
     neon::Neon ne(in.address);
-    if (auto content = ne.get("/etn/v1/comm/services/powerdistributions1")) {
+    if (auto content = ne.get("etn/v1/comm/services/powerdistributions1")) {
         try {
             YAML::Node node = YAML::Load(*content);
             
