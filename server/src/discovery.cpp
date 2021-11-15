@@ -87,7 +87,7 @@ void Discovery::discover(const disco::Message& msg)
         m_pool.pushWorker<job::Mibs>(msg, m_bus);
     } else if (msg.meta.subject == commands::assets::Subject) {
         m_pool.pushWorker<job::Assets>(msg, m_bus);
-    }
+    } 
 }
 
 // =====================================================================================================================

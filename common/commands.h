@@ -87,7 +87,7 @@ namespace commands::assets {
         class Asset : public pack::Node
         {
         public:
-            //pack::String                      name    = FIELD("name");
+            // pack::String                      name    = FIELD("name");
             pack::String                      type    = FIELD("type");
             pack::String                      subtype = FIELD("sub_type");
             pack::ObjectList<pack::StringMap> ext     = FIELD("ext");
@@ -109,6 +109,95 @@ namespace commands::assets {
     using Out = pack::ObjectList<Return>;
 } // namespace commands::assets
 
+// =====================================================================================================================
+/*
+namespace disco::commands::config {
+    static constexpr const char* Subject = "config";
+
+    class In : public pack::Node
+    {
+    public:
+        pack::String type  = FIELD("FTY_DISCOVERY_TYPE");
+        pack::String scans = FIELD("FTY_DISCOVERY_SCANS");
+        pack::String scans = FIELD("FTY_DISCOVERY_IPS");
+        pack::String scans = FIELD("FTY_DISCOVERY_DOCUMENTS");
+        pack::String scans = FIELD("FTY_DISCOVERY_DEFAULT_VALUES_STATUS");
+        pack::String scans = FIELD("FTY_DISCOVERY_DEFAULT_VALUES_PRIORITY");
+        pack::String scans = FIELD("FTY_DISCOVERY_DEFAULT_VALUES_PARENT");
+        pack::String scans = FIELD("FTY_DISCOVERY_DEFAULT_VALUES_LINK_SRC");
+        pack::String scans = FIELD("FTY_DISCOVERY_SCANS_DISABLED");
+        pack::String scans = FIELD("FTY_DISCOVERY_IPS_DISABLED");
+        pack::String scans = FIELD("FTY_DISCOVERY_PROTOCOLS");
+
+        pack::String scans = FIELD("FTY_DISCOVERY_DUMP_POOL");
+        pack::String scans = FIELD("FTY_DISCOVERY_SCAN_POOL");
+        pack::String scans = FIELD("FTY_DISCOVERY_SCAN_TIMEOUT");
+        pack::String scans = FIELD("FTY_DISCOVERY_DUMP_LOOPTIME");
+
+    public:
+        using pack::Node::Node;
+        META(In, address);
+    };
+
+    using Out = pack::StringList;
+
+} // namespace disco::commands::config
+
+// =====================================================================================================================
+
+namespace disco::commands::scan {
+    static constexpr const char* Subject = "scan";
+
+    class In : public pack::Node
+    {
+    public:
+        enum class Type
+        {
+            Local,
+            IP,
+            Multy,
+            Full,
+            Unknown
+        };
+        pack::String     linkSrc   = FIELD("linkSrc");
+        pack::String     parent    = FIELD("parent");
+        pack::Int32      priority  = FIELD("priority");
+        pack::StringList documents = FIELD("documents");
+        pack::StringList ips       = FIELD("ips");
+        pack::Enum<Type> type      = FIELD("type");
+
+    public:
+        using pack::Node::Node;
+        META(In, type);
+    };
+
+    class Out : public pack::Node
+    {
+    public:
+        enum class Status
+        {
+            CancelledByUser = 1,
+            Terminated      = 2,
+            InProgress      = 3
+        };
+        pack::Enum<Status> status     = FIELD("status");
+        pack::String       progress   = FIELD("progress");
+        pack::Int64        discovered = FIELD("discovered");
+        pack::Int64        ups        = FIELD("ups-discovered");
+        pack::Int64        epdu       = FIELD("epdu-discovered");
+        pack::Int64        sts        = FIELD("sts-discovered");
+        pack::Int64        sensors    = FIELD("sensors-discovered");
+
+    public:
+        using pack::Node::Node;
+        META(Out, type);
+    };
+
+
+    // using Out = pack::StringList;
+
+} // namespace disco::commands::scan
+*/
 // =====================================================================================================================
 
 } // namespace fty

@@ -13,3 +13,31 @@
     <url>^/api/v1/admin/discovery/assets$</url>
     <method>POST</method>
 </mapping>
+
+<!-- admin/config -->
+<mapping>
+    <target>config@libfty_rest</target>
+    <url>^/api/v1/admin/config.*$</url>
+    <method>GET</method>
+</mapping>
+
+<!-- POST admin/scan -->
+<mapping>
+  <target>scan_run@libfty_rest</target>
+  <url>^/api/v1/admin/scan.*$</url>
+  <method>POST</method>
+</mapping>
+
+<!-- GET admin/scan -->
+<mapping>
+  <target>scan_progress@libfty_rest</target>
+  <url>^/api/v1/admin/scan.*$</url>
+  <method>GET</method>
+</mapping>
+
+<!-- DELETE admin/scan -->
+<mapping>
+    <target>scan_run@libfty_rest</target>
+    <url>^/api/v1/admin/scan.*$</url>
+    <method>DELETE</method>
+</mapping>
