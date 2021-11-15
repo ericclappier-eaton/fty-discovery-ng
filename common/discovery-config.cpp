@@ -8,13 +8,13 @@ std::ostream& operator<<(std::ostream& ss, ConfigDiscovery::Discovery::Type valu
     ss << [&]() {
         switch (value) {
             case Type::Local:
-                return "CONTAINS";
+                return "localscan";
             case Type::Ip:
-                return "DOESNOTCONTAIN";
+                return "ipscan";
             case Type::Multy:
-                return "IS";
+                return "multiscan";
             case Type::Full:
-                return "ISNOT";
+                return "fullscan";
             case Type::Unknown:
                 return "UNKNOWN";
         }
@@ -29,13 +29,13 @@ std::istream& operator>>(std::istream& ss, ConfigDiscovery::Discovery::Type& val
 
     std::string strval;
     ss >> strval;
-    if (strval == "CONTAINS") {
+    if (strval == "localscan") {
         value = Type::Local;
-    } else if (strval == "IS") {
+    } else if (strval == "ipscan") {
         value = Type::Ip;
-    } else if (strval == "DOESNOTCONTAIN") {
+    } else if (strval == "multiscan") {
         value = Type::Multy;
-    } else if (strval == "ISNOT") {
+    } else if (strval == "fullscan") {
         value = Type::Full;
     } else {
         value = Type::Unknown;
