@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.13)
 
+option(WITH_ZCONFIG "Using zconfig provider" ON)
+
 etn_test(${PROJECT_NAME}-test
     DATA
         assets/*
@@ -13,6 +15,7 @@ etn_test(${PROJECT_NAME}-test
         protocols.cpp
         mibs.cpp
         test-common.h
+        discovery-config.cpp
     USES
         ${PROJECT_NAME}-static
         Catch2::Catch2
