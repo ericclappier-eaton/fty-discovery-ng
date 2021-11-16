@@ -79,6 +79,12 @@ messagebus::Message Message::toMessageBus() const
     return msg;
 }
 
+void Message::setData(const std::string& data)
+{
+    userData.clear();
+    userData.setString(data);
+}
+
 // ===========================================================================================================
 
 } // namespace fty
