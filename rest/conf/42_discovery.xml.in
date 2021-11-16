@@ -16,7 +16,7 @@
 
 <!-- admin/config -->
 <mapping>
-    <target>config@libfty_rest</target>
+    <target>discovery/config-zproject@lib${NAME}</target>
     <url>^/api/v1/admin/config.*$</url>
     <method>GET</method>
 </mapping>

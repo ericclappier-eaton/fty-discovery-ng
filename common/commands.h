@@ -120,42 +120,40 @@ namespace commands::assets {
 } // namespace commands::assets
 
 // =====================================================================================================================
-/*
-namespace disco::commands::config {
+
+namespace disco::zproject::commands::config {
     static constexpr const char* Subject = "config";
 
     class In : public pack::Node
     {
     public:
-        pack::String type  = FIELD("FTY_DISCOVERY_TYPE");
-        pack::String scans = FIELD("FTY_DISCOVERY_SCANS");
-        pack::String scans = FIELD("FTY_DISCOVERY_IPS");
-        pack::String scans = FIELD("FTY_DISCOVERY_DOCUMENTS");
-        pack::String scans = FIELD("FTY_DISCOVERY_DEFAULT_VALUES_STATUS");
-        pack::String scans = FIELD("FTY_DISCOVERY_DEFAULT_VALUES_PRIORITY");
-        pack::String scans = FIELD("FTY_DISCOVERY_DEFAULT_VALUES_PARENT");
-        pack::String scans = FIELD("FTY_DISCOVERY_DEFAULT_VALUES_LINK_SRC");
-        pack::String scans = FIELD("FTY_DISCOVERY_SCANS_DISABLED");
-        pack::String scans = FIELD("FTY_DISCOVERY_IPS_DISABLED");
-        pack::String scans = FIELD("FTY_DISCOVERY_PROTOCOLS");
-
-        pack::String scans = FIELD("FTY_DISCOVERY_DUMP_POOL");
-        pack::String scans = FIELD("FTY_DISCOVERY_SCAN_POOL");
-        pack::String scans = FIELD("FTY_DISCOVERY_SCAN_TIMEOUT");
-        pack::String scans = FIELD("FTY_DISCOVERY_DUMP_LOOPTIME");
+        pack::String     type          = FIELD("FTY_DISCOVERY_TYPE");
+        pack::StringList scans         = FIELD("FTY_DISCOVERY_SCANS");
+        pack::StringList ips           = FIELD("FTY_DISCOVERY_IPS");
+        pack::StringList docs          = FIELD("FTY_DISCOVERY_DOCUMENTS");
+        pack::String     status        = FIELD("FTY_DISCOVERY_DEFAULT_VALUES_STATUS");
+        pack::String     priority      = FIELD("FTY_DISCOVERY_DEFAULT_VALUES_PRIORITY");
+        pack::String     parent        = FIELD("FTY_DISCOVERY_DEFAULT_VALUES_PARENT");
+        pack::String     linkSrc       = FIELD("FTY_DISCOVERY_DEFAULT_VALUES_LINK_SRC");
+        pack::StringList scansDisabled = FIELD("FTY_DISCOVERY_SCANS_DISABLED");
+        pack::StringList ipsDisabled   = FIELD("FTY_DISCOVERY_IPS_DISABLED");
+        pack::StringList protocols     = FIELD("FTY_DISCOVERY_PROTOCOLS");
+        pack::String     dumpPool      = FIELD("FTY_DISCOVERY_DUMP_POOL");
+        pack::String     scanPool      = FIELD("FTY_DISCOVERY_SCAN_POOL");
+        pack::String     scanTimeout   = FIELD("FTY_DISCOVERY_SCAN_TIMEOUT");
+        pack::String     dumpLooptime  = FIELD("FTY_DISCOVERY_DUMP_LOOPTIME");
 
     public:
         using pack::Node::Node;
-        META(In, address);
+        META(In, type, scans, ips, docs, status, priority, parent, linkSrc, scansDisabled, ipsDisabled, protocols,
+            dumpPool, scanPool, scanTimeout, dumpLooptime);
     };
 
-    using Out = pack::StringList;
-
-} // namespace disco::commands::config
+} // namespace disco::zproject::commands::config
 
 // =====================================================================================================================
 
-namespace disco::commands::scan {
+/*namespace disco::commands::scan {
     static constexpr const char* Subject = "scan";
 
     class In : public pack::Node
