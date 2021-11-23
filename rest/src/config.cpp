@@ -27,33 +27,59 @@ unsigned Config::run()
     };
 
     if (in.type.hasValue()) {
-        std::stringstream ss(in.type.value());
-        ss >> cd.discovery.type;
-    } else if (in.scans.hasValue()) {
+        std::stringstream                ss(in.type.value());
+        ConfigDiscovery::Discovery::Type tmpType;
+        ss >> tmpType;
+        cd.discovery.type = tmpType;
+    }
+    if (in.scans.hasValue()) {
         appendString(cd.discovery.scans, in.scans);
-    } else if (in.ips.hasValue()) {
+    }
+    if (in.ips.hasValue()) {
         appendString(cd.discovery.ips, in.ips);
-    } else if (in.docs.hasValue()) {
+    }
+    if (in.docs.hasValue()) {
         appendString(cd.discovery.documents, in.docs);
-    } else if (in.status.hasValue()) {
-    } else if (in.priority.hasValue()) {
-    } else if (in.parent.hasValue()) {
-    } else if (in.linkSrc.hasValue()) {
-    } else if (in.scansDisabled.hasValue()) {
+    }
+    if (in.status.hasValue()) {
+        cd.aux.status = in.status;
+    }
+    if (in.priority.hasValue()) {
+        cd.aux.priority = fty::convert<pack::Int32>(in.priority);
+    }
+    if (in.parent.hasValue()) {
+        cd.aux.parent = in.parent;
+    }
+    if (in.linkSrc.hasValue()) {
+        cd.link.src = in.linkSrc;
+    }
+    if (in.scansDisabled.hasValue()) {
+        cd.disabled.scans.clear();
         appendString(cd.disabled.scans, in.scansDisabled);
-
-    } else if (in.ipsDisabled.hasValue()) {
+    }
+    if (in.ipsDisabled.hasValue()) {
+        cd.disabled.ips.clear();
         appendString(cd.disabled.ips, in.ipsDisabled);
-
-    } else if (in.protocols.hasValue()) {
+    }
+    if (in.protocols.hasValue()) {
         appendString(cd.discovery.protocols, in.protocols);
-    } else if (in.dumpPool.hasValue()) {
-    } else if (in.scanPool.hasValue()) {
-    } else if (in.scanTimeout.hasValue()) {
-    } else if (in.dumpLooptime.hasValue()) {
+    }
+    if (in.dumpPool.hasValue()) {
+        cd.parameters.maxDumpPoolNumber = fty::convert<pack::Int32>(in.dumpPool);
+    }
+    if (in.scanPool.hasValue()) {
+        cd.parameters.maxScanPoolNumber = fty::convert<pack::Int32>(in.scanPool);
+    }
+    if (in.scanTimeout.hasValue()) {
+        cd.parameters.nutScannerTimeOut = fty::convert<pack::Int32>(in.scanTimeout);
+    }
+    if (in.dumpLooptime.hasValue()) {
+        cd.parameters.dumpDataLoopTime = fty::convert<pack::Int32>(in.dumpLooptime);
     }
 
-
+    if(auto ret = saveToFile(cd); !ret){
+        throw rest::errors::Internal(ret.error());
+    }
     // commands::config::Out out;
 
     // m_reply << *pack::json::serialize(out);
