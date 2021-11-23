@@ -1,13 +1,18 @@
 #pragma once
+#include <fty/expected.h>
 #include <pack/pack.h>
 
 namespace fty::disco {
 
+static constexpr const char* ConfigFile = "/etc/fty-discovery-ng/fty-discovery-ng.cfg";
+struct ConfigDiscovery;
 namespace zproject {
     using Variable = std::string;
     using Value    = std::string;
 
     using Argument = std::pair<Variable, Value>;
+
+    static constexpr const char* ZConfigFile = "/etc/fty-discovery/fty-discovery-ng.conf";
 
     static constexpr const char* Type      = "FTY_DISCOVERY_TYPE";
     static constexpr const char* Scans     = "FTY_DISCOVERY_SCANS";
@@ -27,6 +32,8 @@ namespace zproject {
     static constexpr const char* ScanPool     = "FTY_DISCOVERY_SCAN_POOL";
     static constexpr const char* ScanTimeout  = "FTY_DISCOVERY_SCAN_TIMEOUT";
     static constexpr const char* DumpLooptime = "FTY_DISCOVERY_DUMP_LOOPTIME";
+
+    fty::Expected<void> saveToFile(const fty::disco::ConfigDiscovery& config, const std::string& path = ZConfigFile);
 
 } // namespace zproject
 
@@ -67,8 +74,8 @@ struct ConfigDiscovery : public pack::Node
 
     struct Disabled : public pack::Node
     {
-        pack::Bool scans = FIELD("scans_disabled"); // bool?
-        pack::Bool ips   = FIELD("ips_disabled");   // bool?
+        pack::StringList scans = FIELD("scans_disabled"); // bool?
+        pack::StringList ips   = FIELD("ips_disabled");   // bool?
 
         using pack::Node::Node;
         META(Disabled, scans, ips);
@@ -86,13 +93,13 @@ struct ConfigDiscovery : public pack::Node
         META(DefaultValuesAux, createMode, createUser, parent, priority, status);
     };
 
-    struct DefaultValuesLinks : public pack::Node
+    struct DefaultValuesLink : public pack::Node
     {
         pack::String src  = FIELD("src");  // string??
         pack::Int32  type = FIELD("type"); // int?
 
         using pack::Node::Node;
-        META(DefaultValuesLinks, src, type);
+        META(DefaultValuesLink, src, type);
     };
 
     struct Parameters : public pack::Node
@@ -120,16 +127,16 @@ struct ConfigDiscovery : public pack::Node
     Disabled         disabled  = FIELD("disabled");
     DefaultValuesAux aux       = FIELD("defaultValuesAux");
 
-    pack::ObjectList<DefaultValuesLinks> links = FIELD("defaultValuesLinks");
+    DefaultValuesLink link = FIELD("defaultValuesLink");
 
     Parameters parameters = FIELD("parameters");
     Log        log        = FIELD("log");
 
 
     using pack::Node::Node;
-    META(ConfigDiscovery, server, discovery, disabled, aux, links, parameters, log);
+    META(ConfigDiscovery, server, discovery, disabled, aux, link, parameters, log);
 
-    ConfigDiscovery& operator+=(const zproject::Argument& arg);
+    fty::Expected<void> saveToFile(const std::string& path = ConfigFile);
 };
 
 std::ostream& operator<<(std::ostream& ss, ConfigDiscovery::Discovery::Type value);
