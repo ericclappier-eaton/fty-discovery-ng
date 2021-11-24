@@ -153,8 +153,16 @@ namespace disco::zproject::commands::config {
 
 // =====================================================================================================================
 
-/*namespace disco::commands::scan {
+namespace disco::commands::scan {
     static constexpr const char* Subject = "scan";
+
+    enum class Status
+    {
+        CancelledByUser = 1,
+        Terminated      = 2,
+        InProgress      = 3,
+        Unknown
+    };
 
     class In : public pack::Node
     {
@@ -162,32 +170,30 @@ namespace disco::zproject::commands::config {
         enum class Type
         {
             Local,
-            IP,
+            Ip,
             Multy,
             Full,
             Unknown
         };
-        pack::String     linkSrc   = FIELD("linkSrc");
-        pack::String     parent    = FIELD("parent");
-        pack::Int32      priority  = FIELD("priority");
-        pack::StringList documents = FIELD("documents");
-        pack::StringList ips       = FIELD("ips");
-        pack::Enum<Type> type      = FIELD("type");
+        pack::String       linkSrc       = FIELD("linkSrc");
+        pack::String       parent        = FIELD("parent");
+        pack::Int32        priority      = FIELD("priority");
+        pack::Enum<Status> status        = FIELD("priority");
+        pack::StringList   documents     = FIELD("documents");
+        pack::StringList   ips           = FIELD("ips");
+        pack::StringList   ipsDisabled   = FIELD("ipsDisabled");
+        pack::StringList   scans         = FIELD("scans");
+        pack::StringList   scansDisabled = FIELD("scansDisabled");
+        pack::Enum<Type>   type          = FIELD("type");
 
     public:
         using pack::Node::Node;
-        META(In, type);
+        META(In, linkSrc, parent, priority, status, documents, ips, ipsDisabled, scans, scansDisabled, type);
     };
 
     class Out : public pack::Node
     {
     public:
-        enum class Status
-        {
-            CancelledByUser = 1,
-            Terminated      = 2,
-            InProgress      = 3
-        };
         pack::Enum<Status> status     = FIELD("status");
         pack::String       progress   = FIELD("progress");
         pack::Int64        discovered = FIELD("discovered");
@@ -198,14 +204,20 @@ namespace disco::zproject::commands::config {
 
     public:
         using pack::Node::Node;
-        META(Out, type);
+        META(Out, status, progress, discovered, ups, epdu, sts, sensors);
     };
+
+    std::ostream& operator<<(std::ostream& ss, In::Type value);
+    std::istream& operator>>(std::istream& ss, In::Type& value);
+
+    std::ostream& operator<<(std::ostream& ss, Status value);
+    std::istream& operator>>(std::istream& ss, Status& value);
 
 
     // using Out = pack::StringList;
 
 } // namespace disco::commands::scan
-*/
+
 // =====================================================================================================================
 
 } // namespace fty
