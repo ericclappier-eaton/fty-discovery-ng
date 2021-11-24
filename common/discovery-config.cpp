@@ -85,7 +85,7 @@ ConfigDiscovery& ConfigDiscovery::operator+=(const zproject::Argument& arg)
 
  */
 
-fty::Expected<void> ConfigDiscovery::saveToFile(const std::string& path)
+fty::Expected<void> ConfigDiscovery::save(const std::string& path)
 {
     return pack::yaml::serializeFile(path, *this, pack::Option::WithDefaults);
 }
