@@ -136,7 +136,8 @@ struct ConfigDiscovery : public pack::Node
     using pack::Node::Node;
     META(ConfigDiscovery, server, discovery, disabled, aux, link, parameters, log);
 
-    fty::Expected<void> saveToFile(const std::string& path = ConfigFile);
+    fty::Expected<void> save(const std::string& path = ConfigFile);
+    fty::Expected<void> load(const std::string& path = ConfigFile);
 };
 
 std::ostream& operator<<(std::ostream& ss, ConfigDiscovery::Discovery::Type value);
