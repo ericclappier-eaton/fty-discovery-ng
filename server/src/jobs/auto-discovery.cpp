@@ -95,6 +95,8 @@ Expected<void> AutoDiscovery::updateHostName(const std::string& address, fty::as
 
 void AutoDiscovery::scan(const commands::discoveryauto::In in)
 {
+    /////////////////////////////////////////////////////////////////////
+    // TBD: To be replaced
     std::string discoveryConfigFile("/etc/fty-discovery/fty-discovery.cfg");  // TBD
     zconfig_t* config = zconfig_load(discoveryConfigFile.c_str());
     if (!config) {
@@ -141,6 +143,7 @@ void AutoDiscovery::scan(const commands::discoveryauto::In in)
         }
     }
     logDebug("defaultParent={}", defaultParent);
+    /////////////////////////////////////////////////////////////////////
 
     // Get list of protocols
     commands::protocols::In in_prot;
@@ -148,7 +151,7 @@ void AutoDiscovery::scan(const commands::discoveryauto::In in)
     Protocols protocols;
     auto list_protocols = protocols.getProtocols(in_prot);
     if (!list_protocols) {
-        logError(list_protocols.error().c_str());
+        logError(list_protocols.error());
         return;
     }
     std::ostringstream list_str;
@@ -157,7 +160,15 @@ void AutoDiscovery::scan(const commands::discoveryauto::In in)
           list_str << Protocols::getProtocolStr(type) << " ";
         }
     );
-    logInfo("Found protocols [ {}]", list_str.str());
+    logDebug("Found protocols [ {}]", list_str.str());
+
+    // Init bus
+    fty::disco::MessageBus bus;
+    constexpr const char* agent = "fty-discovery-ng";
+    if (auto init = bus.init(agent); !init) {
+        logError(init.error());
+        return;
+    }
 
     // For each protocols read, get assets list available
     // Note: stop when found first assets with the protocol in progress
@@ -179,13 +190,6 @@ void AutoDiscovery::scan(const commands::discoveryauto::In in)
             };
 
             // Create asset list
-            fty::disco::MessageBus bus;
-            constexpr const char* agent = "fty-discovery-ng";
-            if (auto init = bus.init(agent); !init) {
-                logError(init.error());
-                return;
-            }
-
             std::string assetNameCreated;
 
             // For each asset to create

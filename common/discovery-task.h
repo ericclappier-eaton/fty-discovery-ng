@@ -88,9 +88,7 @@ public:
     {
     }
 
-    Task() : m_in(fty::disco::Message()), m_bus(nullptr)
-    {
-    }
+    Task() = default;
 
     void operator()() override
     {
