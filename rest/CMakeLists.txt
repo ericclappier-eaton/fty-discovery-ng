@@ -14,8 +14,12 @@ etn_target(shared ${PROJECT_NAME}-rest
         src/config-read.cpp
         src/config-create.h
         src/config-create.cpp
-        src/scan.h
-        src/scan.cpp
+        src/scan-start.h
+        src/scan-start.cpp
+        src/scan-stop.h
+        src/scan-stop.cpp
+        src/scan-status.h
+        src/scan-status.cpp
     USES
         ${PROJECT_NAME}-common
         fty-cmake-rest
