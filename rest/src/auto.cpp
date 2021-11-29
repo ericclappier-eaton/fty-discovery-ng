@@ -37,15 +37,15 @@ unsigned DiscoveryAutoRest::run()
         throw rest::errors::BadRequestDocument(res.error());
     }
 
-    if (auto disco_auto = discovery_auto(param/*, user.login()*/)) {
-        m_reply << *disco_auto << "\n\n";
+    if (auto discoAuto = discoveryAuto(param)) {
+        m_reply << *discoAuto << "\n\n";
         return HTTP_OK;
     } else {
-        throw rest::errors::Internal(disco_auto.error());
+        throw rest::errors::Internal(discoAuto.error());
     }
 }
 
-Expected<std::string> DiscoveryAutoRest::discovery_auto(const commands::discoveryauto::In& param)
+Expected<std::string> DiscoveryAutoRest::discoveryAuto(const commands::discoveryauto::In& param)
 {
     disco::MessageBus bus;
     if (auto res = bus.init("discovery_rest"); !res) {
