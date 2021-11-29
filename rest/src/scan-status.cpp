@@ -1,11 +1,9 @@
-#include "scan.h"
+#include "scan-status.h"
 #include "commands.h"
-#include "discovery-config.h"
 #include "message-bus.h"
-#include "discovery-rest.h"
 #include <fty/rest/component.h>
 
-namespace fty::disco {
+namespace fty::disco::status {
 
 unsigned Scan::run()
 {
@@ -14,29 +12,21 @@ unsigned Scan::run()
         throw rest::Error(ret.error());
     }
 
-    commands::scan::In in;
-    if (m_request.type() == fty::rest::Request::Type::Post) {
-        if (auto ret = pack::json::deserialize(m_request.body(), in); !ret) {
-            throw rest::errors::Internal(ret.error());
-        }
-    }
-
     fty::disco::MessageBus bus;
     if (auto res = bus.init(AgentName); !res) {
         throw rest::errors::Internal(res.error());
     }
 
-    fty::disco::Message msg = message(fty::disco::commands::scan::Subject);
-
-    msg.setData(*pack::json::serialize(in));
+    fty::disco::Message msg = message(commands::scan::status::Subject);
 
     auto ret = bus.send(fty::Channel, msg);
     if (!ret) {
         throw rest::errors::Internal(ret.error());
     }
 
-    commands::scan::Out data;
-    auto                info = pack::json::deserialize(ret->userData.asString(), data);
+    commands::scan::status::Out data;
+
+    auto info = pack::json::deserialize(ret->userData.asString(), data);
     if (!info) {
         throw rest::errors::Internal(info.error());
     }
@@ -46,6 +36,6 @@ unsigned Scan::run()
     return HTTP_OK;
 }
 
-} // namespace fty::disco
+} // namespace fty::disco::status
 
-registerHandler(fty::disco::Scan)
+registerHandler(fty::disco::status::Scan)

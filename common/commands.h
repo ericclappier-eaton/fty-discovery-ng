@@ -180,7 +180,7 @@ namespace disco::commands::config {
         pack::String     status        = FIELD("FTY_DISCOVERY_DEFAULT_VALUES_STATUS");
         pack::Int32      priority      = FIELD("FTY_DISCOVERY_DEFAULT_VALUES_PRIORITY");
         pack::String     parent        = FIELD("FTY_DISCOVERY_DEFAULT_VALUES_PARENT");
-        pack::String     linkSrc       = FIELD("FTY_DISCOVERY_DEFAULT_VALUES_LINK_SRC");
+        pack::StringList links         = FIELD("FTY_DISCOVERY_DEFAULT_VALUES_LINK_SRC");
         pack::StringList scansDisabled = FIELD("FTY_DISCOVERY_SCANS_DISABLED");
         pack::StringList ipsDisabled   = FIELD("FTY_DISCOVERY_IPS_DISABLED");
         pack::StringList protocols     = FIELD("FTY_DISCOVERY_PROTOCOLS");
@@ -191,7 +191,7 @@ namespace disco::commands::config {
 
     public:
         using pack::Node::Node;
-        META(In, type, scans, ips, docs, status, priority, parent, linkSrc, scansDisabled, ipsDisabled, protocols,
+        META(In, type, scans, ips, docs, status, priority, parent, links, scansDisabled, ipsDisabled, protocols,
             dumpPool, scanPool, scanTimeout, dumpLooptime);
     };
 
@@ -200,65 +200,94 @@ namespace disco::commands::config {
 // =====================================================================================================================
 
 namespace disco::commands::scan {
-    static constexpr const char* Subject = "scan";
+    namespace status {
+        static constexpr const char* Subject = "scan-status";
 
-    enum class Status
-    {
-        CancelledByUser = 1,
-        Terminated      = 2,
-        InProgress      = 3,
-        Unknown
-    };
-
-    class In : public pack::Node
-    {
-    public:
-        enum class Type
+        class Out : public pack::Node
         {
-            Local,
-            Ip,
-            Multy,
-            Full,
+            enum class Status
+            {
+                CancelledByUser = 1,
+                Terminated      = 2,
+                InProgress      = 3,
+                Unknown
+            };
+
+        public:
+            pack::Enum<Status> status     = FIELD("status");
+            pack::String       progress   = FIELD("progress");
+            pack::Int64        discovered = FIELD("discovered");
+            pack::Int64        ups        = FIELD("ups-discovered");
+            pack::Int64        epdu       = FIELD("epdu-discovered");
+            pack::Int64        sts        = FIELD("sts-discovered");
+            pack::Int64        sensors    = FIELD("sensors-discovered");
+
+        public:
+            using pack::Node::Node;
+            META(Out, status, progress, discovered, ups, epdu, sts, sensors);
+        };
+    } // namespace status
+
+    struct Response : public pack::Node
+    {
+        enum class Status
+        {
+            Success,
+            Fail,
             Unknown
         };
-        pack::String       linkSrc       = FIELD("linkSrc");
-        pack::String       parent        = FIELD("parent");
-        pack::Int32        priority      = FIELD("priority");
-        pack::Enum<Status> status        = FIELD("priority");
-        pack::StringList   documents     = FIELD("documents");
-        pack::StringList   ips           = FIELD("ips");
-        pack::StringList   ipsDisabled   = FIELD("ipsDisabled");
-        pack::StringList   scans         = FIELD("scans");
-        pack::StringList   scansDisabled = FIELD("scansDisabled");
-        pack::Enum<Type>   type          = FIELD("type");
+
+        pack::Enum<Status> status = FIELD("status");
+        pack::String       data   = FIELD("data");
 
     public:
         using pack::Node::Node;
-        META(In, linkSrc, parent, priority, status, documents, ips, ipsDisabled, scans, scansDisabled, type);
+        META(Response, status, data);
     };
+    std::ostream& operator<<(std::ostream& ss, Response::Status value);
+    std::istream& operator>>(std::istream& ss, Response::Status& value);
 
-    class Out : public pack::Node
-    {
-    public:
-        pack::Enum<Status> status     = FIELD("status");
-        pack::String       progress   = FIELD("progress");
-        pack::Int64        discovered = FIELD("discovered");
-        pack::Int64        ups        = FIELD("ups-discovered");
-        pack::Int64        epdu       = FIELD("epdu-discovered");
-        pack::Int64        sts        = FIELD("sts-discovered");
-        pack::Int64        sensors    = FIELD("sensors-discovered");
+    namespace stop {
+        static constexpr const char* Subject = "scan-stop";
 
-    public:
-        using pack::Node::Node;
-        META(Out, status, progress, discovered, ups, epdu, sts, sensors);
-    };
+        using Out = Response;
+    } // namespace stop
 
-    std::ostream& operator<<(std::ostream& ss, In::Type value);
-    std::istream& operator>>(std::istream& ss, In::Type& value);
+    namespace start {
+        static constexpr const char* Subject = "scan-start";
 
-    std::ostream& operator<<(std::ostream& ss, Status value);
-    std::istream& operator>>(std::istream& ss, Status& value);
+        using Out = Response;
 
+        class In : public pack::Node
+        {
+        public:
+            enum class Type
+            {
+                Local,
+                Ip,
+                Multy,
+                Full,
+                Unknown
+            };
+            pack::String     linkSrc       = FIELD("linkSrc");
+            pack::String     parent        = FIELD("parent");
+            pack::Int32      priority      = FIELD("priority");
+            pack::StringList documents     = FIELD("documents");
+            pack::StringList ips           = FIELD("ips");
+            pack::StringList ipsDisabled   = FIELD("ipsDisabled");
+            pack::StringList scans         = FIELD("scans");
+            pack::StringList scansDisabled = FIELD("scansDisabled");
+            pack::Enum<Type> type          = FIELD("type");
+
+        public:
+            using pack::Node::Node;
+            META(In, linkSrc, parent, priority, documents, ips, ipsDisabled, scans, scansDisabled, type);
+        };
+
+        std::ostream& operator<<(std::ostream& ss, In::Type value);
+        std::istream& operator>>(std::istream& ss, In::Type& value);
+
+    } // namespace start
 } // namespace disco::commands::scan
 
 // =====================================================================================================================
