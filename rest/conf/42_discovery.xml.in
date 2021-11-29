@@ -26,25 +26,20 @@
     <method>GET</method>
 </mapping>
 
-<!-- POST admin/scan -->
 <mapping>
-  <target>discovery/scan@lib${NAME}</target>
+  <target>discovery/scan/start@lib${NAME}</target>
   <url>^/api/v1/admin/scan.*$</url>
   <method>POST</method>
 </mapping>
 
-<!-- GET admin/scan -->
 <mapping>
-  <target>discovery/scan@lib${NAME}</target>
+  <target>discovery/scan/status@lib${NAME}</target>
   <url>^/api/v1/admin/scan.*$</url>
   <method>GET</method>
 </mapping>
 
-
-
-<!-- DELETE admin/scan -->
 <mapping>
-    <target>scan_run@libfty_rest</target>
+    <target>discovery/scan/stop@lib${NAME}</target>
     <url>^/api/v1/admin/scan.*$</url>
     <method>DELETE</method>
 </mapping>

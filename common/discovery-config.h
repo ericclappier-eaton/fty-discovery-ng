@@ -11,9 +11,9 @@ struct ConfigDiscovery : public pack::Node
     struct Server : public pack::Node
     {
         pack::Int64  timeout    = FIELD("timeout");
-        pack::Int32  background = FIELD("background"); // bool?
+        pack::Int32  background = FIELD("background"); 
         pack::String workdir    = FIELD("workdir");
-        pack::Int32  verbose    = FIELD("verbose"); // bool?
+        pack::Int32  verbose    = FIELD("verbose");
 
         using pack::Node::Node;
         META(Server, timeout, background, workdir, verbose);
@@ -43,8 +43,8 @@ struct ConfigDiscovery : public pack::Node
 
     struct Disabled : public pack::Node
     {
-        pack::StringList scans = FIELD("scans_disabled"); // bool?
-        pack::StringList ips   = FIELD("ips_disabled");   // bool?
+        pack::StringList scans = FIELD("scans_disabled");
+        pack::StringList ips   = FIELD("ips_disabled"); 
 
         using pack::Node::Node;
         META(Disabled, scans, ips);

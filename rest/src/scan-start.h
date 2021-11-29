@@ -22,12 +22,12 @@
 #pragma once
 #include <fty/rest/runner.h>
 
-namespace fty::disco {
+namespace fty::disco::start {
 
 class Scan : public rest::Runner
 {
 public:
-    INIT_REST("discovery/scan");
+    INIT_REST("discovery/scan/start");
 
 public:
     unsigned run() override;
@@ -41,4 +41,4 @@ private:
     // clang-format on
 };
 
-} // namespace fty::disco
+} // namespace fty::disco::start
