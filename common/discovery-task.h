@@ -88,6 +88,10 @@ public:
     {
     }
 
+    Task() : m_in(fty::disco::Message()), m_bus(nullptr)
+    {
+    }
+
     void operator()() override
     {
         Response<ResponseT> response;

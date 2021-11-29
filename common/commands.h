@@ -106,10 +106,8 @@ namespace commands::mibs {
 
 // =====================================================================================================================
 
-namespace commands::assets {
-    static constexpr const char* Subject = "assets";
-
-    class In : public pack::Node
+namespace commands {
+    class CommonIn : public pack::Node
     {
     public:
         class Settings : public pack::Node
@@ -134,32 +132,40 @@ namespace commands::assets {
 
     public:
         using pack::Node::Node;
-        META(In, address, protocol, port, settings);
+        META(CommonIn, address, protocol, port, settings);
+    };
+}
+
+namespace commands::assets {
+    static constexpr const char* Subject = "assets";
+
+    using In = commands::CommonIn;
+
+    using Ext = pack::ObjectList<pack::StringMap>;
+
+    class Asset : public pack::Node
+    {
+    public:
+        pack::String name    = FIELD("name");   // TBD Needed ???
+        pack::String type    = FIELD("type");
+        pack::String subtype = FIELD("sub_type");
+        Ext          ext     = FIELD("ext");
+
+    public:
+        using pack::Node::Node;
+        META(Asset, type, subtype, ext);
     };
 
     class Return : public pack::Node
     {
     public:
-        class Asset : public pack::Node
-        {
-        public:
-            // pack::String                      name    = FIELD("name");
-            pack::String                      type    = FIELD("type");
-            pack::String                      subtype = FIELD("sub_type");
-            pack::ObjectList<pack::StringMap> ext     = FIELD("ext");
-
-        public:
-            using pack::Node::Node;
-            META(Asset, type, subtype, ext);
-        };
-
-    public:
-        pack::String subAddress = FIELD("sub_address", "-1");
-        Asset        asset      = FIELD("asset");
+        pack::String            subAddress = FIELD("sub_address", "-1");
+        Asset                   asset      = FIELD("asset");
+        pack::ObjectList<Asset> sensors    = FIELD("sensors");
 
     public:
         using pack::Node::Node;
-        META(Return, subAddress, asset);
+        META(Return, subAddress, asset, sensors);
     };
 
     using Out = pack::ObjectList<Return>;
@@ -293,6 +299,29 @@ namespace disco::commands::scan {
 
     } // namespace start
 } // namespace disco::commands::scan
+
+// =====================================================================================================================
+// TBD: TO REMOVE
+namespace commands::discoveryauto {
+    static constexpr const char* Subject = "discovery-auto";
+
+    using In = commands::CommonIn;
+
+    class Out : public pack::Node
+    {
+    public:
+        pack::String result = FIELD("result");
+
+    public:
+        using pack::Node::Node;
+        META(Out, result);
+    };
+
+} // namespace commands::discoveryauto
+
+namespace commands {
+    using InVar = pack::Variant<commands::discoveryauto::In, commands::assets::In>;
+}
 
 // =====================================================================================================================
 

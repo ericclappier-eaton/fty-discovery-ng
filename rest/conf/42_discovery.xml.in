@@ -43,3 +43,10 @@
     <url>^/api/v1/admin/scan.*$</url>
     <method>DELETE</method>
 </mapping>
+
+<!-- TBD TO REMOVE -->
+<mapping>
+    <target>discovery/auto@lib${NAME}</target>
+    <url>^/api/v1/admin/discovery/auto$</url>
+    <method>POST</method>
+</mapping>
