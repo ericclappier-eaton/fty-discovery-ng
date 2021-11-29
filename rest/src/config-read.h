@@ -22,14 +22,13 @@
 #pragma once
 #include <fty/rest/runner.h>
 
-namespace fty::disco::zproject {
+namespace fty::disco {
 
-class Config : public rest::Runner
+class ConfigRead: public rest::Runner
 {
 public:
-    INIT_REST("discovery/config-zproject");
+    INIT_REST("discovery/config/read");
 
-public:
     unsigned run() override;
 
 private:
@@ -39,6 +38,7 @@ private:
         { rest::User::Profile::Dashboard, rest::Access::Read }
     };
     // clang-format on
+
 };
 
-} // namespace fty::disco::zproject
+} // namespace fty::disco
