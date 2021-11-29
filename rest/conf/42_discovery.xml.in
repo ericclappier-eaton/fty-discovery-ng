@@ -14,26 +14,33 @@
     <method>POST</method>
 </mapping>
 
-<!-- admin/config -->
+
 <mapping>
-    <target>discovery/config-zproject@lib${NAME}</target>
+    <target>discovery/config/create@lib${NAME}</target>
+    <url>^/api/v1/admin/config.*$</url>
+    <method>POST</method>
+</mapping>
+<mapping>
+    <target>discovery/config/read@lib${NAME}</target>
     <url>^/api/v1/admin/config.*$</url>
     <method>GET</method>
 </mapping>
 
 <!-- POST admin/scan -->
 <mapping>
-  <target>scan_run@libfty_rest</target>
+  <target>discovery/scan@lib${NAME}</target>
   <url>^/api/v1/admin/scan.*$</url>
   <method>POST</method>
 </mapping>
 
 <!-- GET admin/scan -->
 <mapping>
-  <target>scan_progress@libfty_rest</target>
+  <target>discovery/scan@lib${NAME}</target>
   <url>^/api/v1/admin/scan.*$</url>
   <method>GET</method>
 </mapping>
+
+
 
 <!-- DELETE admin/scan -->
 <mapping>
