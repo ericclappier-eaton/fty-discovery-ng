@@ -33,7 +33,7 @@ etn_target(shared ${PROJECT_NAME}-rest
 etn_configure_file(
     conf/42_discovery.xml.in
 
-    TARGET      ${PROJECT_NAME}
+    TARGET      ${PROJECT_NAME}-rest
     DESTINATION /etc/tntnet/bios.d
 )
 
