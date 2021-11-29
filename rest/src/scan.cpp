@@ -1,7 +1,7 @@
 #include "scan.h"
-#include "common/commands.h"
-#include "common/discovery-config.h"
-#include "common/message-bus.h"
+#include "commands.h"
+#include "discovery-config.h"
+#include "message-bus.h"
 #include "discovery-rest.h"
 #include <fty/rest/component.h>
 

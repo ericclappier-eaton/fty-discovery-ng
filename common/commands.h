@@ -111,7 +111,7 @@ namespace commands::assets {
 
 // =====================================================================================================================
 
-namespace disco::zproject::commands::config {
+namespace disco::commands::config {
     static constexpr const char* Subject = "config";
 
     class In : public pack::Node
@@ -122,16 +122,16 @@ namespace disco::zproject::commands::config {
         pack::StringList ips           = FIELD("FTY_DISCOVERY_IPS");
         pack::StringList docs          = FIELD("FTY_DISCOVERY_DOCUMENTS");
         pack::String     status        = FIELD("FTY_DISCOVERY_DEFAULT_VALUES_STATUS");
-        pack::String     priority      = FIELD("FTY_DISCOVERY_DEFAULT_VALUES_PRIORITY");
+        pack::Int32      priority      = FIELD("FTY_DISCOVERY_DEFAULT_VALUES_PRIORITY");
         pack::String     parent        = FIELD("FTY_DISCOVERY_DEFAULT_VALUES_PARENT");
         pack::String     linkSrc       = FIELD("FTY_DISCOVERY_DEFAULT_VALUES_LINK_SRC");
         pack::StringList scansDisabled = FIELD("FTY_DISCOVERY_SCANS_DISABLED");
         pack::StringList ipsDisabled   = FIELD("FTY_DISCOVERY_IPS_DISABLED");
         pack::StringList protocols     = FIELD("FTY_DISCOVERY_PROTOCOLS");
-        pack::String     dumpPool      = FIELD("FTY_DISCOVERY_DUMP_POOL");
-        pack::String     scanPool      = FIELD("FTY_DISCOVERY_SCAN_POOL");
-        pack::String     scanTimeout   = FIELD("FTY_DISCOVERY_SCAN_TIMEOUT");
-        pack::String     dumpLooptime  = FIELD("FTY_DISCOVERY_DUMP_LOOPTIME");
+        pack::Int32      dumpPool      = FIELD("FTY_DISCOVERY_DUMP_POOL");
+        pack::Int32      scanPool      = FIELD("FTY_DISCOVERY_SCAN_POOL");
+        pack::Int32      scanTimeout   = FIELD("FTY_DISCOVERY_SCAN_TIMEOUT");
+        pack::Int32      dumpLooptime  = FIELD("FTY_DISCOVERY_DUMP_LOOPTIME");
 
     public:
         using pack::Node::Node;
@@ -139,7 +139,7 @@ namespace disco::zproject::commands::config {
             dumpPool, scanPool, scanTimeout, dumpLooptime);
     };
 
-} // namespace disco::zproject::commands::config
+} // namespace disco::commands::config
 
 // =====================================================================================================================
 
@@ -202,9 +202,6 @@ namespace disco::commands::scan {
 
     std::ostream& operator<<(std::ostream& ss, Status value);
     std::istream& operator>>(std::istream& ss, Status& value);
-
-
-    // using Out = pack::StringList;
 
 } // namespace disco::commands::scan
 

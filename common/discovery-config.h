@@ -5,37 +5,6 @@
 namespace fty::disco {
 
 static constexpr const char* ConfigFile = "/etc/fty-discovery-ng/fty-discovery-ng.cfg";
-struct ConfigDiscovery;
-namespace zproject {
-    using Variable = std::string;
-    using Value    = std::string;
-
-    using Argument = std::pair<Variable, Value>;
-
-    static constexpr const char* ZConfigFile = "/etc/fty-discovery/fty-discovery-ng.conf";
-
-    static constexpr const char* Type      = "FTY_DISCOVERY_TYPE";
-    static constexpr const char* Scans     = "FTY_DISCOVERY_SCANS";
-    static constexpr const char* Ips       = "FTY_DISCOVERY_IPS";
-    static constexpr const char* Documents = "FTY_DISCOVERY_DOCUMENTS";
-    static constexpr const char* Protocols = "FTY_DISCOVERY_PROTOCOLS";
-
-    static constexpr const char* DefaultValStatus   = "FTY_DISCOVERY_DEFAULT_VALUES_STATUS";
-    static constexpr const char* DefaultValPriority = "FTY_DISCOVERY_DEFAULT_VALUES_PRIORITY";
-    static constexpr const char* DefaultValParent   = "FTY_DISCOVERY_DEFAULT_VALUES_PARENT";
-    static constexpr const char* DefaultValLinkSrc  = "FTY_DISCOVERY_DEFAULT_VALUES_LINK_SRC";
-
-    static constexpr const char* ScansDisabled = "FTY_DISCOVERY_SCANS_DISABLED";
-    static constexpr const char* IpsDisabled   = "FTY_DISCOVERY_IPS_DISABLED";
-
-    static constexpr const char* DumpPool     = "FTY_DISCOVERY_DUMP_POOL";
-    static constexpr const char* ScanPool     = "FTY_DISCOVERY_SCAN_POOL";
-    static constexpr const char* ScanTimeout  = "FTY_DISCOVERY_SCAN_TIMEOUT";
-    static constexpr const char* DumpLooptime = "FTY_DISCOVERY_DUMP_LOOPTIME";
-
-    fty::Expected<void> saveToFile(const fty::disco::ConfigDiscovery& config, const std::string& path = ZConfigFile);
-
-} // namespace zproject
 
 struct ConfigDiscovery : public pack::Node
 {
@@ -95,8 +64,8 @@ struct ConfigDiscovery : public pack::Node
 
     struct DefaultValuesLink : public pack::Node
     {
-        pack::String src  = FIELD("src");  // string??
-        pack::Int32  type = FIELD("type"); // int?
+        pack::String src  = FIELD("src");
+        pack::Int32  type = FIELD("type"); 
 
         using pack::Node::Node;
         META(DefaultValuesLink, src, type);
