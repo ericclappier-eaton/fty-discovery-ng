@@ -2,7 +2,7 @@
 
 etn_target(shared ${PROJECT_NAME}-rest
     SOURCES
-        conf/42_discovery.xml.in
+        src/discovery-rest.h
 
         src/mibs.h
         src/mibs.cpp
@@ -10,6 +10,12 @@ etn_target(shared ${PROJECT_NAME}-rest
         src/protocols.h
         src/asset.cpp
         src/asset.h
+        src/config-read.h
+        src/config-read.cpp
+        src/config-create.h
+        src/config-create.cpp
+        src/scan.h
+        src/scan.cpp
     USES
         ${PROJECT_NAME}-common
         fty-cmake-rest
@@ -27,7 +33,7 @@ etn_target(shared ${PROJECT_NAME}-rest
 etn_configure_file(
     conf/42_discovery.xml.in
 
-    TARGET      ${PROJECT_NAME}-rest
+    TARGET      ${PROJECT_NAME}
     DESTINATION /etc/tntnet/bios.d
 )
 
