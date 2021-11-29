@@ -23,11 +23,11 @@ struct ConfigDiscovery : public pack::Node
     {
         enum class Type
         {
+            Unknown,
             Local,
             Ip,
             Multy,
-            Full,
-            Unknown
+            Full
         };
 
         pack::Enum<Type> type      = FIELD("type");
@@ -96,14 +96,14 @@ struct ConfigDiscovery : public pack::Node
     Disabled         disabled  = FIELD("disabled");
     DefaultValuesAux aux       = FIELD("defaultValuesAux");
 
-    DefaultValuesLink link = FIELD("defaultValuesLink");
+    pack::ObjectList<DefaultValuesLink> links = FIELD("defaultValuesLink");
 
     Parameters parameters = FIELD("parameters");
     Log        log        = FIELD("log");
 
 
     using pack::Node::Node;
-    META(ConfigDiscovery, server, discovery, disabled, aux, link, parameters, log);
+    META(ConfigDiscovery, server, discovery, disabled, aux, links, parameters, log);
 
     fty::Expected<void> save(const std::string& path = ConfigFile);
     fty::Expected<void> load(const std::string& path = ConfigFile);
