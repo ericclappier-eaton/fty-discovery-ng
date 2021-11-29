@@ -1,72 +1,122 @@
 #include "commands.h"
 
-
 namespace fty::disco::commands::scan {
 
-std::ostream& operator<<(std::ostream& ss, In::Type value)
+namespace start {
+    std::ostream& operator<<(std::ostream& ss, In::Type value)
+    {
+        using Type = In::Type;
+
+        ss << [&]() {
+            switch (value) {
+                case Type::Local:
+                    return "localscan";
+                case Type::Ip:
+                    return "ipscan";
+                case Type::Multy:
+                    return "multiscan";
+                case Type::Full:
+                    return "fullscan";
+                case Type::Unknown:
+                    return "UNKNOWN";
+            }
+            return "Unknown";
+        }();
+        return ss;
+    }
+
+    std::istream& operator>>(std::istream& ss, In::Type& value)
+    {
+        using Type = In::Type;
+
+        std::string strval;
+        ss >> strval;
+        if (strval == "localscan") {
+            value = Type::Local;
+        } else if (strval == "ipscan") {
+            value = Type::Ip;
+        } else if (strval == "multiscan") {
+            value = Type::Multy;
+        } else if (strval == "fullscan") {
+            value = Type::Full;
+        } else {
+            value = Type::Unknown;
+        }
+        return ss;
+    }
+} // namespace start
+
+namespace status {
+    std::ostream& operator<<(std::ostream& ss, Out::Status value)
+    {
+        using Status = Out::Status;
+
+        ss << [&]() {
+            switch (value) {
+                case Status::CancelledByUser:
+                    return "1";
+                case Status::Terminated:
+                    return "2";
+                case Status::InProgress:
+                    return "3";
+                case Status::Unknown:
+                    return "0";
+            }
+            return "0";
+        }();
+        return ss;
+    }
+
+    std::istream& operator>>(std::istream& ss, Out::Status& value)
+    {
+        using Status = Out::Status;
+
+        std::string strval;
+        ss >> strval;
+        if (strval == "1") {
+            value = Status::CancelledByUser;
+        } else if (strval == "2") {
+            value = Status::Terminated;
+        } else if (strval == "3") {
+            value = Status::InProgress;
+        } else {
+            value = Status::Unknown;
+        }
+        return ss;
+    }
+} // namespace status
+
+std::ostream& operator<<(std::ostream& ss, Response::Status value)
 {
-    using Type = In::Type;
+    using Status = Response::Status;
 
     ss << [&]() {
         switch (value) {
-            case Type::Local:
-                return "localscan";
-            case Type::Ip:
-                return "ipscan";
-            case Type::Multy:
-                return "multiscan";
-            case Type::Full:
-                return "fullscan";
-            case Type::Unknown:
-                return "UNKNOWN";
+            case Status::Success:
+                return "success";
+            case Status::Fail:
+                return "fail";
+            case Status::Unknown:
+                return "unknown";
         }
         return "Unknown";
     }();
     return ss;
 }
-
-std::istream& operator>>(std::istream& ss, In::Type& value)
+std::istream& operator>>(std::istream& ss, Response::Status& value)
 {
-    using Type = In::Type;
+    using Status = Response::Status;
 
     std::string strval;
     ss >> strval;
-    if (strval == "localscan") {
-        value = Type::Local;
-    } else if (strval == "ipscan") {
-        value = Type::Ip;
-    } else if (strval == "multiscan") {
-        value = Type::Multy;
-    } else if (strval == "fullscan") {
-        value = Type::Full;
+    if (strval == "success") {
+        value = Status::Success;
+    } else if (strval == "fail") {
+        value = Status::Fail;
     } else {
-        value = Type::Unknown;
+        value = Status::Unknown;
     }
     return ss;
 }
-
-std::ostream& operator<<(std::ostream& ss, Status value)
-{
-    ss << [&]() {
-        switch (value) {
-            case Status::CancelledByUser:
-            case Status::Terminated:
-            case Status::InProgress:
-            case Status::Unknown:
-                return value;
-        }
-        return Status::Unknown;
-    }();
-    return ss;
-}
-std::istream& operator>>(std::istream& ss, Status& value)
-{
-    std::string strval;
-    ss >> strval;
-
-    value = static_cast<Status>(fty::convert<int>(strval));
-    return ss;
-}
-
 
 } // namespace fty::disco::commands::scan

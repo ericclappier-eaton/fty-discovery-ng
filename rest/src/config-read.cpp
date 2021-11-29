@@ -28,47 +28,35 @@ unsigned ConfigRead::run()
         std::stringstream ss;
         ss << cd.discovery.type;
         out.type = ss.str();
-    }
-    if (out.scans.key() == *key) {
+    } else if (out.scans.key() == *key) {
         out.scans = cd.discovery.scans;
-    }
-    if (out.ips.key() == *key) {
+    } else if (out.ips.key() == *key) {
         out.ips = cd.discovery.ips;
-    }
-    if (out.docs.key() == *key) {
+    } else if (out.docs.key() == *key) {
         out.docs = cd.discovery.documents;
-    }
-    if (out.status.key() == *key) {
+    } else if (out.status.key() == *key) {
         out.status = cd.aux.status;
-    }
-    if (out.priority.key() == *key) {
+    } else if (out.priority.key() == *key) {
         out.priority = cd.aux.priority;
-    }
-    if (out.parent.key() == *key) {
+    } else if (out.parent.key() == *key) {
         out.parent = cd.aux.parent;
-    }
-    if (out.linkSrc.key() == *key) {
-        out.linkSrc = cd.link.src;
-    }
-    if (out.scansDisabled.key() == *key) {
+    } else if (out.links.key() == *key) {
+        for (const auto& link : cd.links) {
+            out.links.append(link.src);
+        }
+    } else if (out.scansDisabled.key() == *key) {
         out.scansDisabled = cd.disabled.scans;
-    }
-    if (out.ipsDisabled.key() == *key) {
+    } else if (out.ipsDisabled.key() == *key) {
         out.ipsDisabled = cd.disabled.ips;
-    }
-    if (out.protocols.key() == *key) {
+    } else if (out.protocols.key() == *key) {
         out.protocols = cd.discovery.protocols;
-    }
-    if (out.dumpPool.key() == *key) {
+    } else if (out.dumpPool.key() == *key) {
         out.dumpPool = cd.parameters.maxDumpPoolNumber;
-    }
-    if (out.scanPool.key() == *key) {
+    } else if (out.scanPool.key() == *key) {
         out.scanPool = cd.parameters.maxScanPoolNumber;
-    }
-    if (out.scanTimeout.key() == *key) {
+    } else if (out.scanTimeout.key() == *key) {
         out.scanTimeout = cd.parameters.nutScannerTimeOut;
-    }
-    if (out.dumpLooptime.key() == *key) {
+    } else if (out.dumpLooptime.key() == *key) {
         out.dumpLooptime = cd.parameters.dumpDataLoopTime;
     }
 
