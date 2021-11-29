@@ -159,15 +159,15 @@ namespace disco::commands::scan {
 
         class Out : public pack::Node
         {
+        public:
             enum class Status
             {
-                CancelledByUser = 1,
-                Terminated      = 2,
-                InProgress      = 3,
-                Unknown
+                Unknown,
+                CancelledByUser,
+                Terminated,
+                InProgress
             };
 
-        public:
             pack::Enum<Status> status     = FIELD("status");
             pack::String       progress   = FIELD("progress");
             pack::Int64        discovered = FIELD("discovered");
@@ -180,6 +180,9 @@ namespace disco::commands::scan {
             using pack::Node::Node;
             META(Out, status, progress, discovered, ups, epdu, sts, sensors);
         };
+        std::ostream& operator<<(std::ostream& ss, Out::Status value);
+        std::istream& operator>>(std::istream& ss, Out::Status& value);
+
     } // namespace status
 
     struct Response : public pack::Node
@@ -198,6 +201,7 @@ namespace disco::commands::scan {
         using pack::Node::Node;
         META(Response, status, data);
     };
+
     std::ostream& operator<<(std::ostream& ss, Response::Status value);
     std::istream& operator>>(std::istream& ss, Response::Status& value);
 

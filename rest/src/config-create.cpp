@@ -46,8 +46,12 @@ unsigned ConfigCreate::run()
     if (in.parent.hasValue()) {
         cd.aux.parent = in.parent;
     }
-    if (in.linkSrc.hasValue()) {
-        cd.link.src = in.linkSrc;
+    if (in.links.hasValue()) {
+        for(const auto & link : in.links){
+            auto & tmp = cd.links.append();
+            tmp.src = link;
+            tmp.type = 1;
+        }
     }
     if (in.scansDisabled.hasValue()) {
         cd.disabled.scans = in.scansDisabled;
