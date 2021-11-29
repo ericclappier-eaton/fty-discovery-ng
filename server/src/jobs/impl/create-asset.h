@@ -12,8 +12,8 @@
 
 #pragma once
 
-#include "../../../../common/message-bus.h"
-#include "../../../../common/message.h"
+#include "message-bus.h"
+#include "message.h"
 
 namespace fty {
 class Message;

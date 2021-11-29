@@ -32,7 +32,7 @@ public:
     unsigned run() override;
 
 private:
-    Expected<std::string> discovery_auto(const commands::discoveryauto::In& param);
+    Expected<std::string> discoveryAuto(const commands::discoveryauto::In& param);
 
 private:
     // clang-format off
