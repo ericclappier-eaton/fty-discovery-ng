@@ -1,5 +1,6 @@
 #include "scan-status.h"
 #include "commands.h"
+#include "discovery-rest.h"
 #include "message-bus.h"
 #include <fty/rest/component.h>
 
