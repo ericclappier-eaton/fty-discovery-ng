@@ -38,8 +38,8 @@ TEST_CASE("Assets / Test output")
         "--data-dir=assets",
         "--agent-udpv4-endpoint=127.0.0.1:1161",
         "--logging-method=file:.snmpsim.txt",
-        "--variation-modules-dir=assets",
-        "--log-level=error"
+        "--variation-modules-dir=assets"
+        //"--log-level=error"
     });
     // clang-format on
 
