@@ -59,26 +59,31 @@ inline std::ostream& operator<<(std::ostream& ss, Type type)
 }
 
 // =====================================================================================================================
-
-void Protocols::run(const commands::protocols::In& in, commands::protocols::Out& out)
+std::string Protocols::getProtocolStr(const Type type)
 {
-    if (in.address == "__fake__") {
-        logInfo("{} address (test)", in.address);
-        auto& x = out.append();
-        x.protocol = "nut_snmp";
-        x.port = 1234;
-        x.reachable = true;
-        auto& y = out.append();
-        y.protocol = "nut_xml_pdc";
-        y.port = 4321;
-        y.reachable = false;
-        return;
+    std::string protocol;
+    switch (type) {
+        case Type::Snmp:
+            protocol = "nut_snmp";
+            break;
+        case Type::Xml:
+            protocol = "nut_xml_pdc";
+            break;
+        case Type::Powercom:
+            protocol = "nut_powercom";
+            break;
     }
+    return protocol;
+}
 
+// =====================================================================================================================
+Expected<commands::protocols::Out> Protocols::getProtocols(const commands::protocols::In& in) const
+{
     if (!available(in.address)) {
-        throw Error("Host is not available: {}", in.address.value());
+        return unexpected("Host is not available: {}", in.address.value());
     }
 
+    commands::protocols::Out out;
     // supported protocols, tokenized with default port
     // in *order* of preferences
     struct {
@@ -134,6 +139,21 @@ void Protocols::run(const commands::protocols::In& in, commands::protocols::Out&
         }
     }
 
+    return out;
+}
+
+void Protocols::run(const commands::protocols::In& in, commands::protocols::Out& out)
+{
+    if (in.address == "__fake__") {
+        out.setValue({"nut_snmp", "nut_xml_pdc"});
+        return;
+    }
+
+    auto protocols = getProtocols(in);
+    if (!protocols) {
+        throw Error(protocols.error().c_str());
+    }
+    out = *protocols;
     std::string resp = *pack::json::serialize(out, pack::Option::WithDefaults);
     logInfo("Return {}", resp);
 }

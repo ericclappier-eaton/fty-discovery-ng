@@ -26,6 +26,7 @@
 #include "jobs/assets.h"
 #include "jobs/mibs.h"
 #include "jobs/protocols.h"
+#include "jobs/auto-discovery.h"
 #include <fty/thread-pool.h>
 #include <fty_log.h>
 
@@ -90,6 +91,8 @@ void Discovery::discover(const disco::Message& msg)
         m_pool.pushWorker<job::Mibs>(msg, m_bus);
     } else if (msg.meta.subject == commands::assets::Subject) {
         m_pool.pushWorker<job::Assets>(msg, m_bus);
+    } else if (msg.meta.subject == commands::discoveryauto::Subject) {
+        m_pool.pushWorker<job::AutoDiscovery>(msg, m_bus);
     } else {
         logError("Subject not handled {}", msg.meta.subject);
     }
