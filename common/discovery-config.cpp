@@ -17,7 +17,7 @@ fty::Expected<void> ConfigDiscovery::load(const std::string& path)
 
 std::ostream& operator<<(std::ostream& ss, ConfigDiscovery::Discovery::Type value)
 {
-    using Type = fty::disco::ConfigDiscovery::Discovery::Type;
+    using Type = ConfigDiscovery::Discovery::Type;
 
     ss << [&]() {
         switch (value) {
@@ -39,7 +39,7 @@ std::ostream& operator<<(std::ostream& ss, ConfigDiscovery::Discovery::Type valu
 
 std::istream& operator>>(std::istream& ss, ConfigDiscovery::Discovery::Type& value)
 {
-    using Type = fty::disco::ConfigDiscovery::Discovery::Type;
+    using Type = ConfigDiscovery::Discovery::Type;
 
     std::string strval;
     ss >> strval;
