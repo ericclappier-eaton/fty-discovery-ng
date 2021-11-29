@@ -50,6 +50,7 @@ public:
 
 private:
     void discover(const disco::Message& msg);
+    void addTask();
     void doStop();
 
 private:

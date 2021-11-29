@@ -16,41 +16,36 @@
 
 #pragma once
 #include "discovery-task.h"
+#include "impl/create-asset.h"
 
 // =====================================================================================================================
 
 namespace fty::job {
 
-/// Forward declaration
-enum class Type;
-
-/// Discover supported protocols by endpoint
-/// Returns @ref commands::protocols::Out (list of protocols)
-class Protocols : public Task<Protocols, commands::protocols::In, commands::protocols::Out>
+/// Automatic discover Assets from enpoint
+/// Returns @ref commands::discoveryauto::Out (empty if no error in input parameter)
+class AutoDiscovery : public Task<AutoDiscovery, commands::discoveryauto::In, commands::discoveryauto::Out>
 {
 public:
     using Task::Task;
 
-    // Get list protocols found
-    Expected<std::vector<Type>> getProtocols(const commands::protocols::In& in) const;
-
-    /// Runs discover job.
-    void run(const commands::protocols::In& in, commands::protocols::Out& out);
-
-    static std::string getProtocolStr(const Type type);
-
+    // Runs discover job.
+    void run(const commands::discoveryauto::In& in, commands::discoveryauto::Out& out);
 private:
-    /// Try out if endpoint support xml pdc protocol
-    Expected<void> tryXmlPdc(const commands::protocols::In& in) const;
+    // Construct and update output ext attributes according input ext attributes
+    static Expected<void> updateExt(const commands::assets::Ext& ext_in, fty::asset::create::Ext& ext_out);
 
-    /// Try out if endpoint support xnmp protocol
-    Expected<void> trySnmp(const commands::protocols::In& in) const;
+    // Update host name
+    static Expected<void> updateHostName(const std::string& address, fty::asset::create::Ext& ext);
 
-    /// Try out if endpoint support genapi protocol
-    Expected<void> tryPowercom(const commands::protocols::In& in) const;
+    // Scan node(s)
+    static void scan(const commands::discoveryauto::In in);
 
-    /// Sorts protocols from most useful
-    static void sortProtocols(std::vector<Type>& protocols);
+    // Input parameters
+    commands::discoveryauto::In m_params;
+
+    // Thread pool use for discovery scan
+    fty::ThreadPool m_pool;
 };
 
 } // namespace fty::job
