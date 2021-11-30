@@ -267,13 +267,13 @@ namespace disco::commands::scan {
         public:
             enum class Type
             {
+                Unknown,
                 Local,
                 Ip,
                 Multy,
-                Full,
-                Unknown
+                Full
             };
-            pack::String     linkSrc       = FIELD("linkSrc");
+            pack::StringList linkSrc       = FIELD("linkSrc");
             pack::String     parent        = FIELD("parent");
             pack::Int32      priority      = FIELD("priority");
             pack::StringList documents     = FIELD("documents");
@@ -297,3 +297,5 @@ namespace disco::commands::scan {
 // =====================================================================================================================
 
 } // namespace fty
+
+pack::S
