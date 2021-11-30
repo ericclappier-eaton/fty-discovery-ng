@@ -19,17 +19,17 @@
 
 namespace fty::impl::nut {
 
-struct Mappping;
+struct Mapping;
 
 class Mapper
 {
     static constexpr const char* mapFile = "/usr/share/fty-common-nut/mapping.conf";
 
 public:
-    static std::string mapKey(const std::string& key);
+    static std::string mapKey(const std::string& key, int index = 0);
 
 private:
-    static const Mappping& mapping();
+    static const Mapping& mapping();
 };
 
 

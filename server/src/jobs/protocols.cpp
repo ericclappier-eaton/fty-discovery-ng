@@ -57,17 +57,28 @@ inline std::ostream& operator<<(std::ostream& ss, Type type)
 }
 
 // =====================================================================================================================
-
-
-void Protocols::run(const commands::protocols::In& in, commands::protocols::Out& out)
+std::string Protocols::getProtocolStr(const Type type)
 {
-    if (in.address == "__fake__") {
-        out.setValue({"nut_snmp", "nut_xml_pdc"});
-        return;
+    std::string protocol;
+    switch (type) {
+        case Type::Snmp:
+            protocol = "nut_snmp";
+            break;
+        case Type::Xml:
+            protocol = "nut_xml_pdc";
+            break;
+        case Type::Powercom:
+            protocol = "nut_powercom";
+            break;
     }
+    return protocol;
+}
 
+// =====================================================================================================================
+Expected<std::vector<Type>> Protocols::getProtocols(const commands::protocols::In& in) const
+{
     if (!available(in.address)) {
-        throw Error("Host is not available: {}", in.address.value());
+        return unexpected("Host is not available: {}", in.address.value());
     }
 
     std::vector<Type> protocols;
@@ -94,19 +105,23 @@ void Protocols::run(const commands::protocols::In& in, commands::protocols::Out&
     }
 
     sortProtocols(protocols);
+    return protocols;
+}
 
-    for (const auto& prot : protocols) {
-        switch (prot) {
-            case Type::Snmp:
-                out.append("nut_snmp");
-                break;
-            case Type::Xml:
-                out.append("nut_xml_pdc");
-                break;
-            case Type::Powercom:
-                out.append("nut_powercom");
-                break;
-        }
+void Protocols::run(const commands::protocols::In& in, commands::protocols::Out& out)
+{
+    if (in.address == "__fake__") {
+        out.setValue({"nut_snmp", "nut_xml_pdc"});
+        return;
+    }
+
+    auto protocols = getProtocols(in);
+    if (!protocols) {
+        throw Error(protocols.error().c_str());
+    }
+
+    for (const auto& prot : *protocols) {
+        out.append(getProtocolStr(prot));
     }
     std::string resp = *pack::json::serialize(out);
     log_info("Return %s", resp.c_str());
@@ -140,7 +155,7 @@ Expected<void> Protocols::tryPowercom(const commands::protocols::In& in) const
     if (auto content = ne.get("etn/v1/comm/services/powerdistributions1")) {
         try {
             YAML::Node node = YAML::Load(*content);
-            
+
             if (node["device-type"].as<std::string>() == "ups") {
                 return {};
             }

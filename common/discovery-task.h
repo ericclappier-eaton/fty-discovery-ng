@@ -88,6 +88,8 @@ public:
     {
     }
 
+    Task() = default;
+
     void operator()() override
     {
         Response<ResponseT> response;

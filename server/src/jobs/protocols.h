@@ -31,8 +31,13 @@ class Protocols : public Task<Protocols, commands::protocols::In, commands::prot
 public:
     using Task::Task;
 
+    // Get list protocols found
+    Expected<std::vector<Type>> getProtocols(const commands::protocols::In& in) const;
+
     /// Runs discover job.
     void run(const commands::protocols::In& in, commands::protocols::Out& out);
+
+    static std::string getProtocolStr(const Type type);
 
 private:
     /// Try out if endpoint support xml pdc protocol

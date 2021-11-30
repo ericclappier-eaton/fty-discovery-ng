@@ -1,5 +1,5 @@
 /*  ====================================================================================================================
-    message.h - Common message bus wrapper
+    auto.h - Common message bus wrapper
 
     Copyright (C) 2014 - 2020 Eaton
 
@@ -20,24 +20,26 @@
 */
 
 #pragma once
+#include "commands.h"
 #include <fty/rest/runner.h>
 
-namespace fty::disco {
+namespace fty {
 
-class ConfigCreate : public rest::Runner
+class DiscoveryAutoRest : public rest::Runner
 {
 public:
-    INIT_REST("discovery/config");
-
+    INIT_REST("discovery/auto");
     unsigned run() override;
+
+private:
+    Expected<std::string> discoveryAuto(const commands::discoveryauto::In& param);
 
 private:
     // clang-format off
     Permissions m_permissions = {
-        { rest::User::Profile::Admin,     rest::Access::Create }
+        { rest::User::Profile::Admin, rest::Access::Edit }
     };
     // clang-format on
-
 };
 
-} // namespace fty::disco
+} // namespace fty

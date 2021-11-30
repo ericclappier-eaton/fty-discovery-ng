@@ -20,6 +20,11 @@ etn_target(shared ${PROJECT_NAME}-rest
         src/scan-stop.cpp
         src/scan-status.h
         src/scan-status.cpp
+        
+        # TBD TO REMOVE
+        src/auto.cpp
+        src/auto.h
+
     USES
         ${PROJECT_NAME}-common
         fty-cmake-rest

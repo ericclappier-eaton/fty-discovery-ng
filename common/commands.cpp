@@ -18,9 +18,9 @@ namespace start {
                 case Type::Full:
                     return "fullscan";
                 case Type::Unknown:
-                    return "UNKNOWN";
+                    return "unknown";
             }
-            return "Unknown";
+            return "unknown";
         }();
         return ss;
     }
@@ -99,7 +99,7 @@ std::ostream& operator<<(std::ostream& ss, Response::Status value)
             case Status::Unknown:
                 return "unknown";
         }
-        return "Unknown";
+        return "unknown";
     }();
     return ss;
 }

@@ -14,6 +14,8 @@ etn_target(static ${PROJECT_NAME}-static
         src/jobs/mibs.h
         src/jobs/assets.cpp
         src/jobs/assets.h
+        src/jobs/auto-discovery.cpp
+        src/jobs/auto-discovery.h
 
         src/jobs/impl/snmp.cpp
         src/jobs/impl/snmp.h
@@ -26,6 +28,8 @@ etn_target(static ${PROJECT_NAME}-static
         src/jobs/impl/mibs.h
         src/jobs/impl/uuid.cpp
         src/jobs/impl/uuid.h
+        src/jobs/impl/create-asset.cpp
+        src/jobs/impl/create-asset.h
 
         src/jobs/impl/nut/mapper.cpp
         src/jobs/impl/nut/mapper.h
@@ -47,6 +51,10 @@ etn_target(static ${PROJECT_NAME}-static
         crypto
         uuid
         yaml-cpp
+        libfty-asset
+        fty-asset-libng
+        tntdb
+        cxxtools
     PRIVATE
 )
 
