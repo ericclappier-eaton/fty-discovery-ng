@@ -319,10 +319,6 @@ namespace commands::discoveryauto {
 
 } // namespace commands::discoveryauto
 
-namespace commands {
-    using InVar = pack::Variant<commands::discoveryauto::In, commands::assets::In>;
-}
-
 // =====================================================================================================================
 
 } // namespace fty

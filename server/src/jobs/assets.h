@@ -24,7 +24,7 @@ namespace fty::job {
 
 struct DeviceInfo {
     int indexDevice;
-    std::string& deviceSerial;
+    std::string deviceSerial;
     std::string type;
 };
 
