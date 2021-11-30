@@ -11,7 +11,7 @@ struct ConfigDiscovery : public pack::Node
     struct Server : public pack::Node
     {
         pack::Int64  timeout    = FIELD("timeout");
-        pack::Int32  background = FIELD("background"); 
+        pack::Int32  background = FIELD("background");
         pack::String workdir    = FIELD("workdir");
         pack::Int32  verbose    = FIELD("verbose");
 
@@ -44,7 +44,7 @@ struct ConfigDiscovery : public pack::Node
     struct Disabled : public pack::Node
     {
         pack::StringList scans = FIELD("scans_disabled");
-        pack::StringList ips   = FIELD("ips_disabled"); 
+        pack::StringList ips   = FIELD("ips_disabled");
 
         using pack::Node::Node;
         META(Disabled, scans, ips);
@@ -65,7 +65,7 @@ struct ConfigDiscovery : public pack::Node
     struct DefaultValuesLink : public pack::Node
     {
         pack::String src  = FIELD("src");
-        pack::Int32  type = FIELD("type"); 
+        pack::Int32  type = FIELD("type");
 
         using pack::Node::Node;
         META(DefaultValuesLink, src, type);
@@ -83,13 +83,15 @@ struct ConfigDiscovery : public pack::Node
         META(Parameters, mappingFile, maxDumpPoolNumber, maxScanPoolNumber, nutScannerTimeOut, dumpDataLoopTime);
     };
 
-    struct Log : public pack::Node
+    struct DefaultValuesExt : public pack::Node
     {
-        pack::String config = FIELD("config");
+        pack::String key   = FIELD("key");
+        pack::String value = FIELD("value");
 
         using pack::Node::Node;
-        META(Log, config);
+        META(DefaultValuesExt, key, value);
     };
+
 
     Server           server    = FIELD("server");
     Discovery        discovery = FIELD("discovery");
@@ -98,12 +100,11 @@ struct ConfigDiscovery : public pack::Node
 
     pack::ObjectList<DefaultValuesLink> links = FIELD("defaultValuesLink");
 
-    Parameters parameters = FIELD("parameters");
-    Log        log        = FIELD("log");
-
+    Parameters      parameters = FIELD("parameters");
+    DefaultValuesExt ext = FIELD("defaultValuesExt");
 
     using pack::Node::Node;
-    META(ConfigDiscovery, server, discovery, disabled, aux, links, parameters, log);
+    META(ConfigDiscovery, server, discovery, disabled, aux, links, parameters, ext);
 
     fty::Expected<void> save(const std::string& path = ConfigFile);
     fty::Expected<void> load(const std::string& path = ConfigFile);
