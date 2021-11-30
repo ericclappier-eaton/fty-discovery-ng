@@ -22,7 +22,7 @@
 
 namespace fty::job {
 
-Expected<void> AutoDiscovery::updateExt(const commands::assets::Ext &ext_in, fty::asset::create::Ext &ext_out)
+Expected<void> AutoDiscovery::updateExt(const commands::assets::Ext &extIn, fty::asset::create::Ext &extOut)
 {
     // Construct and update output ext attributes according input ext attributes
     // [{ "key": "val", "read_only": "true" },...] -> {
@@ -33,22 +33,22 @@ Expected<void> AutoDiscovery::updateExt(const commands::assets::Ext &ext_in, fty
     //                                                  },
     //                                                  ...
     //                                                }
-    for (auto it = ext_in.begin(); it != ext_in.end(); it++) {
+    for (const auto& it: extIn) {
         fty::asset::create::MapExtObj newMapExtObj;
-        std::string key;
+        std::string keyVal;
         // for each attribute
-        for (auto it_attr = it->begin(); it_attr != it->end(); it_attr++) {
-            if (it_attr->first == "read_only") {
-                newMapExtObj.readOnly = it_attr->second == "true" ? true : false;
+        for (const auto& [key, value]: it) {
+            if (key == "read_only") {
+                newMapExtObj.readOnly = (value == "true") ? true : false;
             }
             else {
                 // It is the name of the key and its associated value
-                key = it_attr->first;
-                newMapExtObj.value = it_attr->second;
+                keyVal = key;
+                newMapExtObj.value = value;
             }
         }
-        if (!key.empty()) {
-            ext_out.append(key, newMapExtObj);
+        if (!keyVal.empty()) {
+            extOut.append(keyVal, newMapExtObj);
         }
     }
     return {};
@@ -58,33 +58,33 @@ Expected<void> AutoDiscovery::updateHostName(const std::string& address, fty::as
 {
     if (!address.empty()) {
         // Set host name
-        struct sockaddr_in sa_in;
-        struct sockaddr* sa  = reinterpret_cast<sockaddr*>(&sa_in);
+        struct sockaddr_in saIn;
+        struct sockaddr* sa  = reinterpret_cast<sockaddr*>(&saIn);
         socklen_t len = sizeof(sockaddr_in);
-        char dns_name[NI_MAXHOST];
-        sa_in.sin_family = AF_INET;
-        memset(dns_name, 0, NI_MAXHOST);
-        if (inet_aton(address.c_str(), &sa_in.sin_addr) == 1) {
-            if (!getnameinfo(sa, len, dns_name, sizeof(dns_name), NULL, 0, NI_NAMEREQD)) {
-                auto &it_ext_dns = ext.append("dns.1");
-                it_ext_dns.value = dns_name;
-                it_ext_dns.readOnly = false;
-                logDebug("Retrieved DNS information: FQDN = '{}'", dns_name);
-                char* p = strchr(dns_name, '.');
+        char dnsName[NI_MAXHOST];
+        saIn.sin_family = AF_INET;
+        memset(dnsName, 0, NI_MAXHOST);
+        if (inet_aton(address.c_str(), &saIn.sin_addr) == 1) {
+            if (!getnameinfo(sa, len, dnsName, sizeof(dnsName), NULL, 0, NI_NAMEREQD)) {
+                auto &itExtDns = ext.append("dns.1");
+                itExtDns.value = dnsName;
+                itExtDns.readOnly = false;
+                logDebug("Retrieved DNS information: FQDN = '{}'", dnsName);
+                char* p = strchr(dnsName, '.');
                 if (p) {
                     *p = 0;
                 }
-                auto &it_ext_hostname = ext.append("hostname");
-                it_ext_hostname.value = dns_name;
-                it_ext_hostname.readOnly = false;
-                logDebug("Hostname = '{}'", dns_name);
+                auto &itExtHostname = ext.append("hostname");
+                itExtHostname.value = dnsName;
+                itExtHostname.readOnly = false;
+                logDebug("Hostname = '{}'", dnsName);
             }
             else {
-                return fty::unexpected("No host information retrieved from DNS");
+                return fty::unexpected("No host information retrieved from DNS for {}", address);
             }
         }
         else {
-            return fty::unexpected("Error during read DNS");
+            return fty::unexpected("Error during read DNS for {}", address);
         }
     }
     else {
@@ -146,21 +146,21 @@ void AutoDiscovery::scan(const commands::discoveryauto::In in)
     /////////////////////////////////////////////////////////////////////
 
     // Get list of protocols
-    commands::protocols::In in_prot;
-    in_prot.address = in.address;
+    commands::protocols::In inProt;
+    inProt.address = in.address;
     Protocols protocols;
-    auto list_protocols = protocols.getProtocols(in_prot);
-    if (!list_protocols) {
-        logError(list_protocols.error());
+    auto listProtocols = protocols.getProtocols(inProt);
+    if (!listProtocols) {
+        logError(listProtocols.error());
         return;
     }
-    std::ostringstream list_str;
-    std::for_each((*list_protocols).begin(), (*list_protocols).end(),
-        [&list_str](const fty::job::Type& type) {
-          list_str << Protocols::getProtocolStr(type) << " ";
+    std::ostringstream listStr;
+    std::for_each((*listProtocols).begin(), (*listProtocols).end(),
+        [&listStr](const fty::job::Type& type) {
+          listStr << Protocols::getProtocolStr(type) << " ";
         }
     );
-    logDebug("Found protocols [ {}]", list_str.str());
+    logDebug("Found protocols [ {}]", listStr.str());
 
     // Init bus
     fty::disco::MessageBus bus;
@@ -172,17 +172,17 @@ void AutoDiscovery::scan(const commands::discoveryauto::In in)
 
     // For each protocols read, get assets list available
     // Note: stop when found first assets with the protocol in progress
-    for (const auto& prot : *list_protocols) {
+    for (const auto& prot : *listProtocols) {
         logInfo("Try with protocol {}: ", Protocols::getProtocolStr(prot));
 
-        commands::assets::In in_asset(in);
-        in_asset.protocol = Protocols::getProtocolStr(prot);
+        commands::assets::In inAsset(in);
+        inAsset.protocol = Protocols::getProtocolStr(prot);
 
-        logInfo("in_asset address={}", in_asset.address);
+        logInfo("in_asset address={}", inAsset.address);
 
-        commands::assets::Out out_asset;
+        commands::assets::Out outAsset;
         Assets assets;
-        if (auto getAssetsRes = assets.getAssets(in_asset, out_asset)) {
+        if (auto getAssetsRes = assets.getAssets(inAsset, outAsset)) {
             logInfo("Found asset with protocol {}", Protocols::getProtocolStr(prot));
 
             auto getStatus = [deviceCentricView]() -> uint {
@@ -193,7 +193,7 @@ void AutoDiscovery::scan(const commands::discoveryauto::In in)
             std::string assetNameCreated;
 
             // For each asset to create
-            for (auto& asset : out_asset) {
+            for (auto& asset : outAsset) {
                 fty::asset::create::Request req;
                 req.type = asset.asset.type;
                 req.sub_type = asset.asset.subtype;
@@ -223,29 +223,29 @@ void AutoDiscovery::scan(const commands::discoveryauto::In in)
                 // Now create sensors attached to the asset
                 for (auto& sensor : asset.sensors) {
                     // TBD add a function ???
-                    fty::asset::create::Request req_sensor;
-                    req_sensor.type = sensor.type;
-                    req_sensor.sub_type = sensor.subtype;
-                    req_sensor.status = getStatus();
-                    req_sensor.priority = 3;
-                    req_sensor.linked = {}; //defaultValuesLinks; // TBD ???
-                    req_sensor.parent = assetNameCreated;
+                    fty::asset::create::Request reqSensor;
+                    reqSensor.type = sensor.type;
+                    reqSensor.sub_type = sensor.subtype;
+                    reqSensor.status = getStatus();
+                    reqSensor.priority = 3;
+                    reqSensor.linked = {}; //defaultValuesLinks; // TBD ???
+                    reqSensor.parent = assetNameCreated;
 
                     // Add logical asset in ext
-                    auto ext_logical_asset = sensor.ext.append();
-                    ext_logical_asset.append("logical_asset", (defaultParent == "0") ? "" : defaultParent);
-                    ext_logical_asset.append("read_only", "false");
+                    auto extLogicalAsset = sensor.ext.append();
+                    extLogicalAsset.append("logical_asset", (defaultParent == "0") ? "" : defaultParent);
+                    extLogicalAsset.append("read_only", "false");
                     // Add parent name in ext
-                    auto ext_parent_name = sensor.ext.append();
-                    ext_parent_name.append("parent_name.1", assetNameCreated);
-                    ext_parent_name.append("read_only", "false");
+                    auto extParentName = sensor.ext.append();
+                    extParentName.append("parent_name.1", assetNameCreated);
+                    extParentName.append("read_only", "false");
 
                     // Initialise ext attributes
-                    if (auto res = updateExt(sensor.ext, req_sensor.ext); !res) {
+                    if (auto res = updateExt(sensor.ext, reqSensor.ext); !res) {
                         logError("Could not update ext during creation of sensor: {}", res.error());
                     }
-                    if (auto res_sensor = fty::asset::create::run(bus, agent, req_sensor); !res_sensor) {
-                        logError("Could not create sensor: {}", res_sensor.error());
+                    if (auto resSensor = fty::asset::create::run(bus, agent, reqSensor); !resSensor) {
+                        logError("Could not create sensor: {}", resSensor.error());
                         continue;
                     }
                 }
@@ -271,7 +271,7 @@ void AutoDiscovery::run(const commands::discoveryauto::In& in, commands::discove
     }
 
     // Execute discovery task
-    m_pool.pushWorker(scan, in/*, out*/);
+    m_pool.pushWorker(scan, in);
 
     // no output
 }
