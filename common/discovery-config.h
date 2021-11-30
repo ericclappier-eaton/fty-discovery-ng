@@ -92,7 +92,6 @@ struct ConfigDiscovery : public pack::Node
         META(DefaultValuesExt, key, value);
     };
 
-
     Server           server    = FIELD("server");
     Discovery        discovery = FIELD("discovery");
     Disabled         disabled  = FIELD("disabled");
@@ -101,7 +100,7 @@ struct ConfigDiscovery : public pack::Node
     pack::ObjectList<DefaultValuesLink> links = FIELD("defaultValuesLink");
 
     Parameters      parameters = FIELD("parameters");
-    DefaultValuesExt ext = FIELD("defaultValuesExt");
+    pack::ObjectList<DefaultValuesExt> ext = FIELD("defaultValuesExt");
 
     using pack::Node::Node;
     META(ConfigDiscovery, server, discovery, disabled, aux, links, parameters, ext);
