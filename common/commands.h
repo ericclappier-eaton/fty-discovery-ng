@@ -100,14 +100,14 @@ namespace commands::assets {
     class Asset : public pack::Node
     {
     public:
-        pack::String name    = FIELD("name");   // TBD Needed ???
+        pack::String name    = FIELD("name");
         pack::String type    = FIELD("type");
         pack::String subtype = FIELD("sub_type");
         Ext          ext     = FIELD("ext");
 
     public:
         using pack::Node::Node;
-        META(Asset, type, subtype, ext);
+        META(Asset, name, type, subtype, ext);
     };
 
     class Return : public pack::Node
