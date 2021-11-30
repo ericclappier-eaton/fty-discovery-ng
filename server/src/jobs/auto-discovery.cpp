@@ -93,58 +93,8 @@ Expected<void> AutoDiscovery::updateHostName(const std::string& address, fty::as
     return {};
 }
 
-void AutoDiscovery::scan(const commands::discoveryauto::In in)
+void AutoDiscovery::scan(AutoDiscovery *autoDiscovery, const commands::discoveryauto::In& in)
 {
-    /////////////////////////////////////////////////////////////////////
-    // TBD: To be replaced
-    std::string discoveryConfigFile("/etc/fty-discovery/fty-discovery.cfg");  // TBD
-    zconfig_t* config = zconfig_load(discoveryConfigFile.c_str());
-    if (!config) {
-        logError("Failed to load config file {}", discoveryConfigFile);
-        config = zconfig_new("root", NULL);
-    }
-
-    // Init default links TBD: To put in a function ???
-    fty::asset::create::PowerLinks defaultValuesLinks;
-    const char *CFG_DISCOVERY_DEFAULT_VALUES_LINKS("/defaultValuesLinks");
-    auto section = zconfig_locate(config, CFG_DISCOVERY_DEFAULT_VALUES_LINKS);
-    if (section) {
-        for (auto link = zconfig_child(section); link; link = zconfig_next(link)) {
-            std::string iname(zconfig_get(link, "src", ""));
-            fty::asset::create::PowerLink powerLink;
-            // When link to no source, the file will have "0"
-            powerLink.source = iname;
-            powerLink.link_type = fty::convert<uint32_t>(std::stoi(zconfig_get(link, "type", "1")));
-            if (!(powerLink.source.value() == "0")) {
-                defaultValuesLinks.append(powerLink);
-            }
-        }
-    }
-    logDebug("defaultValuesLinks size={}", defaultValuesLinks.size());
-
-    // Init default parent TBD: To put in a function ???
-    bool deviceCentricView = false;
-    std::string defaultParent("0");
-    const char *CFG_DISCOVERY_DEFAULT_VALUES_AUX("/defaultValuesAux");
-    section = zconfig_locate(config, CFG_DISCOVERY_DEFAULT_VALUES_AUX);
-    if (section) {
-        for (auto item = zconfig_child(section); item; item = zconfig_next(item)) {
-            std::string configName(zconfig_name(item));
-            // the config API call returns the parent internal name, while fty-proto-t needs to carry the database ID
-            if (configName == "parent") {
-                defaultParent = zconfig_value(item);
-                if (defaultParent.empty()) {
-                   defaultParent == "0";
-                }
-                if (defaultParent != "0") {
-                    deviceCentricView = true;
-                }
-            }
-        }
-    }
-    logDebug("defaultParent={}", defaultParent);
-    /////////////////////////////////////////////////////////////////////
-
     // Get list of protocols
     commands::protocols::In inProt;
     inProt.address = in.address;
@@ -185,8 +135,8 @@ void AutoDiscovery::scan(const commands::discoveryauto::In in)
         if (auto getAssetsRes = assets.getAssets(inAsset, outAsset)) {
             logInfo("Found asset with protocol {}", Protocols::getProtocolStr(prot));
 
-            auto getStatus = [deviceCentricView]() -> uint {
-                return deviceCentricView ? static_cast<uint>(fty::AssetStatus::Active) : static_cast<uint>(fty::AssetStatus::Nonactive);
+            auto getStatus = [autoDiscovery]() -> uint {
+                return autoDiscovery->IsDeviceCentricView() ? static_cast<uint>(fty::AssetStatus::Active) : static_cast<uint>(fty::AssetStatus::Nonactive);
             };
 
             // Create asset list
@@ -200,8 +150,9 @@ void AutoDiscovery::scan(const commands::discoveryauto::In in)
                 auto &ext = asset.asset.ext;
                 req.status = getStatus();
                 req.priority = 3;
-                req.linked = defaultValuesLinks;
-                req.parent = (defaultParent == "0") ? "" : defaultParent;
+                req.linked = autoDiscovery->m_defaultValuesLinks;
+                req.parent = (autoDiscovery->m_params.parent == "0") ?
+                    pack::String(std::string("")) : autoDiscovery->m_params.parent;
                 // Initialise ext attributes
                 if (auto res = updateExt(ext, req.ext); !res) {
                     logError("Could not update ext during creation of asset: {}", res.error());
@@ -233,7 +184,9 @@ void AutoDiscovery::scan(const commands::discoveryauto::In in)
 
                     // Add logical asset in ext
                     auto extLogicalAsset = sensor.ext.append();
-                    extLogicalAsset.append("logical_asset", (defaultParent == "0") ? "" : defaultParent);
+                    extLogicalAsset.append("logical_asset", (autoDiscovery->m_params.parent == "0") ?
+                        pack::String(std::string("")) : autoDiscovery->m_params.parent);
+
                     extLogicalAsset.append("read_only", "false");
                     // Add parent name in ext
                     auto extParentName = sensor.ext.append();
@@ -259,7 +212,31 @@ void AutoDiscovery::scan(const commands::discoveryauto::In in)
     }
 }
 
-void AutoDiscovery::run(const commands::discoveryauto::In& in, commands::discoveryauto::Out&)
+void AutoDiscovery::readConfig(const disco::commands::scan::start::In& in, const disco::commands::scan::start::Out& out) {
+
+    // Init default links
+    fty::asset::create::PowerLink powerLink;
+    // For each link
+    for (const auto& link: in.linkSrc) {
+        // When link to no source, the file will have "0"
+        if (!(link == "0")) {
+            powerLink.source = link;
+            powerLink.link_type = 1;  // TBD
+            m_defaultValuesLinks.append(powerLink);
+            logTrace("defaultValuesLinks add={}", link);
+        }
+    }
+    logTrace("defaultValuesLinks size={}", m_defaultValuesLinks.size());
+
+    // Init default parent
+    std::string defaultParent = in.parent;
+    if (defaultParent.empty()) {
+        in.parent == "0";
+    }
+    logTrace("defaultParent={}", defaultParent);
+}
+
+void AutoDiscovery::run(const disco::commands::scan::start::In& /*commands::discoveryauto::In&*/ in, /*commands::discoveryauto::Out&*/disco::commands::scan::start::Out& out)
 {
     m_params = in;
 
@@ -270,8 +247,18 @@ void AutoDiscovery::run(const commands::discoveryauto::In& in, commands::discove
         throw Error("Bad input parameter");
     }
 
+    // Read input parameters
+    readConfig(in, out);
+
+    commands::discoveryauto::In inScan;
+    // TBD To be improved: Take the first in the list
+    inScan.address = in.ips[0];
+    //inScan.protocol =  TBD ???
+    //inScan.port =      TBD ???
+    inScan.settings.credentialId = in.documents[0];
+
     // Execute discovery task
-    m_pool.pushWorker(scan, in);
+    m_pool.pushWorker(scan, this, inScan);
 
     // no output
 }
