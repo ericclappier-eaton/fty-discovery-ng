@@ -30,7 +30,7 @@ unsigned Scan::run()
 
     msg.setData(*pack::json::serialize(in));
 
-    auto ret = bus.send(fty::Channel, msg);
+    auto ret = bus.send(Channel, msg);
     if (!ret) {
         throw rest::errors::Internal(ret.error());
     }

@@ -22,10 +22,10 @@
 #include "mibs.h"
 #include "commands.h"
 #include "message-bus.h"
-#include <fty_common_rest_utils_web.h>
 #include <fty/rest/component.h>
+#include <fty_common_rest_utils_web.h>
 
-namespace fty {
+namespace fty::disco {
 
 unsigned Mibs::run()
 {
@@ -62,7 +62,7 @@ Expected<std::string> Mibs::mibs(const commands::mibs::In& param)
     msg.meta.to      = "discovery-ng";
     msg.meta.subject = commands::mibs::Subject;
 
-    if (Expected<disco::Message> resp = bus.send(fty::Channel, msg)) {
+    if (Expected<disco::Message> resp = bus.send(Channel, msg)) {
         if (resp->meta.status == disco::Message::Status::Error) {
             return unexpected(resp->userData.asString());
         }
@@ -72,6 +72,6 @@ Expected<std::string> Mibs::mibs(const commands::mibs::In& param)
     }
 }
 
-} // namespace fty
+} // namespace fty::disco
 
-registerHandler(fty::Mibs)
+registerHandler(fty::disco::Mibs)
