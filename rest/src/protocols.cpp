@@ -25,7 +25,7 @@
 #include <fty/rest/component.h>
 #include <tnt/http.h>
 
-namespace fty {
+namespace fty::disco {
 
 unsigned Protocols::run()
 {
@@ -62,7 +62,7 @@ Expected<std::string> Protocols::protocols(const commands::protocols::In& param)
     msg.meta.to      = "discovery-ng";
     msg.meta.subject = commands::protocols::Subject;
 
-    if (Expected<disco::Message> resp = bus.send(fty::Channel, msg)) {
+    if (Expected<disco::Message> resp = bus.send(Channel, msg)) {
         if (resp->meta.status == disco::Message::Status::Error) {
             return unexpected(resp->userData.asString());
         }
@@ -72,6 +72,6 @@ Expected<std::string> Protocols::protocols(const commands::protocols::In& param)
     }
 }
 
-} // namespace fty
+} // namespace fty::disco
 
-registerHandler(fty::Protocols)
+registerHandler(fty::disco::Protocols)

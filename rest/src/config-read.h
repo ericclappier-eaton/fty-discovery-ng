@@ -24,7 +24,7 @@
 
 namespace fty::disco {
 
-class ConfigRead: public rest::Runner
+class ConfigRead : public rest::Runner
 {
 public:
     INIT_REST("discovery/config/read");
@@ -38,7 +38,6 @@ private:
         { rest::User::Profile::Dashboard, rest::Access::Read }
     };
     // clang-format on
-
 };
 
 } // namespace fty::disco

@@ -1,7 +1,7 @@
 #pragma once
 #include <pack/pack.h>
 
-namespace fty {
+namespace fty::disco {
 
 // =====================================================================================================================
 
@@ -88,7 +88,7 @@ namespace commands {
         using pack::Node::Node;
         META(CommonIn, address, protocol, port, settings);
     };
-}
+} // namespace commands
 
 namespace commands::assets {
     static constexpr const char* Subject = "assets";
@@ -127,7 +127,7 @@ namespace commands::assets {
 
 // =====================================================================================================================
 
-namespace disco::commands::config {
+namespace commands::config {
     static constexpr const char* Subject = "config";
 
     class In : public pack::Node
@@ -155,11 +155,11 @@ namespace disco::commands::config {
             dumpPool, scanPool, scanTimeout, dumpLooptime);
     };
 
-} // namespace disco::commands::config
+} // namespace commands::config
 
 // =====================================================================================================================
 
-namespace disco::commands::scan {
+namespace commands::scan {
     namespace status {
         static constexpr const char* Subject = "scan-status";
 
@@ -252,7 +252,7 @@ namespace disco::commands::scan {
         std::istream& operator>>(std::istream& ss, In::Type& value);
 
     } // namespace start
-} // namespace disco::commands::scan
+} // namespace commands::scan
 
 // =====================================================================================================================
 // TBD: TO REMOVE
@@ -275,4 +275,4 @@ namespace commands::discoveryauto {
 
 // =====================================================================================================================
 
-} // namespace fty
+} // namespace fty::disco
