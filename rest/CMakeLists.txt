@@ -22,8 +22,8 @@ etn_target(shared ${PROJECT_NAME}-rest
         src/scan-status.cpp
         
         # TBD TO REMOVE
-        src/auto.cpp
-        src/auto.h
+        # src/auto.cpp
+        # src/auto.h
 
     USES
         ${PROJECT_NAME}-common
