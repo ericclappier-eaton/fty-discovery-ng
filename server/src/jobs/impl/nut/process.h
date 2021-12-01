@@ -5,7 +5,7 @@ namespace fty {
 class Process;
 }
 
-namespace fty::impl::nut {
+namespace fty::disco::impl::nut {
 
 class Process
 {
@@ -23,9 +23,9 @@ public:
 
 private:
     Expected<std::string> findExecutable(const std::string& name) const;
-    Expected<void> setupSnmp(const std::string& address, uint16_t port);
-    Expected<void> setupXmlPdc(const std::string& address, uint16_t port);
-    Expected<void> setupPowercom(const std::string& address);
+    Expected<void>        setupSnmp(const std::string& address, uint16_t port);
+    Expected<void>        setupXmlPdc(const std::string& address, uint16_t port);
+    Expected<void>        setupPowercom(const std::string& address);
 
 private:
     std::string                   m_protocol;
@@ -33,4 +33,4 @@ private:
     std::unique_ptr<fty::Process> m_process;
 };
 
-} // namespace fty::protocol::nut
+} // namespace fty::disco::impl::nut

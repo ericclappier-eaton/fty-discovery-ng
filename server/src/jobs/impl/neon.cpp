@@ -16,11 +16,11 @@
 
 #include "neon.h"
 #include <fty/string-utils.h>
+#include <iostream>
 #include <neon/ne_request.h>
 #include <neon/ne_session.h>
 #include <neon/ne_xml.h>
 #include <pack/visitor.h>
-#include <iostream>
 
 namespace neon {
 
@@ -37,14 +37,14 @@ Neon::~Neon()
 
 fty::Expected<std::string> Neon::get(const std::string& path) const
 {
-    std::string rpath = "/" + path;
+    std::string                                                rpath = "/" + path;
     std::unique_ptr<ne_request, decltype(&ne_request_destroy)> request(
         ne_request_create(m_session.get(), "GET", rpath.c_str()), &ne_request_destroy);
 
     std::string body;
 
     do {
-        int stat = ne_begin_request(request.get());
+        int  stat   = ne_begin_request(request.get());
         auto status = ne_get_status(request.get());
         if (stat != NE_OK) {
             if (!status->code) {
@@ -64,7 +64,7 @@ fty::Expected<std::string> Neon::get(const std::string& path) const
         while ((bytes = ne_read_response_block(request.get(), buffer.data(), buffer.size())) > 0) {
             body += std::string(buffer.data(), size_t(bytes));
         }
-    } while(ne_end_request(request.get()) == NE_RETRY);
+    } while (ne_end_request(request.get()) == NE_RETRY);
 
     return fty::Expected<std::string>(body);
 }
@@ -260,7 +260,7 @@ void deserialize(const std::string& cnt, pack::Attribute& node)
     NeonNode neon;
     Parser   p(neon);
     p.parse(cnt);
-    //neon.dump(std::cout);
+    // neon.dump(std::cout);
     if (!neon.children.empty()) {
         NeonDeserializer::visit(node, neon.children[0]);
     }

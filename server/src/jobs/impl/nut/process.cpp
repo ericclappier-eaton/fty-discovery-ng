@@ -8,7 +8,8 @@
 #include <fty_security_wallet.h>
 #include <unistd.h>
 
-namespace fty::impl::nut {
+namespace fty::disco::impl::nut {
+
 Process::Process(const std::string& protocol)
     : m_protocol(protocol)
 {
@@ -117,7 +118,8 @@ Expected<void> Process::init(const std::string& address, uint16_t port)
 
 Expected<std::string> Process::findExecutable(const std::string& name) const
 {
-    static std::vector<std::filesystem::path> paths = {"/usr/lib/nut", "/lib/nut", "/home/jes/workspace/fty/build/Debug/deps-runtime/bin"};
+    static std::vector<std::filesystem::path> paths = {
+        "/usr/lib/nut", "/lib/nut", "/home/jes/workspace/fty/build/Debug/deps-runtime/bin"};
 
     for (const auto& path : paths) {
         auto check = path / name;
@@ -182,11 +184,11 @@ Expected<void> Process::setCredentialId(const std::string& credential)
 
             if (auto credV3 = secw::Snmpv3::tryToCast(secCred)) {
                 log_debug("Init from wallet for snmp v3");
-                
+
                 m_process->setEnvVar("SU_VAR_VERSION", "v3");
                 m_process->addArgument("-x");
                 m_process->addArgument(fmt::format("snmp_version={}", "v3"));
-                
+
                 if (auto lvl = levelStr(credV3->getSecurityLevel())) {
                     m_process->setEnvVar("SU_VAR_SECLEVEL", *lvl);
                     m_process->addArgument("-x");
@@ -195,15 +197,15 @@ Expected<void> Process::setCredentialId(const std::string& credential)
                 m_process->setEnvVar("SU_VAR_SECNAME", credV3->getSecurityName());
                 m_process->addArgument("-x");
                 m_process->addArgument(fmt::format("secName={}", credV3->getSecurityName()));
-                
+
                 m_process->setEnvVar("SU_VAR_AUTHPASSWD", credV3->getAuthPassword());
                 m_process->addArgument("-x");
                 m_process->addArgument(fmt::format("authPassword={}", credV3->getAuthPassword()));
-                
+
                 m_process->setEnvVar("SU_VAR_PRIVPASSWD", credV3->getPrivPassword());
                 m_process->addArgument("-x");
                 m_process->addArgument(fmt::format("privPassword={}", credV3->getPrivPassword()));
-                
+
                 if (auto prot = authProtStr(credV3->getAuthProtocol())) {
                     m_process->setEnvVar("SU_VAR_AUTHPROT", *prot);
                     m_process->addArgument("-x");
@@ -325,4 +327,4 @@ Expected<std::string> Process::run() const
     }
 }
 
-} // namespace fty::impl::nut
+} // namespace fty::disco::impl::nut

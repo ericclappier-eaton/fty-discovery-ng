@@ -6,7 +6,7 @@
 #include <fty/thread-pool.h>
 #include <fty_log.h>
 
-namespace fty::job {
+namespace fty::disco::job {
 
 // =====================================================================================================================
 
@@ -112,13 +112,13 @@ public:
             }
 
             response.status = disco::Message::Status::Ok;
-            if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
+            if (auto res = m_bus->reply(Channel, m_in, response); !res) {
                 log_error(res.error().c_str());
             }
         } catch (const Error& err) {
             log_error("Error: %s", err.what());
             response.setError(err.what());
-            if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
+            if (auto res = m_bus->reply(Channel, m_in, response); !res) {
                 log_error(res.error().c_str());
             }
         }
@@ -129,4 +129,4 @@ protected:
     disco::MessageBus* m_bus;
 };
 
-} // namespace fty::job
+} // namespace fty::disco::job

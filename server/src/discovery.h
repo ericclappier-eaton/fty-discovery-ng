@@ -25,7 +25,7 @@
 #include <fty/thread-pool.h>
 #include <string>
 
-namespace fty {
+namespace fty::disco {
 
 /// Discovery message dispatcher, worker
 class Discovery
@@ -63,4 +63,4 @@ private:
     Slot<const disco::Message&> m_discoverSlot   = {&Discovery::discover, this};
 };
 
-} // namespace fty
+} // namespace fty::disco

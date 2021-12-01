@@ -1,8 +1,10 @@
 #include "test-common.h"
 
+namespace fty::disco {
+
 TEST_CASE("Protocols/ Empty request")
 {
-    fty::disco::Message msg = Test::createMessage(fty::commands::protocols::Subject);
+    fty::disco::Message msg = Test::createMessage(commands::protocols::Subject);
 
     fty::Expected<fty::disco::Message> ret = Test::send(msg);
     CHECK_FALSE(ret);
@@ -11,7 +13,7 @@ TEST_CASE("Protocols/ Empty request")
 
 TEST_CASE("Protocols / Wrong request")
 {
-    fty::disco::Message msg = Test::createMessage(fty::commands::protocols::Subject);
+    fty::disco::Message msg = Test::createMessage(commands::protocols::Subject);
 
     msg.userData.setString("Some shit");
     fty::Expected<fty::disco::Message> ret = Test::send(msg);
@@ -21,9 +23,9 @@ TEST_CASE("Protocols / Wrong request")
 
 TEST_CASE("Protocols / Unaviable host")
 {
-    fty::disco::Message msg = Test::createMessage(fty::commands::protocols::Subject);
+    fty::disco::Message msg = Test::createMessage(commands::protocols::Subject);
 
-    fty::commands::protocols::In in;
+    commands::protocols::In in;
     in.address = "pointtosky.roz.lab.etn.com";
     msg.userData.setString(*pack::json::serialize(in));
     fty::Expected<fty::disco::Message> ret = Test::send(msg);
@@ -33,23 +35,23 @@ TEST_CASE("Protocols / Unaviable host")
 
 TEST_CASE("Protocols / Not asset")
 {
-    fty::disco::Message msg = Test::createMessage(fty::commands::protocols::Subject);
+    fty::disco::Message msg = Test::createMessage(commands::protocols::Subject);
 
-    fty::commands::protocols::In in;
+    commands::protocols::In in;
     in.address = "127.0.0.1";
     msg.userData.setString(*pack::json::serialize(in));
     fty::Expected<fty::disco::Message> ret = Test::send(msg);
     CHECK(ret);
-    auto res = ret->userData.decode<fty::commands::protocols::Out>();
+    auto res = ret->userData.decode<commands::protocols::Out>();
     CHECK(res);
     CHECK(0 == res->size());
 }
 
 TEST_CASE("Protocols / Invalid ip")
 {
-    fty::disco::Message msg = Test::createMessage(fty::commands::protocols::Subject);
+    fty::disco::Message msg = Test::createMessage(commands::protocols::Subject);
 
-    fty::commands::protocols::In in;
+    commands::protocols::In in;
     in.address = "127.0.145.256";
     msg.userData.setString(*pack::json::serialize(in));
     fty::Expected<fty::disco::Message> ret = Test::send(msg);
@@ -59,16 +61,16 @@ TEST_CASE("Protocols / Invalid ip")
 
 TEST_CASE("Protocols / Fake request")
 {
-    fty::disco::Message msg = Test::createMessage(fty::commands::protocols::Subject);
+    fty::disco::Message msg = Test::createMessage(commands::protocols::Subject);
 
-    fty::commands::protocols::In in;
+    commands::protocols::In in;
     in.address = "__fake__";
     msg.userData.setString(*pack::json::serialize(in));
 
     fty::Expected<fty::disco::Message> ret = Test::send(msg);
 
     CHECK(ret);
-    auto res = ret->userData.decode<fty::commands::protocols::Out>();
+    auto res = ret->userData.decode<commands::protocols::Out>();
     CHECK(res);
     CHECK(2 == res->size());
     CHECK("nut_snmp" == (*res)[0]);
@@ -77,15 +79,15 @@ TEST_CASE("Protocols / Fake request")
 
 TEST_CASE("Protocols / resolve")
 {
-    fty::disco::Message msg = Test::createMessage(fty::commands::protocols::Subject);
+    fty::disco::Message msg = Test::createMessage(commands::protocols::Subject);
 
-    fty::commands::protocols::In in;
+    commands::protocols::In in;
     in.address = "127.0.0.1";
     msg.userData.setString(*pack::json::serialize(in));
 
     fty::Expected<fty::disco::Message> ret = Test::send(msg);
 
-    fty::commands::protocols::In in2;
+    commands::protocols::In in2;
     in2.address = "10.130.33.178";
     msg.userData.setString(*pack::json::serialize(in2));
 
@@ -108,3 +110,5 @@ TEST_CASE("Protocols / resolve")
     CHECK(2 == res->size());
     CHECK("nut_powercom" == (*res)[0]);
 }*/
+
+} // namespace fty::disco

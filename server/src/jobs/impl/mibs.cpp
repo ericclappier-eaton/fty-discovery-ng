@@ -17,12 +17,12 @@
 #include "mibs.h"
 #include "snmp.h"
 #include "src/config.h"
-#include <regex>
 #include <fty_log.h>
 #include <iostream>
+#include <regex>
 
 
-namespace fty::impl {
+namespace fty::disco::impl {
 
 // =====================================================================================================================
 
@@ -148,7 +148,7 @@ Expected<MibsReader::MibList> MibsReader::read() const
             mibs.insert(*oid);
         }
     } else {
-        if (fty::Config::instance().tryAll) {
+        if (Config::instance().tryAll) {
             auto res = m_session->walk([&](const std::string& mib) {
                 if (filterMib(mib)) {
                     size_t pos;
@@ -197,4 +197,4 @@ Expected<std::string> MibsReader::readName() const
 
 // =====================================================================================================================
 
-} // namespace fty::protocol
+} // namespace fty::disco::impl
