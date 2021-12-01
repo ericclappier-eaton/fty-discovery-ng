@@ -16,7 +16,7 @@
 
 #include <string>
 
-namespace fty::impl {
+namespace fty::disco::impl {
 
 std::string generateUUID(const std::string& manufacturer, const std::string& model, const std::string& serial);
 

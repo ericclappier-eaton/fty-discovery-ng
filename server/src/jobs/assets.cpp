@@ -22,7 +22,7 @@
 #include "impl/uuid.h"
 #include <fty/string-utils.h>
 
-namespace fty::job {
+namespace fty::disco::job {
 
 Expected<void> Assets::getAssets(const commands::assets::In& in, commands::assets::Out& out)
 {
@@ -109,11 +109,12 @@ void Assets::run(const commands::assets::In& in, commands::assets::Out& out)
     }
 }
 
-void Assets::addSensors(const DeviceInfo& deviceInfo, int& indexSensor, pack::ObjectList<fty::commands::assets::Asset>& sensors, const std::map<std::string, std::string>& dump)
+void Assets::addSensors(const DeviceInfo& deviceInfo, int& indexSensor,
+    pack::ObjectList<commands::assets::Asset>& sensors, const std::map<std::string, std::string>& dump)
 {
     // Ambient sensor(s)
     bool isSensorsIndexed = false;
-    int startSensor = 0, endSensor = 0;
+    int  startSensor = 0, endSensor = 0;
     {
         // First, check for new style and daisychained sensors
         std::string ambientCount = "ambient.count";
@@ -123,8 +124,8 @@ void Assets::addSensors(const DeviceInfo& deviceInfo, int& indexSensor, pack::Ob
         }
         auto item = dump.find(ambientCount);
         if (item != dump.end()) {
-            startSensor = indexSensor;
-            endSensor   = fty::convert<int>(item->second);
+            startSensor      = indexSensor;
+            endSensor        = fty::convert<int>(item->second);
             isSensorsIndexed = true;
         } else {
             // Otherwise, fallback to checking for legacy sensors
@@ -149,8 +150,7 @@ void Assets::addSensors(const DeviceInfo& deviceInfo, int& indexSensor, pack::Ob
         if (deviceInfo.indexDevice > 0) {
             if (isSensorsIndexed) {
                 prefix = "device.1.";
-            }
-            else {
+            } else {
                 prefix = "device." + std::to_string(deviceInfo.indexDevice) + ".";
             }
         }
@@ -163,7 +163,7 @@ void Assets::addSensors(const DeviceInfo& deviceInfo, int& indexSensor, pack::Ob
 
         // check parent serial number
         std::string parentSerial;
-        auto it_parent_serial = dump.find(prefix + "parent.serial");
+        auto        it_parent_serial = dump.find(prefix + "parent.serial");
         if (it_parent_serial != dump.end()) {
             parentSerial = it_parent_serial->second;
         }
@@ -171,7 +171,8 @@ void Assets::addSensors(const DeviceInfo& deviceInfo, int& indexSensor, pack::Ob
         if ((deviceInfo.indexDevice != 0) && isSensorsIndexed) {
             // Check if it is the good parent which host the sensor
             if (parentSerial.empty() || parentSerial != deviceInfo.deviceSerial) {
-                logDebug("No the good parent for sensor {}: {} (parent sensor) <> {} (device) ", s, parentSerial, deviceInfo.deviceSerial);
+                logDebug("No the good parent for sensor {}: {} (parent sensor) <> {} (device) ", s, parentSerial,
+                    deviceInfo.deviceSerial);
                 continue;
             }
         }
@@ -189,7 +190,7 @@ void Assets::addSensors(const DeviceInfo& deviceInfo, int& indexSensor, pack::Ob
 
         // get sensor serial number (mandatory)
         std::string sensorSerialNumber;
-        auto it_sensor_serial = dump.find(prefix + "serial");
+        auto        it_sensor_serial = dump.find(prefix + "serial");
         if (it_sensor_serial == dump.end()) {
             logError("No serial number for sensor number {}", s);
             continue;
@@ -207,7 +208,7 @@ void Assets::addSensors(const DeviceInfo& deviceInfo, int& indexSensor, pack::Ob
 
         // look for sensor model (mandatory)
         std::string sensorModel;
-        auto it_model = dump.find(prefix + "model");
+        auto        it_model = dump.find(prefix + "model");
         // model field could be not present, if there is parent_serial field -> EMP002
         if (it_model != dump.end()) {
             sensorModel = it_model->second;
@@ -224,7 +225,7 @@ void Assets::addSensors(const DeviceInfo& deviceInfo, int& indexSensor, pack::Ob
 
         // look for manufacturer (mandatory)
         std::string sensorManufacturer;
-        auto it_mfr = dump.find(prefix + "mfr");
+        auto        it_mfr = dump.find(prefix + "mfr");
         if (it_mfr != dump.end()) {
             sensorManufacturer = it_mfr->second;
         } else {
@@ -272,10 +273,10 @@ void Assets::addSensors(const DeviceInfo& deviceInfo, int& indexSensor, pack::Ob
         std::string externalName = "sensor " + sensorModel + " (" + sensorSerialNumber + ")";
 
         auto& sensor = sensors.append();
-        indexSensor ++;
+        indexSensor++;
 
-        sensor.name = sensorSerialNumber;  // TBD
-        sensor.type = "device";
+        sensor.name    = sensorSerialNumber; // TBD
+        sensor.type    = "device";
         sensor.subtype = "sensor";
 
         // Update ext values
@@ -293,16 +294,19 @@ void Assets::addSensors(const DeviceInfo& deviceInfo, int& indexSensor, pack::Ob
         logTrace("Set asset name={} for sensor {}", externalName, s);
         if (!getAssetVal(sensor, "name")) {
             addAssetVal(sensor, "name", externalName);
-        }
-        else {
-            if (auto index = sensor.ext.findIndex([](auto& map) { return map.contains("name"); }); index != -1) {
+        } else {
+            if (auto index = sensor.ext.findIndex([](auto& map) {
+                    return map.contains("name");
+                });
+                index != -1) {
                 sensor.ext[index]["name"] = externalName;
             }
         }
         addAssetVal(sensor, "model", sensorModel);
         addAssetVal(sensor, "endpoint.1.sub_address", modbusAddress);
 
-        logDebug("Added new sensor ({}/{}): SERIAL: {} - TYPE: {} - PARENT: {}", s, endSensor, sensorSerialNumber, sensorModel, parentIdentifier);
+        logDebug("Added new sensor ({}/{}): SERIAL: {} - TYPE: {} - PARENT: {}", s, endSensor, sensorSerialNumber,
+            sensorModel, parentIdentifier);
     }
 }
 
@@ -324,26 +328,26 @@ void Assets::parse(const std::string& cnt, commands::assets::Out& out)
 
     int indexSensor = 1;
 
-    //Get the device type
-    auto it = tmpMap.find("device.type");
+    // Get the device type
+    auto        it         = tmpMap.find("device.type");
     std::string deviceType = it != tmpMap.end() ? fty::convert<std::string>(it->second) : "";
 
     it = tmpMap.find("device.count");
 
     int dcount = it != tmpMap.end() ? fty::convert<int>(it->second) : 0;
-    if (dcount > 1) { //daisy chain is always bigger than one
+    if (dcount > 1) { // daisy chain is always bigger than one
         // for daisychain
         for (int i = 1; i <= dcount; i++) {
-            auto& asset      = out.append();
-            asset.subAddress = std::to_string(i);
-            asset.asset.type = "device";
+            auto& asset         = out.append();
+            asset.subAddress    = std::to_string(i);
+            asset.asset.type    = "device";
             asset.asset.subtype = deviceType;
 
             std::string prefix = "device." + std::to_string(i) + ".";
             for (const auto& p : tmpMap) {
                 // Filter no current daisy device key and daisy ambient key (post treatment with addSensors function)
                 static std::regex rex2("device\\.(\\d+)\\.(.*)");
-                std::smatch matches;
+                std::smatch       matches;
                 if (std::regex_match(p.first, matches, rex2)) {
                     if (matches.str(1) != std::to_string(i) || matches.str(2).find("ambient.") != std::string::npos) {
                         logTrace("Filter property '{}' index={} (daisy-chain override)", p.first, i);
@@ -369,26 +373,22 @@ void Assets::parse(const std::string& cnt, commands::assets::Out& out)
 
             // Get serial number of device
             std::string deviceSerial;
-            auto it_serial = tmpMap.find(prefix + "serial");
+            auto        it_serial = tmpMap.find(prefix + "serial");
             if (it_serial != tmpMap.end()) {
                 deviceSerial = it_serial->second;
             }
 
             // Set device information
-            DeviceInfo deviceInfo = {
-                i,
-                deviceSerial,
-                deviceType
-            };
+            DeviceInfo deviceInfo = {i, deviceSerial, deviceType};
 
             // Add sensor assets
             addSensors(deviceInfo, indexSensor, asset.sensors, tmpMap);
         }
     } 
     else {
-        auto& asset      = out.append();
-        asset.subAddress = "";
-        asset.asset.type = "device";
+        auto& asset         = out.append();
+        asset.subAddress    = "";
+        asset.asset.type    = "device";
         asset.asset.subtype = deviceType;
 
         for (const auto& p : tmpMap) {
@@ -403,17 +403,13 @@ void Assets::parse(const std::string& cnt, commands::assets::Out& out)
         enrichAsset(asset);
 
         std::string deviceSerial;
-        auto it_serial = tmpMap.find("device.serial");
+        auto        it_serial = tmpMap.find("device.serial");
         if (it_serial != tmpMap.end()) {
             deviceSerial = it_serial->second;
         }
 
         // Set device information
-        DeviceInfo deviceInfo = {
-            0,
-            deviceSerial,
-            deviceType
-        };
+        DeviceInfo deviceInfo = {0, deviceSerial, deviceType};
 
         // Add sensor assets
         addSensors(deviceInfo, indexSensor, asset.sensors, tmpMap);
@@ -429,7 +425,10 @@ void Assets::addAssetVal(commands::assets::Asset& asset, const std::string& key,
 
 fty::Expected<std::string> Assets::getAssetVal(const commands::assets::Asset& asset, const std::string& key) const
 {
-    if (auto it = asset.ext.find([key](const auto& map) { return map.contains(key); }); it != std::nullopt) {
+    if (auto it = asset.ext.find([key](const auto& map) {
+            return map.contains(key);
+        });
+        it != std::nullopt) {
         return (*it)[key];
     }
     return fty::unexpected("Not found");
@@ -555,4 +554,4 @@ void Assets::enrichAsset(commands::assets::Return& asset)
     }
 }
 
-} // namespace fty::job
+} // namespace fty::disco::job

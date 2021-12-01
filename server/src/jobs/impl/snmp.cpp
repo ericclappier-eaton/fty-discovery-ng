@@ -28,7 +28,7 @@
 #include <fty_security_wallet.h>
 #include <array>
 
-namespace fty::impl {
+namespace fty::disco::impl {
 
 // =====================================================================================================================
 // Wallet to snmp values conversion
@@ -437,4 +437,4 @@ snmp::SessionPtr Snmp::session(const std::string& address, uint16_t port)
     return std::shared_ptr<snmp::Session>(new snmp::Session(address, port));
 }
 
-} // namespace fty::impl
+} // namespace fty::disco::impl

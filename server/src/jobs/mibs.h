@@ -19,7 +19,7 @@
 
 // =====================================================================================================================
 
-namespace fty::job {
+namespace fty::disco::job {
 
 /// Discover supported SNMP mibs
 /// Returns @ref commands::mibs::Out (list of mibs)
@@ -32,6 +32,6 @@ public:
     void run(const commands::mibs::In& in, commands::mibs::Out& out);
 };
 
-} // namespace fty::job
+} // namespace fty::disco::job
 
 // =====================================================================================================================

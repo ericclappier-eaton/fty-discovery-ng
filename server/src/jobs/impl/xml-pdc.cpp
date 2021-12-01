@@ -16,7 +16,7 @@
 
 #include "xml-pdc.h"
 
-namespace fty::impl {
+namespace fty::disco::impl {
 
 // =====================================================================================================================
 
@@ -41,4 +41,4 @@ XmlPdc::XmlPdc(const std::string& scheme, const std::string& address, uint16_t p
 
 // =====================================================================================================================
 
-} // namespace fty::protocol
+} // namespace fty::disco::impl

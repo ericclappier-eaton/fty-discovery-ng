@@ -20,10 +20,11 @@
 
 // =====================================================================================================================
 
-namespace fty::job {
+namespace fty::disco::job {
 
-struct DeviceInfo {
-    int indexDevice;
+struct DeviceInfo
+{
+    int         indexDevice;
     std::string deviceSerial;
     std::string type;
 };
@@ -39,21 +40,24 @@ public:
     Expected<void> getAssets(const commands::assets::In& in, commands::assets::Out& out);
 
     // Add asset sensors
-    void addSensors(const DeviceInfo& deviceInfo, int& indexSensor, pack::ObjectList<fty::commands::assets::Asset>& sensors, const std::map<std::string, std::string>& dump);
+    void addSensors(const DeviceInfo& deviceInfo, int& indexSensor,
+        pack::ObjectList<commands::assets::Asset>& sensors, const std::map<std::string, std::string>& dump);
 
     /// Runs discover job.
     void run(const commands::assets::In& in, commands::assets::Out& out);
-private:
-    void parse(const std::string& cnt, commands::assets::Out& out);
-    void addAssetVal(commands::assets::Asset& asset, const std::string& key, const std::string& val, bool readOnly = true);
-    fty::Expected<std::string> getAssetVal(const commands::assets::Asset& asset, const std::string& key) const;
-    void enrichAsset(commands::assets::Return& asset);
 
 private:
-    commands::assets::In m_params;
+    void parse(const std::string& cnt, commands::assets::Out& out);
+    void addAssetVal(
+        commands::assets::Asset& asset, const std::string& key, const std::string& val, bool readOnly = true);
+    fty::Expected<std::string> getAssetVal(const commands::assets::Asset& asset, const std::string& key) const;
+    void                       enrichAsset(commands::assets::Return& asset);
+
+private:
+    commands::assets::In  m_params;
     std::set<std::string> m_discoveredSerialSet;
 };
 
-} // namespace fty::job
+} // namespace fty::disco::job
 
 // =====================================================================================================================
