@@ -23,7 +23,7 @@
 #include "message-bus.h"
 #include <fty/rest/component.h>
 
-namespace fty {
+namespace fty::disco {
 
 unsigned AssetRest::run()
 {
@@ -58,7 +58,7 @@ Expected<std::string> AssetRest::assets(const commands::assets::In& param)
     msg.meta.subject = commands::assets::Subject;
     msg.meta.from    = "discovery_rest";
 
-    if (Expected<disco::Message> resp = bus.send(fty::Channel, msg)) {
+    if (Expected<disco::Message> resp = bus.send(Channel, msg)) {
         if (resp->meta.status == disco::Message::Status::Error) {
             return unexpected(resp->userData.asString());
         }
@@ -68,6 +68,6 @@ Expected<std::string> AssetRest::assets(const commands::assets::In& param)
     }
 }
 
-} // namespace fty
+} // namespace fty::disco
 
-registerHandler(fty::AssetRest)
+registerHandler(fty::disco::AssetRest)
