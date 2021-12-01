@@ -24,13 +24,13 @@
 #include "config.h"
 #include "daemon.h"
 #include "jobs/assets.h"
+#include "jobs/auto-discovery.h"
 #include "jobs/mibs.h"
 #include "jobs/protocols.h"
-#include "jobs/auto-discovery.h"
 #include <fty/thread-pool.h>
 #include <fty_log.h>
 
-namespace fty {
+namespace fty::disco {
 
 Discovery::Discovery(const std::string& config)
     : m_configPath(config)
@@ -58,7 +58,7 @@ bool Discovery::loadConfig()
 Expected<void> Discovery::init()
 {
     if (auto res = m_bus.init(Config::instance().actorName)) {
-        if (auto sub = m_bus.subsribe(fty::Channel, &Discovery::discover, this)) {
+        if (auto sub = m_bus.subsribe(Channel, &Discovery::discover, this)) {
             return {};
         } else {
             return unexpected(sub.error());
@@ -95,7 +95,7 @@ void Discovery::discover(const disco::Message& msg)
         m_pool.pushWorker<job::AutoDiscovery>(msg, m_bus);
     } else if (msg.meta.subject == disco::commands::scan::stop::Subject) {
         // TODO
-    // TBD To remove
+        // TBD To remove
     } else if (msg.meta.subject == commands::discoveryauto::Subject) {
         m_pool.pushWorker<job::AutoDiscovery>(msg, m_bus);
     } else {
@@ -111,4 +111,4 @@ Config& Config::instance()
     return inst;
 }
 
-} // namespace fty
+} // namespace fty::disco

@@ -24,7 +24,7 @@ public:
     static fty::disco::Message createMessage(const char* subject)
     {
         fty::disco::Message msg;
-        msg.meta.to      = fty::Config::instance().actorName;
+        msg.meta.to      = fty::disco::Config::instance().actorName;
         msg.meta.subject = subject;
         msg.meta.from    = "unit-test";
         return msg;
@@ -32,7 +32,7 @@ public:
 
     static fty::Expected<fty::disco::Message> send(const fty::disco::Message& msg)
     {
-        return inst->m_bus.send(fty::Channel, msg);
+        return inst->m_bus.send(fty::disco::Channel, msg);
     }
 
     static fty::Expected<void> init()
@@ -42,8 +42,8 @@ public:
             return fty::unexpected("Cannot load config");
         }
 
-        fty::impl::Snmp::instance().init(fty::Config::instance().mibDatabase);
-        ManageFtyLog::setInstanceFtylog(fty::Config::instance().actorName, fty::Config::instance().logConfig);
+        fty::disco::impl::Snmp::instance().init(fty::disco::Config::instance().mibDatabase);
+        ManageFtyLog::setInstanceFtylog(fty::disco::Config::instance().actorName, fty::disco::Config::instance().logConfig);
 
         if (auto res = inst->m_dis.init(); !res) {
             return fty::unexpected(res.error());
@@ -73,7 +73,7 @@ private:
     }
 
 private:
-    fty::Discovery         m_dis;
+    fty::disco::Discovery         m_dis;
     std::thread            m_th;
     fty::disco::MessageBus m_bus;
 };

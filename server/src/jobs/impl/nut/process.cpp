@@ -8,7 +8,8 @@
 #include <fty_security_wallet.h>
 #include <unistd.h>
 
-namespace fty::impl::nut {
+namespace fty::disco::impl::nut {
+
 
 Process::Process(const std::string& protocol)
     : m_protocol(protocol)
@@ -345,4 +346,4 @@ Expected<std::string> Process::run() const
     }
 }
 
-} // namespace fty::impl::nut
+} // namespace fty::disco::impl::nut

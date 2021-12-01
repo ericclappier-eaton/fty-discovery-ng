@@ -20,7 +20,7 @@
 #include <functional>
 #include <memory>
 
-namespace fty::impl {
+namespace fty::disco::impl {
 
 namespace snmp {
     class Session;
@@ -67,4 +67,4 @@ namespace snmp {
 } // namespace snmp
 
 
-} // namespace fty::impl
+} // namespace fty::disco::impl

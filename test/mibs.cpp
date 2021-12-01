@@ -1,9 +1,11 @@
 #include "test-common.h"
 #include <fty/process.h>
 
+namespace fty::disco {
+
 TEST_CASE("Mibs / Empty request")
 {
-    fty::disco::Message msg = Test::createMessage(fty::commands::mibs::Subject);
+    fty::disco::Message msg = Test::createMessage(commands::mibs::Subject);
 
     fty::Expected<fty::disco::Message> ret = Test::send(msg);
     CHECK_FALSE(ret);
@@ -12,7 +14,7 @@ TEST_CASE("Mibs / Empty request")
 
 TEST_CASE("Mibs / Wrong request")
 {
-    fty::disco::Message msg = Test::createMessage(fty::commands::mibs::Subject);
+    fty::disco::Message msg = Test::createMessage(commands::mibs::Subject);
 
     msg.userData.setString("Some shit");
     fty::Expected<fty::disco::Message> ret = Test::send(msg);
@@ -23,9 +25,9 @@ TEST_CASE("Mibs / Wrong request")
 
 TEST_CASE("Mibs / Unaviable host")
 {
-    fty::disco::Message msg = Test::createMessage(fty::commands::mibs::Subject);
+    fty::disco::Message msg = Test::createMessage(commands::mibs::Subject);
 
-    fty::commands::protocols::In in;
+    commands::protocols::In in;
     in.address = "pointtosky";
     msg.userData.setString(*pack::json::serialize(in));
 
@@ -46,8 +48,8 @@ TEST_CASE("Mibs / get mibs")
     });
     // clang-format on
 
-    auto getResponse = [](const fty::commands::mibs::In& in) {
-        fty::disco::Message msg = Test::createMessage(fty::commands::mibs::Subject);
+    auto getResponse = [](const commands::mibs::In& in) {
+        fty::disco::Message msg = Test::createMessage(commands::mibs::Subject);
         msg.userData.setString(*pack::json::serialize(in));
 
         fty::Expected<fty::disco::Message> ret = Test::send(msg);
@@ -56,14 +58,14 @@ TEST_CASE("Mibs / get mibs")
         }
         REQUIRE(ret);
 
-        fty::Expected<fty::commands::mibs::Out> res = ret->userData.decode<fty::commands::mibs::Out>();
+        fty::Expected<commands::mibs::Out> res = ret->userData.decode<commands::mibs::Out>();
         CHECK(res);
         CHECK(res->size());
         return *res;
     };
 
     if (auto pid = proc.run()) {
-        fty::commands::mibs::In in;
+        commands::mibs::In in;
         in.address = "127.0.0.1";
         in.port    = 1161;
         in.timeout = 5000;
@@ -71,56 +73,58 @@ TEST_CASE("Mibs / get mibs")
         SECTION("Daisy device epdu.147")
         {
             in.community = "epdu.147";
-            auto res = getResponse(in);
+            auto res     = getResponse(in);
             CHECK("EATON-EPDU-MIB::eatonEpdu" == res[0]);
         }
 
         SECTION("MG device mge.125")
         {
             in.community = "mge.125";
-            auto res = getResponse(in);
+            auto res     = getResponse(in);
             CHECK("MG-SNMP-UPS-MIB::upsmg" == res[0]);
         }
 
         SECTION("MG device mge.191")
         {
             in.community = "mge.191";
-            auto res = getResponse(in);
+            auto res     = getResponse(in);
             CHECK("MG-SNMP-UPS-MIB::upsmg" == res[0]);
         }
 
         SECTION("HP device cpqpqwer.114")
         {
             in.community = "cpqpqwer.114";
-            auto res = getResponse(in);
+            auto res     = getResponse(in);
             CHECK("CPQPOWER-MIB::ups" == res[0]);
         }
 
         SECTION("Lenovo device lenovo.181")
         {
             in.community = "lenovo.181";
-            auto res = getResponse(in);
+            auto res     = getResponse(in);
             CHECK("joint-iso-ccitt" == res[0]);
         }
 
         SECTION("Genapi device xups.238")
         {
             in.community = "xups.238";
-            auto res = getResponse(in);
+            auto res     = getResponse(in);
             CHECK("EATON-OIDS::xupsMIB" == res[0]);
         }
 
         SECTION("Genapi device xups.159")
         {
             in.community = "xups.159";
-            auto res = getResponse(in);
+            auto res     = getResponse(in);
             CHECK("EATON-OIDS::xupsMIB" == res[0]);
         }
 
-        //std::cerr << proc.readAllStandardError() << std::endl;
+        // std::cerr << proc.readAllStandardError() << std::endl;
         proc.interrupt();
         proc.wait();
     } else {
         FAIL(pid.error());
     }
 }
+
+} // namespace fty::disco
