@@ -1,8 +1,8 @@
 #include "commands.h"
 
-namespace fty::disco::commands::scan {
+namespace fty::disco {
 
-namespace start {
+namespace commands::scan::start {
     std::ostream& operator<<(std::ostream& ss, In::Type value)
     {
         using Type = In::Type;
@@ -44,9 +44,9 @@ namespace start {
         }
         return ss;
     }
-} // namespace start
+} // namespace commands::scan::start
 
-namespace status {
+namespace commands::scan::status {
     std::ostream& operator<<(std::ostream& ss, Out::Status value)
     {
         using Status = Out::Status;
@@ -84,39 +84,40 @@ namespace status {
         }
         return ss;
     }
-} // namespace status
+} // namespace commands::scan::status
 
-std::ostream& operator<<(std::ostream& ss, Response::Status value)
-{
-    using Status = Response::Status;
+namespace commands::scan {
+    std::ostream& operator<<(std::ostream& ss, Response::Status value)
+    {
+        using Status = Response::Status;
 
-    ss << [&]() {
-        switch (value) {
-            case Status::Success:
-                return "success";
-            case Status::Fail:
-                return "fail";
-            case Status::Unknown:
-                return "unknown";
-        }
-        return "unknown";
-    }();
-    return ss;
-}
-std::istream& operator>>(std::istream& ss, Response::Status& value)
-{
-    using Status = Response::Status;
-
-    std::string strval;
-    ss >> strval;
-    if (strval == "success") {
-        value = Status::Success;
-    } else if (strval == "fail") {
-        value = Status::Fail;
-    } else {
-        value = Status::Unknown;
+        ss << [&]() {
+            switch (value) {
+                case Status::Success:
+                    return "success";
+                case Status::Fail:
+                    return "fail";
+                case Status::Unknown:
+                    return "unknown";
+            }
+            return "unknown";
+        }();
+        return ss;
     }
-    return ss;
-}
+    std::istream& operator>>(std::istream& ss, Response::Status& value)
+    {
+        using Status = Response::Status;
 
-} // namespace fty::disco::commands::scan
+        std::string strval;
+        ss >> strval;
+        if (strval == "success") {
+            value = Status::Success;
+        } else if (strval == "fail") {
+            value = Status::Fail;
+        } else {
+            value = Status::Unknown;
+        }
+        return ss;
+    }
+} // namespace commands::scan
+} // namespace fty::disco
