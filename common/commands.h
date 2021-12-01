@@ -255,24 +255,5 @@ namespace commands::scan {
 } // namespace commands::scan
 
 // =====================================================================================================================
-// TBD: TO REMOVE
-namespace commands::discoveryauto {
-    static constexpr const char* Subject = "discovery-auto";
-
-    using In = commands::CommonIn;
-
-    class Out : public pack::Node
-    {
-    public:
-        pack::String result = FIELD("result");
-
-    public:
-        using pack::Node::Node;
-        META(Out, result);
-    };
-
-} // namespace commands::discoveryauto
-
-// =====================================================================================================================
 
 } // namespace fty::disco

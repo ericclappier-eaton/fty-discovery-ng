@@ -14,8 +14,14 @@ etn_target(static ${PROJECT_NAME}-static
         src/jobs/mibs.h
         src/jobs/assets.cpp
         src/jobs/assets.h
-        src/jobs/auto-discovery.cpp
-        src/jobs/auto-discovery.h
+        # src/jobs/auto-discovery.cpp
+        # src/jobs/auto-discovery.h
+        src/jobs/scan-start.cpp
+        src/jobs/scan-start.h
+        src/jobs/scan-stop.cpp
+        src/jobs/scan-stop.h
+        src/jobs/scan-status.cpp
+        src/jobs/scan-status.h
 
         src/jobs/impl/snmp.cpp
         src/jobs/impl/snmp.h
