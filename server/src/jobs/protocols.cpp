@@ -27,7 +27,7 @@
 #include <unistd.h>
 #include <yaml-cpp/yaml.h>
 
-namespace fty::job {
+namespace fty::disco::job {
 
 // =====================================================================================================================
 
@@ -168,7 +168,7 @@ Expected<void> Protocols::tryXmlPdc(const commands::protocols::In& in, uint16_t 
 {
     impl::XmlPdc xml("http", in.address, port);
     if (auto prod = xml.get<impl::ProductInfo>("product.xml")) {
-        if(!(prod->name == "Network Management Card" || prod->name == "HPE UPS Network Module")) {
+        if (!(prod->name == "Network Management Card" || prod->name == "HPE UPS Network Module")) {
             return unexpected("unsupported card type");
         }
 
@@ -299,4 +299,4 @@ Expected<void> Protocols::trySnmp(const commands::protocols::In& in, uint16_t po
 
 // =====================================================================================================================
 
-} // namespace fty::job
+} // namespace fty::disco::job

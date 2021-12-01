@@ -19,7 +19,7 @@
 
 // =====================================================================================================================
 
-namespace fty::job {
+namespace fty::disco::job {
 
 /// Forward declaration
 enum class Type;
@@ -50,6 +50,6 @@ private:
     Expected<void> tryPowercom(const commands::protocols::In& in, uint16_t port) const;
 };
 
-} // namespace fty::job
+} // namespace fty::disco::job
 
 // =====================================================================================================================

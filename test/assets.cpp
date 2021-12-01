@@ -3,7 +3,7 @@
 
 TEST_CASE("Assets / Empty request")
 {
-    fty::disco::Message                msg = Test::createMessage(fty::commands::assets::Subject);
+    fty::disco::Message                msg = Test::createMessage(fty::disco::commands::assets::Subject);
     fty::Expected<fty::disco::Message> ret = Test::send(msg);
     CHECK_FALSE(ret);
     CHECK("Wrong input data: payload is empty" == ret.error());
@@ -11,7 +11,7 @@ TEST_CASE("Assets / Empty request")
 
 TEST_CASE("Assets / Wrong request")
 {
-    fty::disco::Message msg = Test::createMessage(fty::commands::assets::Subject);
+    fty::disco::Message msg = Test::createMessage(fty::disco::commands::assets::Subject);
 
     msg.userData.setString("Some shit");
     fty::Expected<fty::disco::Message> ret = Test::send(msg);
@@ -21,9 +21,9 @@ TEST_CASE("Assets / Wrong request")
 
 TEST_CASE("Assets / Unaviable host")
 {
-    fty::disco::Message msg = Test::createMessage(fty::commands::assets::Subject);
+    fty::disco::Message msg = Test::createMessage(fty::disco::commands::assets::Subject);
 
-    fty::commands::protocols::In in;
+    fty::disco::commands::protocols::In in;
     in.address = "pointtosky";
     msg.userData.setString(*pack::json::serialize(in));
     fty::Expected<fty::disco::Message> ret = Test::send(msg);
@@ -44,9 +44,9 @@ TEST_CASE("Assets / Test output")
     // clang-format on
 
     if (auto pid = proc.run()) {
-        fty::disco::Message msg = Test::createMessage(fty::commands::assets::Subject);
+        fty::disco::Message msg = Test::createMessage(fty::disco::commands::assets::Subject);
 
-        fty::commands::assets::In in;
+        fty::disco::commands::assets::In in;
         in.address          = "127.0.0.1";
         in.port             = 1161;
         in.protocol         = "nut_snmp";

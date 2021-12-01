@@ -5,7 +5,7 @@ namespace fty {
 class Process;
 }
 
-namespace fty::impl::nut {
+namespace fty::disco::impl::nut {
 
 class Process
 {
@@ -33,4 +33,4 @@ private:
     std::unique_ptr<fty::Process> m_process;
 };
 
-} // namespace fty::impl::nut
+} // namespace fty::disco::impl::nut

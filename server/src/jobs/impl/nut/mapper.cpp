@@ -22,7 +22,7 @@
 #include <regex>
 
 
-namespace fty::impl::nut {
+namespace fty::disco::impl::nut {
 
 // =====================================================================================================================
 
@@ -56,7 +56,8 @@ std::string Mapper::mapKey(const std::string& key, int index)
     // device.n.ambient.xxx  -> emp01 with daisychain (only one sensor on a device #n)
     // ambient.n.xxx  -> emp02 with no daisychain
     // device.1.ambient.n.xxx -> emp02 with daisychain (all sensor are on master #1)
-    const static std::regex prefixRegex(R"xxx(.*((?:device(?!\.\d*\.ambient\.\d*\.))|ambient)\.(\d*)\.(.+))xxx", std::regex::optimize);
+    const static std::regex prefixRegex(
+        R"xxx(.*((?:device(?!\.\d*\.ambient\.\d*\.))|ambient)\.(\d*)\.(.+))xxx", std::regex::optimize);
     std::smatch matches;
 
     std::string transformedKey = key;
@@ -73,11 +74,11 @@ std::string Mapper::mapKey(const std::string& key, int index)
             // ambient.<property> or <property> (for device only)
             if (!map.map(matches.str(1) + "." + matches.str(3)).empty()) {
                 transformedKey = matches.str(1) + "." + matches.str(3);
-                //logTrace("key {} (index {}) -> {}", key, index, transformedKey);
+                // logTrace("key {} (index {}) -> {}", key, index, transformedKey);
             } else {
                 if (matches.str(1) != "ambient") {
                     transformedKey = matches.str(3);
-                    //logTrace("key {} (index {}) -> {}", key, index, transformedKey);
+                    // logTrace("key {} (index {}) -> {}", key, index, transformedKey);
                 }
             }
         } else {
@@ -110,4 +111,4 @@ const Mapping& Mapper::mapping()
 
 // =====================================================================================================================
 
-} // namespace fty::protocol::nut
+} // namespace fty::disco::impl::nut
