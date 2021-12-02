@@ -128,11 +128,9 @@ namespace commands::assets {
 // =====================================================================================================================
 
 namespace commands::config {
-    static constexpr const char* Subject = "config";
 
-    class In : public pack::Node
+    struct Config : public pack::Node
     {
-    public:
         pack::String     type          = FIELD("FTY_DISCOVERY_TYPE");
         pack::StringList scans         = FIELD("FTY_DISCOVERY_SCANS");
         pack::StringList ips           = FIELD("FTY_DISCOVERY_IPS");
@@ -149,11 +147,23 @@ namespace commands::config {
         pack::Int32      scanTimeout   = FIELD("FTY_DISCOVERY_SCAN_TIMEOUT");
         pack::Int32      dumpLooptime  = FIELD("FTY_DISCOVERY_DUMP_LOOPTIME");
 
-    public:
         using pack::Node::Node;
-        META(In, type, scans, ips, docs, status, priority, parent, links, scansDisabled, ipsDisabled, protocols,
+        META(Config, type, scans, ips, docs, status, priority, parent, links, scansDisabled, ipsDisabled, protocols,
             dumpPool, scanPool, scanTimeout, dumpLooptime);
     };
+
+    namespace read {
+        static constexpr const char* Subject = "config-read";
+
+        using Out = Config;
+        using In  = pack::StringList;
+    } // namespace read
+
+    namespace create {
+        static constexpr const char* Subject = "config-create";
+
+        using In = Config;
+    } // namespace create
 
 } // namespace commands::config
 
