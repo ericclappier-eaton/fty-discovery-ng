@@ -22,7 +22,7 @@
 #pragma once
 #include <pack/pack.h>
 
-namespace fty {
+namespace fty::disco {
 
 class Config : public pack::Node
 {
@@ -40,4 +40,4 @@ public:
     static Config& instance();
 };
 
-} // namespace fty
+} // namespace fty::disco

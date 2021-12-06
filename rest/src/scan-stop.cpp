@@ -20,7 +20,7 @@ unsigned Scan::run()
 
     fty::disco::Message msg = message(commands::scan::stop::Subject);
 
-    auto ret = bus.send(fty::Channel, msg);
+    auto ret = bus.send(Channel, msg);
     if (!ret) {
         throw rest::errors::Internal(ret.error());
     }

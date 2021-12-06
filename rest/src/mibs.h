@@ -24,7 +24,7 @@
 #include "commands.h"
 #include <fty/rest/runner.h>
 
-namespace fty {
+namespace fty::disco {
 
 class Mibs : public rest::Runner
 {
@@ -43,4 +43,4 @@ private:
     // clang-format on
 };
 
-} // namespace fty
+} // namespace fty::disco

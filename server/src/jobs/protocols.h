@@ -19,7 +19,7 @@
 
 // =====================================================================================================================
 
-namespace fty::job {
+namespace fty::disco::job {
 
 /// Forward declaration
 enum class Type;
@@ -53,6 +53,6 @@ private:
     static void sortProtocols(std::vector<Type>& protocols);
 };
 
-} // namespace fty::job
+} // namespace fty::disco::job
 
 // =====================================================================================================================

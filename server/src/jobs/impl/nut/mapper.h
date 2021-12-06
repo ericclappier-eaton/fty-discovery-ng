@@ -17,7 +17,7 @@
 #pragma once
 #include <string>
 
-namespace fty::impl::nut {
+namespace fty::disco::impl::nut {
 
 struct Mapping;
 
@@ -33,4 +33,4 @@ private:
 };
 
 
-} // namespace fty::protocol::nut
+} // namespace fty::disco::impl::nut

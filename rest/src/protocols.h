@@ -24,7 +24,7 @@
 #include <fty/rest/runner.h>
 #include <pack/pack.h>
 
-namespace fty {
+namespace fty::disco {
 
 class Protocols : public rest::Runner
 {
@@ -44,4 +44,4 @@ private:
     // clang-format on
 };
 
-} // namespace fty
+} // namespace fty::disco

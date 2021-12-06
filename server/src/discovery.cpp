@@ -24,13 +24,16 @@
 #include "config.h"
 #include "daemon.h"
 #include "jobs/assets.h"
+// #include "jobs/auto-discovery.h"
 #include "jobs/mibs.h"
 #include "jobs/protocols.h"
-#include "jobs/auto-discovery.h"
+#include "jobs/scan-start.h"
+#include "jobs/scan-status.h"
+#include "jobs/scan-stop.h"
 #include <fty/thread-pool.h>
 #include <fty_log.h>
 
-namespace fty {
+namespace fty::disco {
 
 Discovery::Discovery(const std::string& config)
     : m_configPath(config)
@@ -56,7 +59,7 @@ bool Discovery::loadConfig()
 Expected<void> Discovery::init()
 {
     if (auto res = m_bus.init(Config::instance().actorName)) {
-        if (auto sub = m_bus.subsribe(fty::Channel, &Discovery::discover, this)) {
+        if (auto sub = m_bus.subsribe(Channel, &Discovery::discover, this)) {
             return {};
         } else {
             return unexpected(sub.error());
@@ -88,13 +91,12 @@ void Discovery::discover(const disco::Message& msg)
         m_pool.pushWorker<job::Mibs>(msg, m_bus);
     } else if (msg.meta.subject == commands::assets::Subject) {
         m_pool.pushWorker<job::Assets>(msg, m_bus);
-    } else if (msg.meta.subject == disco::commands::scan::start::Subject) {
-        m_pool.pushWorker<job::AutoDiscovery>(msg, m_bus);
+    } else if (msg.meta.subject == disco::commands::scan::status::Subject) {
+        m_pool.pushWorker<job::ScanStatus>(msg, m_bus);
     } else if (msg.meta.subject == disco::commands::scan::stop::Subject) {
-        // TODO
-    // TBD To remove
-    } else if (msg.meta.subject == commands::discoveryauto::Subject) {
-        m_pool.pushWorker<job::AutoDiscovery>(msg, m_bus);
+        m_pool.pushWorker<job::ScanStop>(msg, m_bus);
+    } else if (msg.meta.subject == disco::commands::scan::start::Subject) {
+        m_pool.pushWorker<job::ScanStart>(msg, m_bus);
     }
 }
 
@@ -106,4 +108,4 @@ Config& Config::instance()
     return inst;
 }
 
-} // namespace fty
+} // namespace fty::disco
