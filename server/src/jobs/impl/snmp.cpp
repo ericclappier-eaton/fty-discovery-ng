@@ -58,6 +58,12 @@ static Expected<oid*> authProt(secw::Snmpv3AuthProtocol proc)
             return usmHMACMD5AuthProtocol;
         case secw::SHA:
             return usmHMACSHA1AuthProtocol;
+        case secw::SHA256:
+            return usmHMAC256SHA384AuthProtocol;
+        case secw::SHA384:
+            return usmHMAC384SHA512AuthProtocol;
+        case secw::SHA512:
+            return usmHMAC384SHA512AuthProtocol;
         case secw::MAX_AUTH_PROTOCOL:
             return unexpected("Wrong protocol");
     }
@@ -71,6 +77,10 @@ static Expected<oid*> authPriv(secw::Snmpv3PrivProtocol proc)
             return usmDESPrivProtocol;
         case secw::AES:
             return usmAESPrivProtocol;
+        case secw::AES192:
+            return usmAES192PrivProtocol;
+        case secw::AES256:
+            return usmAES256PrivProtocol;
         case secw::MAX_PRIV_PROTOCOL:
             return unexpected("Wrong protocol");
     }

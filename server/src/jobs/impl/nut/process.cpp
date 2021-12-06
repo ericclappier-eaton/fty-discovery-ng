@@ -159,6 +159,12 @@ Expected<void> Process::setCredentialId(const std::string& credential)
                     return std::string("MD5");
                 case secw::SHA:
                     return std::string("SHA");
+                case secw::SHA256:
+                    return std::string("SHA256");
+                case secw::SHA384:
+                    return std::string("SHA384");
+                case secw::SHA512:
+                    return std::string("SHA512");
                 case secw::MAX_AUTH_PROTOCOL:
                     return unexpected("Wrong protocol");
             }
@@ -171,6 +177,10 @@ Expected<void> Process::setCredentialId(const std::string& credential)
                     return std::string("DES");
                 case secw::AES:
                     return std::string("AES");
+                case secw::AES192:
+                    return std::string("AES192");
+                case secw::AES256:
+                    return std::string("AES256");
                 case secw::MAX_PRIV_PROTOCOL:
                     return unexpected("Wrong protocol");
             }
