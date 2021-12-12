@@ -83,8 +83,8 @@ int Discovery::run()
 
 void Discovery::discover(const disco::Message& msg)
 {
-    log_debug("Discovery: got message %s", msg.dump().c_str());
-    log_debug("Payload: %s", msg.userData.asString().c_str());
+    logDebug("Discovery: got message {}", msg.dump());
+    logDebug("Payload: {}", msg.userData.asString());
     if (msg.meta.subject == commands::protocols::Subject) {
         m_pool.pushWorker<job::Protocols>(msg, m_bus);
     } else if (msg.meta.subject == commands::mibs::Subject) {
