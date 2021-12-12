@@ -107,3 +107,10 @@ etn_configure_file(
 )
 
 ########################################################################################################################
+
+etn_configure_file(
+    conf/config-discovery.conf.in
+
+    TARGET      ${PROJECT_NAME}
+    DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/${PROJECT_NAME}
+)

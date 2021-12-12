@@ -34,10 +34,9 @@ public:
 private:
     // clang-format off
     Permissions m_permissions = {
-        { rest::User::Profile::Admin,     rest::Access::Create }
+        { rest::User::Profile::Admin, rest::Access::Create }
     };
     // clang-format on
-
 };
 
 } // namespace fty::disco
