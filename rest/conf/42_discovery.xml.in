@@ -17,30 +17,35 @@
 
 <mapping>
     <target>discovery/config/create@lib${NAME}</target>
-    <url>^/api/v1/admin/config.*$</url>
+    <url>^/api/v1/admin/config/create.*$</url>
     <method>POST</method>
 </mapping>
 <mapping>
     <target>discovery/config/read@lib${NAME}</target>
-    <url>^/api/v1/admin/config.*$</url>
+    <url>^/api/v1/admin/config/read.*$</url>
     <method>GET</method>
+</mapping>
+<mapping>
+    <target>discovery/config/read@lib${NAME}</target>
+    <url>^/api/v1/admin/config/read.*$</url>
+    <method>POST</method>
 </mapping>
 
 <mapping>
   <target>discovery/scan/start@lib${NAME}</target>
-  <url>^/api/v1/admin/scan.*$</url>
+  <url>^/api/v1/admin/scan/new.*$</url>
   <method>POST</method>
 </mapping>
 
 <mapping>
   <target>discovery/scan/status@lib${NAME}</target>
-  <url>^/api/v1/admin/scan.*$</url>
+  <url>^/api/v1/admin/scan/new.*$</url>
   <method>GET</method>
 </mapping>
 
 <mapping>
     <target>discovery/scan/stop@lib${NAME}</target>
-    <url>^/api/v1/admin/scan.*$</url>
+    <url>^/api/v1/admin/scan/new.*$</url>
     <method>DELETE</method>
 </mapping>
 
