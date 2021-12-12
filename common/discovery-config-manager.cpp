@@ -37,6 +37,11 @@ fty::Expected<ConfigDiscovery> ConfigDiscoveryManager::config() const
     return *m_config;
 }
 
+void ConfigDiscoveryManager::set(const ConfigDiscovery& config)
+{
+    m_config = config;
+}
+
 fty::Expected<void> ConfigDiscoveryManager::commandCreate(const commands::config::Config& in)
 {
     auto tmp = ConfigDiscovery();
@@ -50,6 +55,7 @@ fty::Expected<void> ConfigDiscoveryManager::commandCreate(const commands::config
     }
 
     if (in.type.hasValue()) {
+
         std::stringstream                ss(in.type.value());
         ConfigDiscovery::Discovery::Type tmpType;
         ss >> tmpType;
@@ -59,6 +65,11 @@ fty::Expected<void> ConfigDiscoveryManager::commandCreate(const commands::config
         tmp.discovery.scans = in.scans;
     }
     if (in.ips.hasValue()) {
+        for (const auto& ip : in.ips) {
+            if(!validateIp(ip)){
+                return fty::unexpected("invalid ip: {}", ip);
+            }
+        }
         tmp.discovery.ips = in.ips;
     }
     if (in.docs.hasValue()) {
@@ -109,52 +120,74 @@ fty::Expected<void> ConfigDiscoveryManager::commandCreate(const commands::config
 
 fty::Expected<commands::config::Config> ConfigDiscoveryManager::commandRead(const pack::StringList& keys) const
 {
-    auto tmp = ConfigDiscovery();
+    if (!m_config.has_value()) {
+        return fty::unexpected("config not loaded => cannot resolve read");
+    }
 
+    commands::config::Config out;
+
+    for (const auto& key : keys) {
+        if (auto ret = commandReadKey(key, out); !ret) {
+            return fty::unexpected(ret.error());
+        }
+    }
+    return out;
+}
+
+fty::Expected<void> ConfigDiscoveryManager::commandReadKey(const std::string& key, commands::config::Config& out) const
+{
     if (!m_config.has_value()) {
         return fty::unexpected("config not loaded => cannot resolve read");
     }
     const auto& conf = *m_config;
 
-    commands::config::Config out;
-
-    for (const auto& key : keys) {
-        if (out.type.key() == key) {
-            std::stringstream ss;
-            ss << conf.discovery.type;
-            out.type = ss.str();
-        } else if (out.scans.key() == key) {
-            out.scans = conf.discovery.scans;
-        } else if (out.ips.key() == key) {
-            out.ips = conf.discovery.ips;
-        } else if (out.docs.key() == key) {
-            out.docs = conf.discovery.documents;
-        } else if (out.status.key() == key) {
-            out.status = conf.aux.status;
-        } else if (out.priority.key() == key) {
-            out.priority = conf.aux.priority;
-        } else if (out.parent.key() == key) {
-            out.parent = conf.aux.parent;
-        } else if (out.links.key() == key) {
-            for (const auto& link : conf.links) {
-                out.links.append(link.src);
-            }
-        } else if (out.scansDisabled.key() == key) {
-            out.scansDisabled = conf.disabled.scans;
-        } else if (out.ipsDisabled.key() == key) {
-            out.ipsDisabled = conf.disabled.ips;
-        } else if (out.protocols.key() == key) {
-            out.protocols = conf.discovery.protocols;
-        } else if (out.dumpPool.key() == key) {
-            out.dumpPool = conf.parameters.maxDumpPoolNumber;
-        } else if (out.scanPool.key() == key) {
-            out.scanPool = conf.parameters.maxScanPoolNumber;
-        } else if (out.scanTimeout.key() == key) {
-            out.scanTimeout = conf.parameters.nutScannerTimeOut;
-        } else if (out.dumpLooptime.key() == key) {
-            out.dumpLooptime = conf.parameters.dumpDataLoopTime;
+    if (out.type.key() == key) {
+        std::stringstream ss;
+        ss << conf.discovery.type;
+        out.type = ss.str();
+    } else if (out.scans.key() == key) {
+        out.scans = conf.discovery.scans;
+    } else if (out.ips.key() == key) {
+        out.ips = conf.discovery.ips;
+    } else if (out.docs.key() == key) {
+        out.docs = conf.discovery.documents;
+    } else if (out.status.key() == key) {
+        out.status = conf.aux.status;
+    } else if (out.priority.key() == key) {
+        out.priority = conf.aux.priority;
+    } else if (out.parent.key() == key) {
+        out.parent = conf.aux.parent;
+    } else if (out.links.key() == key) {
+        for (const auto& link : conf.links) {
+            out.links.append(link.src);
         }
+    } else if (out.scansDisabled.key() == key) {
+        out.scansDisabled = conf.disabled.scans;
+    } else if (out.ipsDisabled.key() == key) {
+        out.ipsDisabled = conf.disabled.ips;
+    } else if (out.protocols.key() == key) {
+        out.protocols = conf.discovery.protocols;
+    } else if (out.dumpPool.key() == key) {
+        out.dumpPool = conf.parameters.maxDumpPoolNumber;
+    } else if (out.scanPool.key() == key) {
+        out.scanPool = conf.parameters.maxScanPoolNumber;
+    } else if (out.scanTimeout.key() == key) {
+        out.scanTimeout = conf.parameters.nutScannerTimeOut;
+    } else if (out.dumpLooptime.key() == key) {
+        out.dumpLooptime = conf.parameters.dumpDataLoopTime;
+    } else {
+        return fty::unexpected("key does not exist: {}", key);
     }
+
+    return {};
+}
+
+bool ConfigDiscoveryManager::validateIp(const std::string& ip)
+{
+    // return std::regex_match(ip,
+    // std::regex("(?=^.{4,253}$)(^((?!-)[a-zA-Z0-9-]{0,62}[a-zA-Z0-9]\\.)+[a-zA-Z]{2,63}$)"));
+    return std::regex_match(
+        ip, std::regex("(^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$)"));
 }
 
 
