@@ -4,7 +4,7 @@
 
 namespace fty::disco::job {
 
-void ScanStop::run(commands::scan::stop::Out& out)
+void ScanStop::run(commands::scan::stop::Out&)
 {
     if (auto res = m_autoDiscovery->stop(); !res) {
         throw Error("Error when stopped automatic discovery: {}", res.error());
