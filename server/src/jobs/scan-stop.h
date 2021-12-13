@@ -7,7 +7,7 @@ class ScanStop : public AutoTask<ScanStop, void, commands::scan::stop::Out>
 {
 public:
     using AutoTask::AutoTask;
-    void run(commands::scan::stop::Out& out);
+    void run(commands::scan::stop::Out&);
 };
 
 } // namespace fty::disco::job
