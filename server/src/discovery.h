@@ -21,6 +21,7 @@
 
 #pragma once
 #include "message-bus.h"
+#include "jobs/auto-discovery.h"
 #include <fty/event.h>
 #include <fty/thread-pool.h>
 #include <string>
@@ -54,9 +55,10 @@ private:
     void doStop();
 
 private:
-    std::string       m_configPath;
-    disco::MessageBus m_bus;
-    ThreadPool        m_pool;
+    std::string                 m_configPath;
+    disco::MessageBus           m_bus;
+    ThreadPool                  m_pool;
+    job::AutoDiscovery          m_autoDiscovery;
 
     Slot<>                      m_stopSlot       = {&Discovery::doStop, this};
     Slot<>                      m_loadConfigSlot = {&Discovery::loadConfig, this};

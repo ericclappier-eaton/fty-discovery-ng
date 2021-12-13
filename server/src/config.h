@@ -31,10 +31,11 @@ public:
     pack::String logConfig   = FIELD("log-config", "conf/logger.conf");
     pack::String mibDatabase = FIELD("mib-database", "mibs");
     pack::Bool   tryAll      = FIELD("try-all", false);
+    pack::UInt32 pollScanMax = FIELD("poll-scan-max", 10);
 
 public:
     using pack::Node::Node;
-    META(Config, actorName, logConfig, mibDatabase, tryAll);
+    META(Config, actorName, logConfig, mibDatabase, tryAll, pollScanMax);
 
 public:
     static Config& instance();

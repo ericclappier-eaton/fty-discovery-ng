@@ -17,28 +17,55 @@
 #pragma once
 #include "discovery-task.h"
 #include "impl/create-asset.h"
+#include <fty/thread-pool.h>
 
 // =====================================================================================================================
 
 namespace fty::disco::job {
 
 /// Automatic discover Assets from enpoint
-/// Returns @ref commands::discoveryauto::Out (empty if no error in input parameter)
-class AutoDiscovery : public Task<AutoDiscovery, disco::commands::scan::start::In, disco::commands::scan::start::Out>
+class AutoDiscovery
 {
 public:
-    using Task::Task;
+    static const uint32_t SCAN_CHECK_PERIOD_MS = 10000;
 
-    // Runs discover job.
-    // void run(const commands::discoveryauto::In& in, commands::discoveryauto::Out& out);
-    void run(const disco::commands::scan::start::In& in, disco::commands::scan::start::Out& out);
+    // TBD: To centralise with rest status ???
+    enum class State {
+        Unknown,
+        CancelledByUser,
+        Terminated,
+        InProgress
+    };
+    struct StatusDiscovery {
+        State           state;
+        uint32_t        progress;
+        uint32_t        discovered;
+        uint32_t        ups;
+        uint32_t        epdu;
+        uint32_t        sts;
+        uint32_t        sensors;
+    };
+
+    AutoDiscovery();
+    ~AutoDiscovery() = default;
+
+    // Runs discover
+    Expected<void> start(const disco::commands::scan::start::In& InStart);
+
+    // Stop current discover
+    Expected<void> stop();
+
+    const StatusDiscovery& getStatus() { return m_statusDiscovery; };
 
 private:
     // Construct and update output ext attributes according input ext attributes
-    static Expected<void> updateExt(const commands::assets::Ext& ext_in, fty::asset::create::Ext& ext_out);
+    static Expected<void> updateExt(const commands::assets::Ext& ext_in, asset::create::Ext& ext_out);
 
     // Update host name
-    static Expected<void> updateHostName(const std::string& address, fty::asset::create::Ext& ext);
+    static Expected<void> updateHostName(const std::string& address, asset::create::Ext& ext);
+
+    // Split protocol and port number if present (optional)
+    static const std::pair<std::string, std::string> splitPortFromProtocol(const std::string &protocol);
 
     // Device centric view
     bool IsDeviceCentricView() const
@@ -47,20 +74,41 @@ private:
     };
 
     // Read configuration
-    void readConfig(const disco::commands::scan::start::In& in, const disco::commands::scan::start::Out& out);
+    void readConfig(const disco::commands::scan::start::In& in);
+
+    // Status management
+    void statusDiscoveryReset();
+    void updateStatusDiscoveryCounters(std::string deviceSubType);
+    void updateStatusDiscoveryProgress();
 
     // Scan node(s)
-    static void scan(AutoDiscovery* autoDiscovery, const commands::discoveryauto::In& in);
+    static void scan(AutoDiscovery* autoDiscovery, const std::string& ipAddress);
 
+    // Scan check
+    static bool scanCheck(AutoDiscovery* autoDiscovery);
+    static void startThreadScanCheck(AutoDiscovery* autoDiscovery, const unsigned int interval);
+
+private:
     // Input parameters
     disco::commands::scan::start::In m_params;
 
-    fty::asset::create::PowerLinks m_defaultValuesLinks;
+    // Default power links
+    fty::asset::create::PowerLinks   m_defaultValuesLinks;
 
-    std::vector<std::string> m_listIpAddress;
+    // Ip address list
+    std::vector<std::string>         m_listIpAddress;
+
+    // Ip address initial count
+    uint64_t                         m_listIpAddressCount;
+
+    // Automatic discovery status
+    StatusDiscovery                  m_statusDiscovery;
 
     // Thread pool use for discovery scan
-    fty::ThreadPool m_pool;
+    fty::ThreadPool                  m_poolScan;
+
+    // Mutex for secure auto discovery
+    std::mutex                       m_mutex;
 };
 
 } // namespace fty::disco::job
