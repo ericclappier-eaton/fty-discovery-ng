@@ -3,10 +3,10 @@
 
 namespace fty::disco::job {
 
-class ScanStop : public Task<ScanStop, void, commands::scan::stop::Out>
+class ScanStop : public AutoTask<ScanStop, void, commands::scan::stop::Out>
 {
 public:
-    using Task::Task;
+    using AutoTask::AutoTask;
     void run(commands::scan::stop::Out& out);
 };
 
