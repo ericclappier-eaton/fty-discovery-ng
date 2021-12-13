@@ -346,7 +346,7 @@ void Assets::parse(const std::string& cnt, commands::assets::Out& out)
                 std::smatch       matches;
                 if (std::regex_match(p.first, matches, rex2)) {
                     if (matches.str(1) != std::to_string(i) || matches.str(2).find("ambient.") != std::string::npos) {
-                        logTrace("Filter property '{}' index={} (daisy-chain override)", p.first, i);
+                        //logTrace("Filter property '{}' index={} (daisy-chain override)", p.first, i);
                         continue;
                     }
                 }
@@ -355,7 +355,7 @@ void Assets::parse(const std::string& cnt, commands::assets::Out& out)
                 static std::regex overrideRegex(R"xxx((device|ambient)\.([^[:digit:]].*))xxx", std::regex::optimize);
                 if (std::regex_match(p.first, matches, overrideRegex)) {
                     if (tmpMap.count(matches.str(1) + "." + std::to_string(i) + "." + matches.str(2))) {
-                        logTrace("Ignoring overriden property '{}' (daisy-chain override)", p.first);
+                        //logTrace("Ignoring overriden property '{}' (daisy-chain override)", p.first);
                         continue;
                     }
                 }

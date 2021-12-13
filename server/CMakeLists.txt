@@ -14,8 +14,10 @@ etn_target(static ${PROJECT_NAME}-static
         src/jobs/mibs.h
         src/jobs/assets.cpp
         src/jobs/assets.h
-        # src/jobs/auto-discovery.cpp
-        # src/jobs/auto-discovery.h
+        src/jobs/auto-discovery.cpp
+        src/jobs/auto-discovery.h
+        src/jobs/create-asset.cpp
+        src/jobs/create-asset.h
         src/jobs/scan-start.cpp
         src/jobs/scan-start.h
         src/jobs/scan-stop.cpp
@@ -34,13 +36,12 @@ etn_target(static ${PROJECT_NAME}-static
         src/jobs/impl/mibs.h
         src/jobs/impl/uuid.cpp
         src/jobs/impl/uuid.h
-        src/jobs/impl/create-asset.cpp
-        src/jobs/impl/create-asset.h
-
         src/jobs/impl/nut/mapper.cpp
         src/jobs/impl/nut/mapper.h
         src/jobs/impl/nut/process.cpp
         src/jobs/impl/nut/process.h
+    INCLUDE_DIRS
+        src
     USES
         fty-utils
         fty_common_logging

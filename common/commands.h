@@ -231,11 +231,12 @@ namespace commands::scan {
             pack::StringList ipsDisabled   = FIELD("ipsDisabled");
             pack::StringList scans         = FIELD("scans");
             pack::StringList scansDisabled = FIELD("scansDisabled");
+            pack::StringList protocols     = FIELD("protocols");
             pack::Enum<Type> type          = FIELD("type");
 
         public:
             using pack::Node::Node;
-            META(In, linkSrc, parent, priority, documents, ips, ipsDisabled, scans, scansDisabled, type);
+            META(In, linkSrc, parent, priority, documents, ips, ipsDisabled, scans, scansDisabled, protocols, type);
         };
 
         std::ostream& operator<<(std::ostream& ss, In::Type value);
