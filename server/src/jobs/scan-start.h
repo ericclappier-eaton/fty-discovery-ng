@@ -3,10 +3,12 @@
 
 namespace fty::disco::job {
 
-class ScanStart : public Task<ScanStart, commands::scan::start::In, commands::scan::start::Out>
+class ScanStart : public AutoTask<ScanStart, commands::scan::start::In, commands::scan::start::Out>
 {
 public:
-    using Task::Task;
+    using AutoTask::AutoTask;
+
+    // Runs discover job.
     void run(const commands::scan::start::In& in, commands::scan::start::Out& out);
 };
 

@@ -107,20 +107,17 @@ public:
             } else {
                 throw Error("Not a correct task");
             } */
-
             if (auto it = dynamic_cast<T*>(this)) {
                 if constexpr (!std::is_same<InputT, void>::value) {
                     if (m_in.userData.empty()) {
                         throw Error("Wrong input data: payload is empty");
                     }
-
                     InputT cmd;
                     if (auto parsedCmd = m_in.userData.decode<InputT>()) {
                         cmd = *parsedCmd;
                     } else {
                         throw Error("Wrong input data: format of payload is incorrect");
                     }
-
                     if constexpr (std::is_same<ResponseT, void>::value) {
                         it->run(cmd);
                     } else {
@@ -149,6 +146,25 @@ public:
 protected:
     disco::Message     m_in;
     disco::MessageBus* m_bus = nullptr;
+};
+
+class AutoDiscovery;
+
+template <typename T, typename InputT, typename ResponseT>
+class AutoTask : public Task<T, InputT, ResponseT>
+{
+public:
+    AutoTask(const disco::Message& in, disco::MessageBus& bus, AutoDiscovery& autoDiscovery)
+          : m_autoDiscovery(&autoDiscovery)
+    {
+        this->m_in = in;
+        this->m_bus = &bus;
+    }
+
+    AutoTask() = default;
+
+protected:
+    AutoDiscovery* m_autoDiscovery = nullptr;
 };
 
 } // namespace fty::disco::job

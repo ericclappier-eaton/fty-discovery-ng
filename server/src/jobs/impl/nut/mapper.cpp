@@ -62,14 +62,14 @@ std::string Mapper::mapKey(const std::string& key, int index)
 
     std::string transformedKey = key;
 
-    logTrace("Looking for key {} (index {})", key, index);
+    //logTrace("Looking for key {} (index {})", key, index);
     auto map = mapping();
 
     // Daisy-chained or indexed sensor special case, need to fold it back into conventional case.
     if (index > 0 && std::regex_match(key, matches, prefixRegex)) {
-        logTrace("match1 = {}, match2 = {}, match3 = {}", matches.str(1), matches.str(2), matches.str(3));
+        //logTrace("match1 = {}, match2 = {}, match3 = {}", matches.str(1), matches.str(2), matches.str(3));
         if (matches.str(2) == std::to_string(index)) {
-            logTrace("key {} (index {}) 1-> found and test {}.{}", key, index, matches.str(1), matches.str(3));
+            //logTrace("key {} (index {}) 1-> found and test {}.{}", key, index, matches.str(1), matches.str(3));
             // We have a "{device,ambient}.<id>.<property>" property, map it to either device.<property> or
             // ambient.<property> or <property> (for device only)
             if (!map.map(matches.str(1) + "." + matches.str(3)).empty()) {
