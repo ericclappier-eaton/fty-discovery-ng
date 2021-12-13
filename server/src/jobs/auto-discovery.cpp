@@ -119,7 +119,7 @@ const std::pair<std::string, std::string> AutoDiscovery::splitPortFromProtocol(c
 void AutoDiscovery::readConfig(const disco::commands::scan::start::In& in/*, const disco::commands::scan::start::Out& out*/)
 {
     // Init default links
-    fty::asset::create::PowerLink powerLink;
+    asset::create::PowerLink powerLink;
     // For each link
     for (const auto& link : in.linkSrc) {
         // When link to no source, the file will have "0"
@@ -292,7 +292,7 @@ void AutoDiscovery::scan(AutoDiscovery* autoDiscovery, const std::string& ipAddr
                         logError("Could not update host name during creation of asset ({}): {}", ipAddress, res.error());
                     }
                     // Create asset
-                    if (auto res = fty::asset::create::run(bus, Config::instance().actorName, req); !res) {
+                    if (auto res = asset::create::run(bus, Config::instance().actorName, req); !res) {
                         logError("Could not create asset ({}): {}", ipAddress, res.error());
                         continue;
                     } else {
@@ -327,7 +327,7 @@ void AutoDiscovery::scan(AutoDiscovery* autoDiscovery, const std::string& ipAddr
                         if (auto res = updateExt(sensor.ext, reqSensor.ext); !res) {
                             logError("Could not update ext during creation of sensor ({}): {}", ipAddress, res.error());
                         }
-                        if (auto resSensor = fty::asset::create::run(bus, Config::instance().actorName, reqSensor); !resSensor) {
+                        if (auto resSensor = asset::create::run(bus, Config::instance().actorName, reqSensor); !resSensor) {
                             logError("Could not create sensor ({}): {}", ipAddress, resSensor.error());
                             continue;
                         }

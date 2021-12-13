@@ -9,7 +9,7 @@ public:
     using AutoTask::AutoTask;
 
     // Runs discover job.
-    void run(const commands::scan::start::In& in, commands::scan::start::Out& out);
+    void run(const commands::scan::start::In& in, commands::scan::start::Out&);
 };
 
 } // namespace fty::disco::job

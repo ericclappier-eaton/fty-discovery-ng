@@ -16,7 +16,7 @@
 
 #pragma once
 #include "discovery-task.h"
-#include "impl/create-asset.h"
+#include "create-asset.h"
 #include <fty/thread-pool.h>
 
 // =====================================================================================================================
@@ -93,7 +93,7 @@ private:
     disco::commands::scan::start::In m_params;
 
     // Default power links
-    fty::asset::create::PowerLinks   m_defaultValuesLinks;
+    asset::create::PowerLinks        m_defaultValuesLinks;
 
     // Ip address list
     std::vector<std::string>         m_listIpAddress;
