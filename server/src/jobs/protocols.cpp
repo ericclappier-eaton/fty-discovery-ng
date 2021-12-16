@@ -140,14 +140,18 @@ Expected<void> Protocols::tryPowercom(const commands::protocols::In& in) const
     if (auto content = ne.get("etn/v1/comm/services/powerdistributions1")) {
         try {
             YAML::Node node = YAML::Load(*content);
-            
-            if (node["device-type"].as<std::string>() == "ups") {
+
+            auto deviceType{node["device-type"].as<std::string>()};
+            if (deviceType == "ups") {
+                return {};
+            }
+            if (deviceType == "ats") {
                 return {};
             }
 
-            return unexpected("not supported device");
-        } catch (const std::exception&) {
-            return unexpected("not supported device");
+            return unexpected("not supported device (" + deviceType + ")");
+        } catch (const std::exception& e) {
+            return unexpected("not supported device (" + std::string{e.what()} + ")");
         }
     } else {
         return unexpected(content.error());
