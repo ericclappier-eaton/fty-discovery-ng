@@ -1,7 +1,7 @@
 #include "test-common.h"
 #include <fty/process.h>
 
-TEST_CASE("Assets / Empty request")
+TEST_CASE("Assets / Empty request", "[assets]")
 {
     fty::disco::Message                msg = Test::createMessage(fty::disco::commands::assets::Subject);
     fty::Expected<fty::disco::Message> ret = Test::send(msg);
@@ -9,7 +9,7 @@ TEST_CASE("Assets / Empty request")
     CHECK("Wrong input data: payload is empty" == ret.error());
 }
 
-TEST_CASE("Assets / Wrong request")
+TEST_CASE("Assets / Wrong request", "[assets]")
 {
     fty::disco::Message msg = Test::createMessage(fty::disco::commands::assets::Subject);
 
@@ -19,7 +19,7 @@ TEST_CASE("Assets / Wrong request")
     CHECK("Wrong input data: format of payload is incorrect" == ret.error());
 }
 
-TEST_CASE("Assets / Unaviable host")
+TEST_CASE("Assets / Unaviable host", "[assets]")
 {
     fty::disco::Message msg = Test::createMessage(fty::disco::commands::assets::Subject);
 
@@ -31,7 +31,7 @@ TEST_CASE("Assets / Unaviable host")
     CHECK("Host is not available: pointtosky" == ret.error());
 }
 
-TEST_CASE("Assets / Test output")
+TEST_CASE("Assets / Test output", "[assets]")
 {
     // clang-format off
     fty::Process proc("snmpsimd",  {

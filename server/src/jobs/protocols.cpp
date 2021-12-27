@@ -31,15 +31,6 @@ namespace fty::disco::job {
 
 // =====================================================================================================================
 
-enum class Type
-{
-    Powercom = 1,
-    Xml      = 2,
-    Snmp     = 3,
-};
-
-// =====================================================================================================================
-
 inline std::ostream& operator<<(std::ostream& ss, Type type)
 {
     switch (type) {
@@ -74,6 +65,44 @@ std::string Protocols::getProtocolStr(const Type type)
             break;
     }
     return protocol;
+}
+
+const std::pair<std::string, std::string> Protocols::splitPortFromProtocol(const std::string &str) {
+    // split protocol and port with format "<protocol>:<port>"
+    std::string protocol, port;
+    auto pos = str.find(":");
+    // If port found,
+    if (pos != std::string::npos) {
+        // get first protocol
+        protocol = std::move(str.substr(0, pos));
+        // and get second port number
+        port = std::move(str.substr(pos + 1));
+    }
+    else {
+        // No port found, return only protocol
+        protocol = str;
+    }
+    return make_pair(protocol, port);
+}
+
+std::optional<uint16_t> Protocols::getPort(const std::string& protocolIn, const commands::protocols::In& in) {
+    if (in.port != 0) {
+        logDebug("getPort: get port={}", in.port);
+        return in.port;
+    }
+    else if (in.protocols.size() != 0) {
+        for (const auto& protocolRequested : in.protocols) {
+            auto split = Protocols::splitPortFromProtocol(protocolRequested);
+            std::string protocol = split.first;
+            if (protocol == protocolIn) {
+                if (!split.second.empty()) {
+                    logDebug("getPort: get port={} from {} protocol", split.second, protocolIn);
+                    return std::atoi(split.second.c_str());
+                }
+            }
+        }
+    }
+    return std::nullopt;
 }
 
 // =====================================================================================================================
@@ -144,11 +173,6 @@ Expected<commands::protocols::Out> Protocols::getProtocols(const commands::proto
 
 void Protocols::run(const commands::protocols::In& in, commands::protocols::Out& out)
 {
-    if (in.address == "__fake__") {
-        out.setValue({"nut_snmp", "nut_xml_pdc"});
-        return;
-    }
-
     auto protocols = getProtocols(in);
     if (!protocols) {
         throw Error(protocols.error().c_str());
@@ -160,6 +184,9 @@ void Protocols::run(const commands::protocols::In& in, commands::protocols::Out&
 
 Expected<void> Protocols::tryXmlPdc(const commands::protocols::In& in, uint16_t port) const
 {
+    // TBD_MERGE
+    //auto port = Protocols::getPort("nut_xml_pdc", in);
+    //impl::XmlPdc xml(in.address , (port != std::nullopt) ? *port : 80);
     impl::XmlPdc xml("http", in.address, port);
     if (auto prod = xml.get<impl::ProductInfo>("product.xml")) {
         if (!(prod->name == "Network Management Card" || prod->name == "HPE UPS Network Module")) {
@@ -182,6 +209,9 @@ Expected<void> Protocols::tryXmlPdc(const commands::protocols::In& in, uint16_t 
 
 Expected<void> Protocols::tryPowercom(const commands::protocols::In& in, uint16_t port) const
 {
+    // TBD_MERGE
+    //auto port = getPort("nut_powercom", in);
+    //neon::Neon ne(in.address, (port != std::nullopt) ? *port : 80);
     neon::Neon ne("https", in.address, port);
     if (auto content = ne.get("etn/v1/comm/services/powerdistributions1")) {
         try {
@@ -249,6 +279,10 @@ struct AutoRemove
 
 Expected<void> Protocols::trySnmp(const commands::protocols::In& in, uint16_t port) const
 {
+    // TBD_MERGE
+    //auto port = getPort("nut_snmp", in);
+    //std::string portStr = (port != std::nullopt) ? std::to_string(*port) : "161";
+    //logDebug("getPort: portStr={}", portStr);
     std::string portStr = std::to_string(port);
 
     addrinfo hints;

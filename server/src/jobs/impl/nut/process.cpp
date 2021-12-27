@@ -149,7 +149,7 @@ Expected<void> Process::setCredentialId(const std::string& credential)
     }
 
     if (m_protocol == "nut_snmp") {
-        fty::SocketSyncClient secwSyncClient("/run/fty-security-wallet/secw.socket");
+        fty::SocketSyncClient secwSyncClient(Config::instance().secwSocket);
         auto                  client = secw::ConsumerAccessor(secwSyncClient);
 
         auto levelStr = [](secw::Snmpv3SecurityLevel lvl) -> Expected<std::string> {
@@ -237,7 +237,7 @@ Expected<void> Process::setCredentialId(const std::string& credential)
             return unexpected(err.what());
         }
     } else if (m_protocol == "nut_powercom") {
-        fty::SocketSyncClient secwSyncClient("/run/fty-security-wallet/secw.socket");
+        fty::SocketSyncClient secwSyncClient(Config::instance().secwSocket);
         auto                  client = secw::ConsumerAccessor(secwSyncClient);
 
         try {

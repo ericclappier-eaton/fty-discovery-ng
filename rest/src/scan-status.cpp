@@ -26,13 +26,12 @@ unsigned Scan::run()
     }
 
     commands::scan::status::Out data;
-
     auto info = pack::json::deserialize(ret->userData.asString(), data);
     if (!info) {
         throw rest::errors::Internal(info.error());
     }
 
-    m_reply << *pack::json::serialize(data);
+    m_reply << *pack::json::serialize(data, pack::Option::WithDefaults);
 
     return HTTP_OK;
 }

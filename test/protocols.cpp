@@ -1,8 +1,9 @@
 #include "test-common.h"
+#include "../server/src/jobs/protocols.h"
 
 namespace fty::disco {
 
-TEST_CASE("Protocols/ Empty request")
+TEST_CASE("Protocols/ Empty request", "[protocols]")
 {
     fty::disco::Message msg = Test::createMessage(commands::protocols::Subject);
 
@@ -11,7 +12,7 @@ TEST_CASE("Protocols/ Empty request")
     CHECK("Wrong input data: payload is empty" == ret.error());
 }
 
-TEST_CASE("Protocols / Wrong request")
+TEST_CASE("Protocols / Wrong request", "[protocols]")
 {
     fty::disco::Message msg = Test::createMessage(commands::protocols::Subject);
 
@@ -21,7 +22,7 @@ TEST_CASE("Protocols / Wrong request")
     CHECK("Wrong input data: format of payload is incorrect" == ret.error());
 }
 
-TEST_CASE("Protocols / Unaviable host")
+TEST_CASE("Protocols / Unaviable host", "[protocols]")
 {
     fty::disco::Message msg = Test::createMessage(commands::protocols::Subject);
 
@@ -33,7 +34,7 @@ TEST_CASE("Protocols / Unaviable host")
     CHECK("Host is not available: pointtosky.roz.lab.etn.com" == ret.error());
 }
 
-TEST_CASE("Protocols / Not asset")
+TEST_CASE("Protocols / Not asset", "[protocols]")
 {
     fty::disco::Message msg = Test::createMessage(commands::protocols::Subject);
 
@@ -47,7 +48,7 @@ TEST_CASE("Protocols / Not asset")
     CHECK(0 == res->size());
 }
 
-TEST_CASE("Protocols / Invalid ip")
+TEST_CASE("Protocols / Invalid ip", "[protocols]")
 {
     fty::disco::Message msg = Test::createMessage(commands::protocols::Subject);
 
@@ -59,12 +60,13 @@ TEST_CASE("Protocols / Invalid ip")
     CHECK("Host is not available: 127.0.145.256" == ret.error());
 }
 
-TEST_CASE("Protocols / Fake request")
+TEST_CASE("Protocols / Fake request", "[protocols]")
 {
     fty::disco::Message msg = Test::createMessage(commands::protocols::Subject);
 
     commands::protocols::In in;
-    in.address = "__fake__";
+    in.address = "127.0.0.1";
+    in.port = 1161;
     msg.userData.setString(*pack::json::serialize(in));
 
     fty::Expected<fty::disco::Message> ret = Test::send(msg);
@@ -72,18 +74,20 @@ TEST_CASE("Protocols / Fake request")
     CHECK(ret);
     auto res = ret->userData.decode<commands::protocols::Out>();
     CHECK(res);
-    CHECK(2 == res->size());
+    CHECK(1 == res->size());
 
+    // TBD_MERGE
     CHECK("nut_snmp" == (*res)[0].protocol);
-    CHECK(1234 == (*res)[0].port);
+    CHECK(161 == (*res)[0].port);
     CHECK(true == (*res)[0].reachable);
 
-    CHECK("nut_xml_pdc" == (*res)[1].protocol);
-    CHECK(4321 == (*res)[1].port);
-    CHECK(false == (*res)[1].reachable);
+    // TBD_MERGE
+    //CHECK("nut_xml_pdc" == (*res)[1].protocol);
+    //CHECK(4321 == (*res)[1].port);
+    //CHECK(false == (*res)[1].reachable);
 }
 
-TEST_CASE("Protocols / resolve")
+TEST_CASE("Protocols / resolve", "[protocols]")
 {
     fty::disco::Message msg = Test::createMessage(commands::protocols::Subject);
 
@@ -98,6 +102,49 @@ TEST_CASE("Protocols / resolve")
     msg.userData.setString(*pack::json::serialize(in2));
 
     fty::Expected<fty::disco::Message> ret2 = Test::send(msg);
+}
+
+TEST_CASE("Protocols / getProtocolStr", "[protocols]")
+{
+    auto res = fty::disco::job::Protocols::getProtocolStr(fty::disco::job::Type::Powercom);
+    CHECK(res == "nut_powercom");
+    res = fty::disco::job::Protocols::getProtocolStr(fty::disco::job::Type::Xml);
+    CHECK(res == "nut_xml_pdc");
+    res = fty::disco::job::Protocols::getProtocolStr(fty::disco::job::Type::Snmp);
+    CHECK(res == "nut_snmp");
+}
+
+TEST_CASE("Protocols / splitPortFromProtocol", "[protocols]")
+{
+    auto res = fty::disco::job::Protocols::splitPortFromProtocol("");
+    CHECK(res.first == "");
+    CHECK(res.second == "");
+    res = fty::disco::job::Protocols::splitPortFromProtocol("nut_snmp");
+    CHECK(res.first == "nut_snmp");
+    CHECK(res.second == "");
+    res = fty::disco::job::Protocols::splitPortFromProtocol("nut_snmp:162");
+    CHECK(res.first == "nut_snmp");
+    CHECK(res.second == "162");
+}
+
+TEST_CASE("Protocols / getPort", "[protocols]")
+{
+    fty::disco::commands::protocols::In in;
+    auto res = fty::disco::job::Protocols::getPort("", in);
+    CHECK(res == std::nullopt);
+    in.port = 162;
+    res = fty::disco::job::Protocols::getPort("", in);
+    CHECK(*res == 162);
+    in.protocols.append("nut_snmp:163");
+    res = fty::disco::job::Protocols::getPort("", in);
+    CHECK(*res == 162);
+    res = fty::disco::job::Protocols::getPort("nut_snmp", in);
+    CHECK(*res == 162);
+    in.port = 0;
+    res = fty::disco::job::Protocols::getPort("nut_snmp", in);
+    CHECK(*res == 163);
+    res = fty::disco::job::Protocols::getPort("nut_bad", in);
+    CHECK(res == std::nullopt);
 }
 
 /*TEST_CASE("Protocols / powercom")
