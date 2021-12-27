@@ -34,8 +34,8 @@ std::optional<std::string> Properties::value(const std::string& key)
 
 // =====================================================================================================================
 
-XmlPdc::XmlPdc(const std::string& address)
-    : m_ne(address)
+XmlPdc::XmlPdc(const std::string& address, const uint32_t port)
+    : m_ne(address, port)
 {
 }
 
