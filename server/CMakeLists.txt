@@ -58,7 +58,6 @@ etn_target(static ${PROJECT_NAME}-static
         crypto
         uuid
         yaml-cpp
-        libfty-asset
         fty-asset-libng
         tntdb
         cxxtools
