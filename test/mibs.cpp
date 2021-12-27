@@ -3,7 +3,7 @@
 
 namespace fty::disco {
 
-TEST_CASE("Mibs / Empty request")
+TEST_CASE("Mibs / Empty request", "[mibs]")
 {
     fty::disco::Message msg = Test::createMessage(commands::mibs::Subject);
 
@@ -12,7 +12,7 @@ TEST_CASE("Mibs / Empty request")
     CHECK("Wrong input data: payload is empty" == ret.error());
 }
 
-TEST_CASE("Mibs / Wrong request")
+TEST_CASE("Mibs / Wrong request", "[mibs]")
 {
     fty::disco::Message msg = Test::createMessage(commands::mibs::Subject);
 
@@ -23,7 +23,7 @@ TEST_CASE("Mibs / Wrong request")
     CHECK("Wrong input data: format of payload is incorrect" == ret.error());
 }
 
-TEST_CASE("Mibs / Unaviable host")
+TEST_CASE("Mibs / Unaviable host", "[mibs]")
 {
     fty::disco::Message msg = Test::createMessage(commands::mibs::Subject);
 
@@ -36,7 +36,7 @@ TEST_CASE("Mibs / Unaviable host")
     CHECK("Host is not available: pointtosky" == ret.error());
 }
 
-TEST_CASE("Mibs / get mibs")
+TEST_CASE("Mibs / get mibs", "[mibs]")
 {
     // clang-format off
     fty::Process proc("snmpsimd", {

@@ -21,8 +21,12 @@
 
 namespace fty::disco::job {
 
-/// Forward declaration
-enum class Type;
+enum class Type
+{
+    Powercom = 1,
+    Xml      = 2,
+    Snmp     = 3,
+};
 
 /// Discover supported protocols by endpoint
 /// Returns @ref commands::protocols::Out (list of protocols)
@@ -39,7 +43,13 @@ public:
 
     static std::string getProtocolStr(const Type type);
 
+    // Split protocol and port number if present (optional)
+    static const std::pair<std::string, std::string> splitPortFromProtocol(const std::string &str);
+
+    // Get optional port
+    static std::optional<uint16_t> getPort(const std::string& protocolIn, const commands::protocols::In& in);
 private:
+
     /// Try out if endpoint support xml pdc protocol
     Expected<void> tryXmlPdc(const commands::protocols::In& in, uint16_t port) const;
 

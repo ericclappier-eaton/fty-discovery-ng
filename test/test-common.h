@@ -9,7 +9,13 @@
 #include <catch2/catch.hpp>
 #include <fty_log.h>
 #include <thread>
+#include <mlm_library.h>
+#include <mlm_server.h>
 
+// TBD
+#include <czmq.h>
+#include <fstream>
+#include <fty_common_mlm.h>
 
 class Test;
 inline Test* inst;
@@ -19,6 +25,7 @@ class Test
 public:
     ~Test()
     {
+        //zactor_destroy(&m_broker);
     }
 
     static fty::disco::Message createMessage(const char* subject)
@@ -35,6 +42,11 @@ public:
         return inst->m_bus.send(fty::disco::Channel, msg);
     }
 
+    /*static void subscribe(const std::string& queue, std::function<void(const messagebus::Message&)>&& fun)
+    {
+        return inst->m_bus.subscribe<>(fty::disco::Channel, msg);
+    }*/
+
     static fty::Expected<void> init()
     {
         inst = new Test;
@@ -44,6 +56,15 @@ public:
 
         fty::disco::impl::Snmp::instance().init(fty::disco::Config::instance().mibDatabase);
         ManageFtyLog::setInstanceFtylog(fty::disco::Config::instance().actorName, fty::disco::Config::instance().logConfig);
+
+// TBD
+#if 0
+        // create the broker
+        static const char* endpoint_disco = "inproc://fty-discovery-ng-test";
+        zactor_t *broker = inst->m_broker;//.get();
+        zstr_sendx(inst->m_broker, "BIND", endpoint_disco, NULL);
+        zstr_send(inst->m_broker, "VERBOSE");
+#endif
 
         if (auto res = inst->m_dis.init(); !res) {
             return fty::unexpected(res.error());
@@ -59,6 +80,10 @@ public:
         return {};
     }
 
+    fty::disco::Discovery& getDisco() {
+        return m_dis;
+    }
+
     static void shutdown()
     {
         inst->m_dis.shutdown();
@@ -69,11 +94,15 @@ public:
 private:
     Test()
         : m_dis("conf/discovery.conf")
+          //m_broker(zactor_new(mlm_server, const_cast<char*>("Malamute")))
     {
     }
 
 private:
-    fty::disco::Discovery         m_dis;
-    std::thread            m_th;
-    fty::disco::MessageBus m_bus;
+    fty::disco::Discovery     m_dis;
+    std::thread               m_th;
+    fty::disco::MessageBus    m_bus;
+    // TBD
+    //std::unique_ptr<zactor_t> m_broker;
+    //zactor_t*                 m_broker = nullptr;
 };
