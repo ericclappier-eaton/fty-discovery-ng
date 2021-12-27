@@ -32,10 +32,11 @@ public:
     pack::String mibDatabase = FIELD("mib-database", "mibs");
     pack::Bool   tryAll      = FIELD("try-all", false);
     pack::UInt32 pollScanMax = FIELD("poll-scan-max", 10);
+    pack::String secwSocket  = FIELD("secw-socket", "/run/fty-security-wallet/secw.socket");
 
 public:
     using pack::Node::Node;
-    META(Config, actorName, logConfig, mibDatabase, tryAll, pollScanMax);
+    META(Config, actorName, logConfig, mibDatabase, tryAll, pollScanMax, secwSocket);
 
 public:
     static Config& instance();
