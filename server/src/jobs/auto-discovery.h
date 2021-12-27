@@ -27,7 +27,7 @@ namespace fty::disco::job {
 class AutoDiscovery
 {
 public:
-    static const uint32_t SCAN_CHECK_PERIOD_MS = 10000;
+    static const uint32_t SCAN_CHECK_PERIOD_MS = 1000;
 
     // TBD: To centralise with rest status ???
     enum class State {
@@ -57,18 +57,18 @@ public:
 
     const StatusDiscovery& getStatus() { return m_statusDiscovery; };
 
-private:
+    inline void initListIpAddressNb(uint64_t listIpAddressNb) { m_listIpAddressNb = listIpAddressNb; };
+    inline void initListIpAddressCount(uint64_t listIpAddressCount) { m_listIpAddressCount = listIpAddressCount; };
+
+//private:
     // Construct and update output ext attributes according input ext attributes
     static Expected<void> updateExt(const commands::assets::Ext& ext_in, asset::create::Ext& ext_out);
 
     // Update host name
     static Expected<void> updateHostName(const std::string& address, asset::create::Ext& ext);
 
-    // Split protocol and port number if present (optional)
-    static const std::pair<std::string, std::string> splitPortFromProtocol(const std::string &protocol);
-
     // Device centric view
-    bool IsDeviceCentricView() const
+    bool isDeviceCentricView() const
     {
         return (m_params.parent == "0") ? false : true;
     };
@@ -77,9 +77,14 @@ private:
     void readConfig(const disco::commands::scan::start::In& in);
 
     // Status management
+    void statusDiscoveryInit();
     void statusDiscoveryReset();
     void updateStatusDiscoveryCounters(std::string deviceSubType);
     void updateStatusDiscoveryProgress();
+
+    // Manage pool scan
+    void resetPoolScan();
+    void stopPoolScan();
 
     // Scan node(s)
     static void scan(AutoDiscovery* autoDiscovery, const std::string& ipAddress);
@@ -98,14 +103,17 @@ private:
     // Ip address list
     std::vector<std::string>         m_listIpAddress;
 
-    // Ip address initial count
+    // Ip address initial number
+    uint64_t                         m_listIpAddressNb;
+
+    // Ip address count
     uint64_t                         m_listIpAddressCount;
 
     // Automatic discovery status
     StatusDiscovery                  m_statusDiscovery;
 
     // Thread pool use for discovery scan
-    fty::ThreadPool                  m_poolScan;
+    std::unique_ptr<fty::ThreadPool> m_poolScan;
 
     // Mutex for secure auto discovery
     std::mutex                       m_mutex;

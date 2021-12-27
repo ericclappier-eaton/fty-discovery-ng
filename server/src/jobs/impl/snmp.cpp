@@ -15,6 +15,7 @@
 */
 
 #include "snmp.h"
+#include "src/config.h"
 // Config should be first
 #include <net-snmp/net-snmp-config.h>
 // Snmp stuff
@@ -132,7 +133,7 @@ public:
     Expected<void> setCredentialId(const std::string& credId)
     {
         try {
-            fty::SocketSyncClient secwSyncClient("/run/fty-security-wallet/secw.socket");
+            fty::SocketSyncClient secwSyncClient(Config::instance().secwSocket);
             auto                  client  = secw::ConsumerAccessor(secwSyncClient);
             auto                  secCred = client.getDocumentWithPrivateData("default", credId);
 

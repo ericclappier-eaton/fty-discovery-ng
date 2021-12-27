@@ -45,7 +45,7 @@ Neon::~Neon()
 
 fty::Expected<std::string> Neon::get(const std::string& path) const
 {
-    std::string                                                rpath = "/" + path;
+    std::string rpath = "/" + path;
     std::unique_ptr<ne_request, decltype(&ne_request_destroy)> request(
         ne_request_create(m_session.get(), "GET", rpath.c_str()), &ne_request_destroy);
 

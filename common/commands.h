@@ -15,11 +15,13 @@ namespace commands::protocols {
     class In : public pack::Node
     {
     public:
-        pack::String address = FIELD("address");
+        pack::String address       = FIELD("address");
+        pack::UInt32 port          = FIELD("port", 0);   // optional
+        pack::StringList protocols = FIELD("protocols"); // optional
 
     public:
         using pack::Node::Node;
-        META(In, address);
+        META(In, address, port, protocols);
     };
 
     class Return: public pack::Node

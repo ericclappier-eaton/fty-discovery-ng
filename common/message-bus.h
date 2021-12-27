@@ -40,7 +40,9 @@ namespace fty::disco {
 class MessageBus
 {
 public:
+    // TBD
     static constexpr const char* endpoint = "ipc://@/malamute";
+    //static constexpr const char* endpoint = "inproc://fty-discovery-ng-test";
 
 public:
     MessageBus();
