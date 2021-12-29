@@ -40,6 +40,8 @@ etn_target(static ${PROJECT_NAME}-static
         src/jobs/impl/nut/mapper.h
         src/jobs/impl/nut/process.cpp
         src/jobs/impl/nut/process.h
+        src/jobs/impl/address.cpp
+        src/jobs/impl/address.h
     INCLUDE_DIRS
         src
     USES
@@ -51,6 +53,7 @@ etn_target(static ${PROJECT_NAME}-static
         netsnmp
         neon
         stdc++fs
+        cidr
         fty_security_wallet
         czmq
         fty_common
@@ -59,6 +62,8 @@ etn_target(static ${PROJECT_NAME}-static
         uuid
         yaml-cpp
         fty-asset-libng
+
+        # TBD To Remove ???
         tntdb
         cxxtools
     PRIVATE

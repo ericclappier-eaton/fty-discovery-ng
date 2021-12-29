@@ -28,6 +28,7 @@ class AutoDiscovery
 {
 public:
     static const uint32_t SCAN_CHECK_PERIOD_MS = 1000;
+    static const uint32_t SCAN_MIN_NUM_THREAD  = 10;
 
     // TBD: To centralise with rest status ???
     enum class State {
@@ -44,6 +45,13 @@ public:
         uint32_t        epdu;
         uint32_t        sts;
         uint32_t        sensors;
+    };
+
+    enum class AssetStatus
+    {
+        Unknown = 0,
+        Active,
+        Nonactive
     };
 
     AutoDiscovery();
@@ -74,7 +82,7 @@ public:
     };
 
     // Read configuration
-    void readConfig(const disco::commands::scan::start::In& in);
+    Expected<void> readConfig(const disco::commands::scan::start::In& in);
 
     // Status management
     void statusDiscoveryInit();
