@@ -34,6 +34,7 @@ AutoDiscovery::AutoDiscovery()
         maxNumThreads = minNumThreads;
         logInfo("AutoDiscovery: change scan max thread to {}", maxNumThreads);
     }
+    // TBD: CAUTION Don't add more then 50 threads max due of default limitation of 1024 FD on the system
     logDebug("AutoDiscovery: create pool scan thread with min={}, max={}", minNumThreads, maxNumThreads);
     m_poolScan = std::unique_ptr<fty::ThreadPool>(new fty::ThreadPool(minNumThreads, maxNumThreads));
     statusDiscoveryInit();
