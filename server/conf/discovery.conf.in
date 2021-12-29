@@ -1,5 +1,5 @@
 actor-name: 'discovery-ng'
 log-config: 'logger.conf'
 mib-database: '${DATA_DIR}/mibs/'
-poll-scan-max: 10
+poll-scan-max: 100
 
