@@ -31,7 +31,7 @@ public:
     pack::String logConfig   = FIELD("log-config", "conf/logger.conf");
     pack::String mibDatabase = FIELD("mib-database", "mibs");
     pack::Bool   tryAll      = FIELD("try-all", false);
-    pack::UInt32 pollScanMax = FIELD("poll-scan-max", 100);  // TBD: Put 10 by default, workaround for issue in config params
+    pack::UInt32 pollScanMax = FIELD("poll-scan-max", 50);
     pack::String secwSocket  = FIELD("secw-socket", "/run/fty-security-wallet/secw.socket");
 
 public:
