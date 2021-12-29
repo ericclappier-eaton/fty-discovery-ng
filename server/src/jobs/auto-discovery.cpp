@@ -18,15 +18,24 @@
 #include "assets.h"
 #include "protocols.h"
 #include "src/config.h"
+#include "impl/address.h"
 #include <asset/asset-manager.h>
-#include <fty_asset_dto.h>
+//#include <fty_asset_dto.h>  // TBD Remove cxxtools ???
 #include <string>
 #include <sys/types.h>
 
 namespace fty::disco::job {
 
-AutoDiscovery::AutoDiscovery() : m_poolScan(new fty::ThreadPool(Config::instance().pollScanMax))
+AutoDiscovery::AutoDiscovery()
 {
+    size_t minNumThreads = SCAN_MIN_NUM_THREAD;
+    size_t maxNumThreads = Config::instance().pollScanMax;
+    if (maxNumThreads < minNumThreads) {
+        maxNumThreads = minNumThreads;
+        logInfo("AutoDiscovery: change scan max thread to {}", maxNumThreads);
+    }
+    logDebug("AutoDiscovery: create pool scan thread with min={}, max={}", minNumThreads, maxNumThreads);
+    m_poolScan = std::unique_ptr<fty::ThreadPool>(new fty::ThreadPool(minNumThreads, maxNumThreads));
     statusDiscoveryInit();
 }
 
@@ -97,7 +106,7 @@ Expected<void> AutoDiscovery::updateHostName(const std::string& address, asset::
     return {};
 }
 
-void AutoDiscovery::readConfig(const disco::commands::scan::start::In& in/*, const disco::commands::scan::start::Out& out*/)
+Expected<void> AutoDiscovery::readConfig(const disco::commands::scan::start::In& in)
 {
     // Init default links
     asset::create::PowerLink powerLink;
@@ -120,12 +129,65 @@ void AutoDiscovery::readConfig(const disco::commands::scan::start::In& in/*, con
     }
     logTrace("defaultParent={}", defaultParent);
 
-    // TBD To be finished
-    // For each ip on ips
     m_listIpAddress.clear();
-    for (const auto& ip: in.ips) {
-        m_listIpAddress.push_back(ip);
+    // Ip list scan
+    if (in.type == commands::scan::start::In::Type::Ip) {
+        if (in.ips.size() == 0) {
+            fty::unexpected("Ips list empty");
+        }
+        for (const auto& ip: in.ips) {
+            m_listIpAddress.push_back(ip);
+        }
     }
+    // Multi scan
+    else if (in.type == commands::scan::start::In::Type::Multy) {
+        if (in.scans.size() == 0) {
+            fty::unexpected("Scans list empty");
+        }
+        for (const auto& range: in.scans) {
+            if (auto listIp = address::AddressParser::getRangeIp(range); listIp) {
+                m_listIpAddress.insert(m_listIpAddress.end(), listIp->begin(), listIp->end());
+            }
+            else {
+                logError("getRangeIp: {}", listIp.error());
+            }
+        }
+    }
+    // Full scan
+    else if (in.type == commands::scan::start::In::Type::Full) {
+
+        if (in.ips.size() == 0 && in.scans.size() == 0) {
+            fty::unexpected("Ips and scans list empty");
+        }
+        if (in.ips.size() > 0) {
+            for (const auto& ip: in.ips) {
+                m_listIpAddress.push_back(ip);
+            }
+        }
+        if (in.scans.size() > 0) {
+            for (const auto& range: in.scans) {
+                if (auto listIp = address::AddressParser::getRangeIp(range); listIp) {
+                    m_listIpAddress.insert(m_listIpAddress.end(), listIp->begin(), listIp->end());
+                }
+                else {
+                    logError("getRangeIp: {}", listIp.error());
+                }
+            }
+        }
+    }
+    // Local scan
+    else if (in.type == commands::scan::start::In::Type::Local) {
+        if (auto listIp = address::AddressParser::getLocalRangeIp(); listIp) {
+            m_listIpAddress.insert(m_listIpAddress.end(), listIp->begin(), listIp->end());
+        }
+        else {
+            logError("getLocalRangeIp: {}", listIp.error());
+        }
+    }
+    else {
+        fty::unexpected("Bad scan type {}", in.type);
+    }
+    return {};
 }
 
 void AutoDiscovery::statusDiscoveryInit() {
@@ -228,6 +290,7 @@ void AutoDiscovery::scan(AutoDiscovery* autoDiscovery, const std::string& ipAddr
 
         // Init bus
         std::string agent = "fty-discovery-ng" + std::to_string(gettid());
+        logTrace("Create agent {}", agent);
         fty::disco::MessageBus bus;
         if (auto init = bus.init(agent.c_str()); !init) {
             logError(init.error());
@@ -288,8 +351,8 @@ void AutoDiscovery::scan(AutoDiscovery* autoDiscovery, const std::string& ipAddr
                     logInfo("Found asset with protocol/credential ({}/{}) for {}", strProtocol, doc, ipAddress);
 
                     auto getStatus = [autoDiscovery]() -> uint {
-                        return autoDiscovery->isDeviceCentricView() ? static_cast<uint>(fty::AssetStatus::Active)
-                                                                    : static_cast<uint>(fty::AssetStatus::Nonactive);
+                        return autoDiscovery->isDeviceCentricView() ? static_cast<uint>(AssetStatus::Active)
+                                                                    : static_cast<uint>(AssetStatus::Nonactive);
                     };
 
                     // Create asset list
@@ -381,8 +444,10 @@ void AutoDiscovery::scan(AutoDiscovery* autoDiscovery, const std::string& ipAddr
 bool AutoDiscovery::scanCheck(AutoDiscovery* autoDiscovery) {
     if (!autoDiscovery) return true;
 
-    logTrace("getCountActiveTasks={}", autoDiscovery->m_poolScan->getCountActiveTasks());
-    if (autoDiscovery->m_poolScan->getCountActiveTasks() == 0) {
+    logTrace("AutoDiscovery scanCheck: pending tasks={}, active tasks={})",
+        autoDiscovery->m_poolScan->getCountPendingTasks(),
+        autoDiscovery->m_poolScan->getCountActiveTasks());
+    if (autoDiscovery->m_poolScan->getCountPendingTasks() == 0) {
 
         std::lock_guard<std::mutex> lock(autoDiscovery->m_mutex);
         autoDiscovery->m_statusDiscovery.state = State::Terminated;
@@ -420,15 +485,10 @@ Expected<void> AutoDiscovery::start(const disco::commands::scan::start::In& in)
         statusDiscoveryReset();
         resetPoolScan();
 
-        // Test input parameter
-        // TBD
-        bool res = true;
-        if (!res) {
-            return fty::unexpected("Bad input parameter");
+        // Read and test input parameters
+        if (auto res = readConfig(in); !res) {
+            return fty::unexpected("Bad input parameter: {}", res.error());
         }
-
-        // Read input parameters
-        readConfig(in);
 
         // Init scan counters
         m_listIpAddressNb = m_listIpAddressCount = m_listIpAddress.size();

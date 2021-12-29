@@ -47,6 +47,7 @@ void Discovery::doStop()
 
 bool Discovery::loadConfig()
 {
+    // TBD: Parameters not taken into account ???
     if (auto ret = pack::yaml::deserializeFile(m_configPath, Config::instance()); !ret) {
         logError(ret.error());
         return false;
