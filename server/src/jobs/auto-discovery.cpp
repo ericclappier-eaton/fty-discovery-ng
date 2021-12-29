@@ -34,7 +34,7 @@ AutoDiscovery::AutoDiscovery()
         maxNumThreads = minNumThreads;
         logInfo("AutoDiscovery: change scan max thread to {}", maxNumThreads);
     }
-    // TBD: CAUTION Don't add more then 50 threads max due of default limitation of 1024 FD on the system
+    // TBD: CAUTION Don't add more then 50 threads max due of the default limitation of 1024 FD on the system
     logDebug("AutoDiscovery: create pool scan thread with min={}, max={}", minNumThreads, maxNumThreads);
     m_poolScan = std::unique_ptr<fty::ThreadPool>(new fty::ThreadPool(minNumThreads, maxNumThreads));
     statusDiscoveryInit();
@@ -448,7 +448,7 @@ bool AutoDiscovery::scanCheck(AutoDiscovery* autoDiscovery) {
     logTrace("AutoDiscovery scanCheck: pending tasks={}, active tasks={})",
         autoDiscovery->m_poolScan->getCountPendingTasks(),
         autoDiscovery->m_poolScan->getCountActiveTasks());
-    if (autoDiscovery->m_poolScan->getCountPendingTasks() == 0) {
+    if (autoDiscovery->m_poolScan->getCountActiveTasks() == 0) {
 
         std::lock_guard<std::mutex> lock(autoDiscovery->m_mutex);
         autoDiscovery->m_statusDiscovery.state = State::Terminated;
