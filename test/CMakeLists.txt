@@ -16,6 +16,7 @@ etn_test(${PROJECT_NAME}-test
         mibs.cpp
         address.cpp
         auto-disco.cpp
+        test-common.cpp
         test-common.h
         discovery-config-manager.cpp
     USES

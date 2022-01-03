@@ -58,8 +58,10 @@ bool Discovery::loadConfig()
 
 Expected<void> Discovery::init()
 {
-    if (auto res = m_bus.init(Config::instance().actorName)) {
+    logDebug("Discovery::init actorName={} endpoint={}", Config::instance().actorName, Config::instance().endpoint);
+    if (auto res = m_bus.init(Config::instance().actorName, Config::instance().endpoint)) {
         if (auto sub = m_bus.subsribe(Channel, &Discovery::discover, this)) {
+            m_autoDiscovery.setEndpoint(Config::instance().endpoint);
             return {};
         } else {
             return unexpected(sub.error());

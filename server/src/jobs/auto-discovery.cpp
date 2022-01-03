@@ -291,9 +291,9 @@ void AutoDiscovery::scan(AutoDiscovery* autoDiscovery, const std::string& ipAddr
 
         // Init bus
         std::string agent = "fty-discovery-ng" + std::to_string(gettid());
-        logTrace("Create agent {}", agent);
+        logTrace("Create agent {} with {} endpoint", agent, autoDiscovery->getEndpoint());
         fty::disco::MessageBus bus;
-        if (auto init = bus.init(agent.c_str()); !init) {
+        if (auto init = bus.init(agent.c_str(), autoDiscovery->getEndpoint()); !init) {
             logError(init.error());
             // Update progress
             autoDiscovery->updateStatusDiscoveryProgress();
