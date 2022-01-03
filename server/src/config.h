@@ -33,10 +33,11 @@ public:
     pack::Bool   tryAll      = FIELD("try-all", false);
     pack::UInt32 pollScanMax = FIELD("poll-scan-max", 50);
     pack::String secwSocket  = FIELD("secw-socket", "/run/fty-security-wallet/secw.socket");
+    pack::String endpoint    = FIELD("endpoint", "ipc://@/malamute");
 
 public:
     using pack::Node::Node;
-    META(Config, actorName, logConfig, mibDatabase, tryAll, pollScanMax, secwSocket);
+    META(Config, actorName, logConfig, mibDatabase, tryAll, pollScanMax, secwSocket, endpoint);
 
 public:
     static Config& instance();

@@ -28,7 +28,7 @@ class AutoDiscovery
 {
 public:
     static const uint32_t SCAN_CHECK_PERIOD_MS = 1000;
-    static const uint32_t SCAN_MIN_NUM_THREAD  = 10;
+    static const uint32_t SCAN_MIN_NUM_THREAD  = 5;
 
     // TBD: To centralise with rest status ???
     enum class State {
@@ -56,6 +56,9 @@ public:
 
     AutoDiscovery();
     ~AutoDiscovery() = default;
+
+    std::string getEndpoint() { return m_endpoint; };
+    void setEndpoint(const std::string& endpoint) { m_endpoint = endpoint; };
 
     // Runs discover
     Expected<void> start(const disco::commands::scan::start::In& InStart);
@@ -125,6 +128,9 @@ private:
 
     // Mutex for secure auto discovery
     std::mutex                       m_mutex;
+
+    // Endpoint name
+    std::string                      m_endpoint;
 };
 
 } // namespace fty::disco::job

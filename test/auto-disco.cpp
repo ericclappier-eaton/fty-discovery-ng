@@ -7,17 +7,12 @@
 #include <fty_security_wallet.h>
 #include <secw_producer_accessor.h>
 #include <secw_security_wallet_server.h>
+#include <fty_common_messagebus_message.h>
 #include <fty_common_socket.h>
 #include <fty_common_mlm.h>
 #include <vector>
 #include <utility>
 #include <chrono>
-
-// TBD
-#include <fty_common_messagebus_exception.h>
-#include <fty_common_messagebus_interface.h>
-#include <fty_common_messagebus_message.h>
-//#include <mlm_server.h>
 
 using namespace fty::disco;
 
@@ -60,20 +55,19 @@ TEST_CASE("Auto disco / updateHostName", "[auto]")
 
 TEST_CASE("Auto disco / isDeviceCentricView", "[auto]")
 {
-    auto& discoAuto = inst->getDisco().getAutoDiscovery();
+    auto& discoAuto = Test::instance().getDisco().getAutoDiscovery();
     REQUIRE_NOTHROW(discoAuto.isDeviceCentricView());
 }
 
 TEST_CASE("Auto disco / readConfig", "[auto]")
 {
-    auto& discoAuto = inst->getDisco().getAutoDiscovery();
-    commands::scan::start::In in;
-    REQUIRE_NOTHROW(discoAuto.readConfig(in));
+    auto& discoAuto = Test::instance().getDisco().getAutoDiscovery();
+    REQUIRE_NOTHROW(discoAuto.isDeviceCentricView());
 }
 
 TEST_CASE("Auto disco / status discovery update", "[auto]")
 {
-    auto& discoAuto = inst->getDisco().getAutoDiscovery();
+    auto& discoAuto = Test::instance().getDisco().getAutoDiscovery();
     discoAuto.initListIpAddressNb(4);
     discoAuto.initListIpAddressCount(4);
     discoAuto.statusDiscoveryReset();
@@ -181,7 +175,7 @@ auto getStatus = []() -> const status::Out {
 
 TEST_CASE("Auto disco / Test normal scan auto", "[auto]")
 {
-    auto& discoAuto = inst->getDisco().getAutoDiscovery();
+    auto& discoAuto = Test::instance().getDisco().getAutoDiscovery();
     discoAuto.statusDiscoveryInit();
 
     // Test status before scan
@@ -196,6 +190,7 @@ TEST_CASE("Auto disco / Test normal scan auto", "[auto]")
     // Prepare discovery
     fty::disco::Message msg = Test::createMessage(start::Subject);
     start::In in;
+    in.type = start::In::Type::Ip;
     for (int i = 0; i < 100; i++) {
         in.ips.append("127.0.0.1");
     }
@@ -240,7 +235,7 @@ TEST_CASE("Auto disco / Test normal scan auto", "[auto]")
 
 TEST_CASE("Auto disco / Test stop scan auto", "[auto]")
 {
-    auto& discoAuto = inst->getDisco().getAutoDiscovery();
+    auto& discoAuto = Test::instance().getDisco().getAutoDiscovery();
     discoAuto.statusDiscoveryInit();
 
     // Test status before scan
@@ -255,6 +250,7 @@ TEST_CASE("Auto disco / Test stop scan auto", "[auto]")
     // Prepare discovery
     fty::disco::Message msg = Test::createMessage(start::Subject);
     start::In in;
+    in.type = start::In::Type::Ip;
     for (int i = 0; i < 100; i++) {
         in.ips.append("127.0.0.1");
     }
@@ -305,7 +301,33 @@ TEST_CASE("Auto disco / Test stop scan auto", "[auto]")
     CHECK(!(out.progress == "100%"));  // normally not finished
 }
 
-TEST_CASE("Auto disco / Test real scan auto with simulation", "[.auto]")
+class TestAuto {
+public:
+    TestAuto(fty::disco::MessageBus& bus) : m_bus(bus) {};
+    void recAssets(const fty::disco::Message& msg);
+private:
+    fty::disco::MessageBus& m_bus;
+};
+
+void TestAuto::recAssets(const fty::disco::Message& msg)
+{
+    messagebus::Message msg2 = msg.toMessageBus();
+    if (msg2.metaData()[messagebus::Message::SUBJECT] == "CREATE") {
+        logDebug("RECEIVE CREATE MSG OK");
+        messagebus::Message answ;
+        answ.metaData().emplace(messagebus::Message::SUBJECT, msg2.metaData().find(messagebus::Message::SUBJECT)->second);
+        answ.metaData().emplace(messagebus::Message::FROM, "asset-agent-ng");
+        answ.metaData().emplace(messagebus::Message::TO, msg2.metaData().find(messagebus::Message::FROM)->second);
+        answ.metaData().emplace(messagebus::Message::CORRELATION_ID, msg2.metaData().find(messagebus::Message::CORRELATION_ID)->second);
+        answ.metaData().emplace(messagebus::Message::STATUS, messagebus::STATUS_OK);
+        answ.userData() = msg2.userData();
+
+        // send response
+        m_bus.send(msg2.metaData().find(messagebus::Message::REPLY_TO)->second, Message(answ));
+    }
+}
+
+TEST_CASE("Auto disco / Test real scan auto with simulation", "[auto]")
 {
     // clang-format off
     fty::Process proc("snmpsimd",  {
@@ -319,40 +341,33 @@ TEST_CASE("Auto disco / Test real scan auto with simulation", "[.auto]")
         FAIL(pid.error());
     }
 
-    //////////////////////////////////////////////
-
     static const char* endpoint_disco = "inproc://fty-discovery-ng-test";
-    //static const char* endpoint_asset = "ipc://@/malamute";
-
-    // TBD Create in main ???
-    // create the broker
-    /*zactor_t* broker = zactor_new(mlm_server, const_cast<char*>("Malamute"));
-    zstr_sendx(broker, "BIND", endpoint_disco, NULL);
-    zstr_send(broker, "VERBOSE");*/
 
     static constexpr const char* Name = "asset-agent-ng";
     static constexpr const char* Subject = "CREATE";
     static constexpr const char* Queue   = "FTY.Q.ASSET.QUERY";
 
-    // TBD: Create callback for asset creation
+    // Create message bus for asset creation
+    fty::disco::MessageBus bus;
+    if (auto res = bus.init("asset-agent-ng", endpoint_disco); !res) {
+        FAIL("Bus asset init");
+    }
+    TestAuto testAuto(bus);
+    auto sub = bus.subsribe("FTY.Q.ASSET.QUERY", &TestAuto::recAssets, &testAuto);
 
-    //////////////////////////////////////////////
+    // Create a stream publisher for security wallet notification
+    mlm::MlmStreamClient notificationStream(SECURITY_WALLET_AGENT, SECW_NOTIFICATIONS, 1000, endpoint_disco);
 
-    // create the endpoint for security wallet
-    static const char* endpoint = "inproc://fty-security-wallet-test";
-    // create a stream publisher for notification
-    mlm::MlmStreamClient notificationStream(SECURITY_WALLET_AGENT, SECW_NOTIFICATIONS, 1000, endpoint);
-
-    // create the server for security wallet
+    // Create the server for security wallet
     secw::SecurityWalletServer serverSecw("conf/configuration.json", "conf/data.json", notificationStream);
     fty::SocketBasicServer     agentSecw(serverSecw, "secw-test.socket");
     std::thread                agentSecwThread(&fty::SocketBasicServer::run, &agentSecw);
 
-    // create client for security wallet
+    // Create client for security wallet
     fty::SocketSyncClient  secwSyncClient("secw-test.socket");
     secw::ProducerAccessor producerAccessor(secwSyncClient);
 
-    auto& discoAuto = inst->getDisco().getAutoDiscovery();
+    auto& discoAuto = Test::instance().getDisco().getAutoDiscovery();
     discoAuto.statusDiscoveryInit();
 
     auto initStatus = [](status::Out::Status status,
@@ -395,7 +410,6 @@ TEST_CASE("Auto disco / Test real scan auto with simulation", "[.auto]")
         //auto passwordList = testCases.first;
         auto password = testCases.first;
         auto statusExpected = testCases.second;
-        // TBD: TEST if document exist before create it !!!!
         // create passwords in security wallet
         std::vector<std::string> idList;
         //for (const auto password : passwordList) {
@@ -434,6 +448,7 @@ TEST_CASE("Auto disco / Test real scan auto with simulation", "[.auto]")
         // Prepare discovery
         fty::disco::Message msg = Test::createMessage(start::Subject);
         start::In in;
+        in.type = start::In::Type::Ip;
         // TBD Use 169.254.50.X private address for multi scan
         // ip address add dev eth0 scope link $addr/16
         // ip address del $addr/16 dev eth0
@@ -449,27 +464,39 @@ TEST_CASE("Auto disco / Test real scan auto with simulation", "[.auto]")
         if (!ret) {
             FAIL(ret.error());
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-        // Check status (in progress)
-        out = getStatus();
-        CHECK(out.status     == status::Out::Status::InProgress);
-        CHECK(out.progress   == "0%");
-        CHECK(out.discovered == 0);
-        CHECK(out.ups        == 0);
-        CHECK(out.epdu       == 0);
-        CHECK(out.sts        == 0);
-        CHECK(out.sensors    == 0);
-
+        // Wait start of discovery
         auto start = std::chrono::steady_clock::now();
+        while(1) {
+            out = getStatus();
+            if (out.status == status::Out::Status::InProgress) {
+                CHECK(out.progress   == "0%");
+                CHECK(out.discovered == 0);
+                CHECK(out.ups        == 0);
+                CHECK(out.epdu       == 0);
+                CHECK(out.sts        == 0);
+                CHECK(out.sensors    == 0);
+                break;
+            }
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+            // Timeout of 20 sec
+            auto end = std::chrono::steady_clock::now();
+            if (std::chrono::duration_cast<std::chrono::seconds>(end - start).count() > 20) {
+                FAIL("Timeout when wait progress status");
+            }
+        }
+
+        // Wait end of discovery
+        start = std::chrono::steady_clock::now();
         while(1) {
             out = getStatus();
             if (out.status == status::Out::Status::Terminated) {
                 break;
             }
             std::this_thread::sleep_for(std::chrono::seconds(1));
+            // Timeout of 60 sec
             auto end = std::chrono::steady_clock::now();
-            if (std::chrono::duration_cast<std::chrono::seconds>(end - start).count() > 20) {
+            if (std::chrono::duration_cast<std::chrono::seconds>(end - start).count() > 60) {
                 FAIL("Timeout when wait terminated status");
             }
         }
@@ -492,8 +519,6 @@ TEST_CASE("Auto disco / Test real scan auto with simulation", "[.auto]")
     }
     agentSecw.requestStop();
     agentSecwThread.join();
-
-    //zactor_destroy(&broker);
 
     proc.interrupt();
     proc.wait();
