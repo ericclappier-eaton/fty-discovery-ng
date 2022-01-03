@@ -11,7 +11,7 @@ int main(int argc, char* argv[])
         Test::shutdown();
         return result;
     } else {
-        std::cerr << "Canot init test: " << res.error() << "\n\n";
+        std::cerr << "Cannot init test: " << res.error() << "\n\n";
         return 1;
     }
 }
