@@ -114,7 +114,7 @@ public:
     Expected<void> setCredentialId(const std::string& credId)
     {
         try {
-            fty::SocketSyncClient secwSyncClient(Config::instance().secwSocket);
+            fty::SocketSyncClient secwSyncClient(Config::instance().secwSocket.value());
             auto                  client  = secw::ConsumerAccessor(secwSyncClient);
             auto                  secCred = client.getDocumentWithPrivateData("default", credId);
 

@@ -57,8 +57,7 @@ public:
     AutoDiscovery();
     ~AutoDiscovery() = default;
 
-    std::string getEndpoint() { return m_endpoint; };
-    void setEndpoint(const std::string& endpoint) { m_endpoint = endpoint; };
+    Expected<void> init();
 
     // Runs discover
     Expected<void> start(const disco::commands::scan::start::In& InStart);
@@ -129,8 +128,8 @@ private:
     // Mutex for secure auto discovery
     std::mutex                       m_mutex;
 
-    // Endpoint name
-    std::string                      m_endpoint;
+    // Bus for creation asset
+    disco::MessageBus                m_bus;
 };
 
 } // namespace fty::disco::job

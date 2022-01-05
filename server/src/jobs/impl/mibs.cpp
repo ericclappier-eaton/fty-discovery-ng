@@ -147,7 +147,7 @@ Expected<MibsReader::MibList> MibsReader::read() const
             mibs.insert(*oid);
         }
     } else {
-        if (Config::instance().tryAll) {
+        if (Config::instance().tryAll.value()) {
             auto res = m_session->walk([&](const std::string& mib) {
                 if (filterMib(mib)) {
                     size_t pos;

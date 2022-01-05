@@ -138,18 +138,17 @@ TEST_CASE("Auto disco / status discovery update", "[auto]")
 
 TEST_CASE("Auto disco / Empty request", "[auto]")
 {
-    fty::disco::Message                msg = Test::createMessage(fty::disco::commands::scan::start::Subject);
-    fty::Expected<fty::disco::Message> ret = Test::send(msg);
+    auto msg = Test::createMessage(fty::disco::commands::scan::start::Subject);
+    auto ret = Test::send(msg);
     CHECK_FALSE(ret);
     CHECK("Wrong input data: payload is empty" == ret.error());
 }
 
 TEST_CASE("Auto disco / Wrong request", "[auto]")
 {
-    fty::disco::Message msg = Test::createMessage(fty::disco::commands::scan::start::Subject);
-
+    auto msg = Test::createMessage(fty::disco::commands::scan::start::Subject);
     msg.userData.setString("Some shit");
-    fty::Expected<fty::disco::Message> ret = Test::send(msg);
+    auto ret = Test::send(msg);
     CHECK_FALSE(ret);
     CHECK("Wrong input data: format of payload is incorrect" == ret.error());
 }
@@ -160,7 +159,7 @@ using namespace fty::disco::commands::scan;
 auto getStatus = []() -> const status::Out {
     status::Out res;
 
-    fty::disco::Message msgStatus = Test::createMessage(status::Subject);
+    auto msgStatus = Test::createMessage(status::Subject);
     fty::Expected<fty::disco::Message> ret = Test::send(msgStatus);
     if (!ret) {
         FAIL(ret.error());
@@ -313,7 +312,6 @@ void TestAuto::recAssets(const fty::disco::Message& msg)
 {
     messagebus::Message msg2 = msg.toMessageBus();
     if (msg2.metaData()[messagebus::Message::SUBJECT] == "CREATE") {
-        logDebug("RECEIVE CREATE MSG OK");
         messagebus::Message answ;
         answ.metaData().emplace(messagebus::Message::SUBJECT, msg2.metaData().find(messagebus::Message::SUBJECT)->second);
         answ.metaData().emplace(messagebus::Message::FROM, "asset-agent-ng");
@@ -323,7 +321,7 @@ void TestAuto::recAssets(const fty::disco::Message& msg)
         answ.userData() = msg2.userData();
 
         // send response
-        m_bus.send(msg2.metaData().find(messagebus::Message::REPLY_TO)->second, Message(answ));
+        auto res = m_bus.send(msg2.metaData().find(messagebus::Message::REPLY_TO)->second, Message(answ));
     }
 }
 
@@ -341,11 +339,10 @@ TEST_CASE("Auto disco / Test real scan auto with simulation", "[auto]")
         FAIL(pid.error());
     }
 
-    static const char* endpoint_disco = "inproc://fty-discovery-ng-test";
+    // Wait a moment for snmpsim init
+    std::this_thread::sleep_for(std::chrono::seconds(1));
 
-    static constexpr const char* Name = "asset-agent-ng";
-    static constexpr const char* Subject = "CREATE";
-    static constexpr const char* Queue   = "FTY.Q.ASSET.QUERY";
+    static const char* endpoint_disco = "inproc://fty-discovery-ng-test";
 
     // Create message bus for asset creation
     fty::disco::MessageBus bus;
@@ -464,6 +461,7 @@ TEST_CASE("Auto disco / Test real scan auto with simulation", "[auto]")
         if (!ret) {
             FAIL(ret.error());
         }
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
         // Wait start of discovery
         auto start = std::chrono::steady_clock::now();
@@ -496,7 +494,7 @@ TEST_CASE("Auto disco / Test real scan auto with simulation", "[auto]")
             std::this_thread::sleep_for(std::chrono::seconds(1));
             // Timeout of 60 sec
             auto end = std::chrono::steady_clock::now();
-            if (std::chrono::duration_cast<std::chrono::seconds>(end - start).count() > 60) {
+            if (std::chrono::duration_cast<std::chrono::seconds>(end - start).count() > 80) {
                 FAIL("Timeout when wait terminated status");
             }
         }
