@@ -1,5 +1,6 @@
 #include "test-common.h"
 #include "../server/src/jobs/protocols.h"
+#include <fty/process.h>
 
 namespace fty::disco {
 
@@ -62,20 +63,40 @@ TEST_CASE("Protocols / Invalid ip", "[protocols]")
 
 TEST_CASE("Protocols / Fake request", "[protocols]")
 {
-    fty::disco::Message msg = Test::createMessage(commands::protocols::Subject);
+    // clang-format off
+    fty::Process proc("snmpsimd", {
+        "--data-dir=root",
+        "--agent-udpv4-endpoint=127.0.0.1:1161",
+        "--logging-method=file:.snmpsim.txt",
+        "--variation-modules-dir=root",
+    });
+    // clang-format on
 
-    commands::protocols::In in;
-    in.address = "127.0.0.1";
-    in.port = 1161;
-    msg.userData.setString(*pack::json::serialize(in));
+    if (auto pid = proc.run()) {
 
-    fty::Expected<fty::disco::Message> ret = Test::send(msg);
+        // Wait a moment for snmpsim init
+        std::this_thread::sleep_for(std::chrono::seconds(1));
 
-    CHECK(ret);
-    auto res = ret->userData.decode<commands::protocols::Out>();
-    CHECK(res);
-    CHECK(1 == res->size());
-    CHECK("nut_snmp" == (*res)[0]);
+        commands::protocols::In in;
+        in.address = "127.0.0.1";
+        in.port = 1161;
+
+        fty::disco::Message msg = Test::createMessage(commands::protocols::Subject);
+        msg.userData.setString(*pack::json::serialize(in));
+
+        fty::Expected<fty::disco::Message> ret = Test::send(msg);
+
+        CHECK(ret);
+        auto res = ret->userData.decode<commands::protocols::Out>();
+        CHECK(res);
+        CHECK(1 == res->size());
+        CHECK("nut_snmp" == (*res)[0]);
+
+        proc.interrupt();
+        proc.wait();
+    } else {
+        FAIL(pid.error());
+    }
 }
 
 TEST_CASE("Protocols / resolve", "[protocols]")

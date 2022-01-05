@@ -85,7 +85,7 @@ const std::pair<std::string, std::string> Protocols::splitPortFromProtocol(const
 
 std::optional<uint16_t> Protocols::getPort(const std::string& protocolIn, const commands::protocols::In& in) {
     if (in.port != 0) {
-        logDebug("getPort: get port={}", in.port);
+        logDebug("getPort: get port={}", in.port.value());
         return in.port;
     }
     else if (in.protocols.size() != 0) {

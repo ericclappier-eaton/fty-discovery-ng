@@ -47,7 +47,7 @@ void Discovery::doStop()
 
 bool Discovery::loadConfig()
 {
-    // TBD: Parameters not taken into account ???
+    logDebug("Load config file: {}", m_configPath);
     if (auto ret = pack::yaml::deserializeFile(m_configPath, Config::instance()); !ret) {
         logError(ret.error());
         return false;
@@ -57,16 +57,19 @@ bool Discovery::loadConfig()
 
 Expected<void> Discovery::init()
 {
-    logDebug("Discovery::init actorName={} endpoint={}", Config::instance().actorName, Config::instance().endpoint);
-    if (auto res = m_bus.init(Config::instance().actorName, Config::instance().endpoint)) {
+    logDebug("Discovery::init actorName={} endpoint={}", Config::instance().actorName.value(),
+                                                         Config::instance().endpoint.value());
+    if (auto init = m_bus.init(Config::instance().actorName.value(), Config::instance().endpoint.value())) {
         if (auto sub = m_bus.subsribe(Channel, &Discovery::discover, this)) {
-            m_autoDiscovery.setEndpoint(Config::instance().endpoint);
+            if (auto autoInit = m_autoDiscovery.init(); !autoInit) {
+                return unexpected(autoInit.error());
+            }
             return {};
         } else {
             return unexpected(sub.error());
         }
     } else {
-        return unexpected(res.error());
+        return unexpected(init.error());
     }
 }
 
