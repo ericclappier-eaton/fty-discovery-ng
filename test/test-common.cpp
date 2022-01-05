@@ -29,8 +29,9 @@ fty::Expected<void> Test::init()
         return fty::unexpected("Cannot load config");
     }
 
-    fty::disco::impl::Snmp::instance().init(fty::disco::Config::instance().mibDatabase);
-    ManageFtyLog::setInstanceFtylog(fty::disco::Config::instance().actorName, fty::disco::Config::instance().logConfig);
+    fty::disco::impl::Snmp::instance().init(fty::disco::Config::instance().mibDatabase.value());
+    ManageFtyLog::setInstanceFtylog(fty::disco::Config::instance().actorName.value(),
+                                    fty::disco::Config::instance().logConfig.value());
 
     // Create the broker
     static const char* endpoint_disco = "inproc://fty-discovery-ng-test";

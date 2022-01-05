@@ -47,7 +47,7 @@ Expected<void> Process::setupSnmp(const std::string& address, uint16_t port)
         }));
         // clang-format on
         m_process->setEnvVar("NUT_STATEPATH", m_root);
-        m_process->setEnvVar("MIBDIRS", Config::instance().mibDatabase);
+        m_process->setEnvVar("MIBDIRS", Config::instance().mibDatabase.value());
         return {};
     } else {
         return unexpected(path.error());
@@ -148,7 +148,7 @@ Expected<void> Process::setCredentialId(const std::string& credential)
     }
 
     if (m_protocol == "nut_snmp") {
-        fty::SocketSyncClient secwSyncClient(Config::instance().secwSocket);
+        fty::SocketSyncClient secwSyncClient(Config::instance().secwSocket.value());
         auto                  client = secw::ConsumerAccessor(secwSyncClient);
 
         auto levelStr = [](secw::Snmpv3SecurityLevel lvl) -> Expected<std::string> {
@@ -246,7 +246,7 @@ Expected<void> Process::setCredentialId(const std::string& credential)
             return unexpected(err.what());
         }
     } else if (m_protocol == "nut_powercom") {
-        fty::SocketSyncClient secwSyncClient(Config::instance().secwSocket);
+        fty::SocketSyncClient secwSyncClient(Config::instance().secwSocket.value());
         auto                  client = secw::ConsumerAccessor(secwSyncClient);
 
         try {

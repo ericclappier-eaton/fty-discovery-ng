@@ -28,17 +28,31 @@ namespace fty::disco::job {
 
 AutoDiscovery::AutoDiscovery()
 {
+}
+
+Expected<void> AutoDiscovery::init()
+{
+    // Init thread number
     size_t minNumThreads = SCAN_MIN_NUM_THREAD;
-    size_t maxNumThreads = Config::instance().pollScanMax;
+    size_t maxNumThreads = Config::instance().pollScanMax.value();
     if (maxNumThreads < minNumThreads) {
         maxNumThreads = minNumThreads;
         logInfo("AutoDiscovery: change scan max thread to {}", maxNumThreads);
     }
-    // TBD: CAUTION Don't add more then 50 threads max due of the default limitation of 1024 FD on the system
     logDebug("AutoDiscovery: create pool scan thread with min={}, max={}", minNumThreads, maxNumThreads);
     m_poolScan = std::unique_ptr<fty::ThreadPool>(new fty::ThreadPool(minNumThreads, maxNumThreads));
+
+    // Init bus for asset creation
+    std::string agent = "fty-discovery-ng-asset-creation";
+    logTrace("Create agent {} with {} endpoint", agent, Config::instance().endpoint.value());
+    if (auto init = m_bus.init(agent.c_str(), Config::instance().endpoint.value()); !init) {
+        return fty::unexpected("Init bus error: {}", init.error());
+    }
+    // Init status
     statusDiscoveryInit();
+    return {};
 }
+
 
 Expected<void> AutoDiscovery::updateExt(const commands::assets::Ext& extIn, asset::create::Ext& extOut)
 {
@@ -250,7 +264,7 @@ void AutoDiscovery::updateStatusDiscoveryProgress() {
 }
 
 void AutoDiscovery::resetPoolScan() {
-    m_poolScan.reset(new fty::ThreadPool(Config::instance().pollScanMax));
+    m_poolScan.reset(new fty::ThreadPool(Config::instance().pollScanMax.value()));
 }
 
 void AutoDiscovery::stopPoolScan() {
@@ -288,17 +302,6 @@ void AutoDiscovery::scan(AutoDiscovery* autoDiscovery, const std::string& ipAddr
             listStr << Protocols::getProtocolStr(type) << " ";
         });
         logDebug("Found protocols [ {}] for {}", listStr.str(), ipAddress);
-
-        // Init bus
-        std::string agent = "fty-discovery-ng" + std::to_string(gettid());
-        logTrace("Create agent {} with {} endpoint", agent, autoDiscovery->getEndpoint());
-        fty::disco::MessageBus bus;
-        if (auto init = bus.init(agent.c_str(), autoDiscovery->getEndpoint()); !init) {
-            logError(init.error());
-            // Update progress
-            autoDiscovery->updateStatusDiscoveryProgress();
-            return;
-        }
 
         Assets assets;
 
@@ -379,7 +382,7 @@ void AutoDiscovery::scan(AutoDiscovery* autoDiscovery, const std::string& ipAddr
                             logError("Could not update host name during creation of asset ({}): {}", ipAddress, res.error());
                         }
                         // Create asset
-                        if (auto res = asset::create::run(bus, Config::instance().actorName, req); !res) {
+                        if (auto res = asset::create::run(autoDiscovery->m_bus, Config::instance().actorName.value(), req); !res) {
                             logError("Could not create asset ({}): {}", ipAddress, res.error());
                             continue;
                         } else {
@@ -414,7 +417,7 @@ void AutoDiscovery::scan(AutoDiscovery* autoDiscovery, const std::string& ipAddr
                             if (auto res = updateExt(sensor.ext, reqSensor.ext); !res) {
                                 logError("Could not update ext during creation of sensor ({}): {}", ipAddress, res.error());
                             }
-                            if (auto resSensor = asset::create::run(bus, Config::instance().actorName, reqSensor); !resSensor) {
+                            if (auto resSensor = asset::create::run(autoDiscovery->m_bus, Config::instance().actorName.value(), reqSensor); !resSensor) {
                                 logError("Could not create sensor ({}): {}", ipAddress, resSensor.error());
                                 continue;
                             }
