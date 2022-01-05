@@ -155,7 +155,7 @@ Expected<MibsReader::MibList> MibsReader::read() const
             mibs.insert(*oid);
         }
     }
-    else if (Config::instance().tryAll) {
+    else if (Config::instance().tryAll.value()) {
         logTrace("read allMibs walk");
         auto res = m_session->walk([&](const std::string& mib) {
             if (filterMib(mib)) {

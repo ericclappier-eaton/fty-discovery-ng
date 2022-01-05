@@ -36,8 +36,9 @@ int main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    fty::disco::impl::Snmp::instance().init(fty::disco::Config::instance().mibDatabase);
-    ManageFtyLog::setInstanceFtylog(fty::disco::Config::instance().actorName, fty::disco::Config::instance().logConfig);
+    fty::disco::impl::Snmp::instance().init(fty::disco::Config::instance().mibDatabase.value());
+    ManageFtyLog::setInstanceFtylog(fty::disco::Config::instance().actorName.value(),
+                                    fty::disco::Config::instance().logConfig.value());
 
     if (daemon) {
         log_debug("Start discovery agent as daemon");

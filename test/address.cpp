@@ -10,7 +10,7 @@ TEST_CASE("Address / iteration", "[address]")
 
     // without stop address
     auto res0 = addr.itIpInit("192.168.0.0", "");
-    std::cout << "res0=" << *res0 << std::endl;
+    //std::cout << "res0=" << *res0 << std::endl;
     CHECK(*res0 == "192.168.0.0");
     CHECK(addr.itIpNext()->empty());
 
@@ -21,7 +21,7 @@ TEST_CASE("Address / iteration", "[address]")
 
     // continuous address
     auto res2 = addr.itIpInit("192.168.0.0", "192.168.0.14");
-    std::cout << "res2=" << *res2 << std::endl;
+    //std::cout << "res2=" << *res2 << std::endl;
     CHECK(*res2 == "192.168.0.0");
     int count = 1;
     auto previous = *res2;
@@ -33,7 +33,7 @@ TEST_CASE("Address / iteration", "[address]")
         else if ((*res3).empty()) {
             break;
         }
-        std::cout << "res3=" << *res3 << std::endl;
+        //std::cout << "res3=" << *res3 << std::endl;
         CHECK(previous != *res3);
         previous = *res3;
         count ++;
@@ -42,7 +42,7 @@ TEST_CASE("Address / iteration", "[address]")
 
     // discontinuous address
     auto res4 = addr.itIpInit("192.168.0.254", "192.168.1.14");
-    std::cout << "res4=" << *res4 << std::endl;
+    //std::cout << "res4=" << *res4 << std::endl;
     CHECK(*res4 == "192.168.0.254");
     count = 1;
     previous = *res4;
@@ -54,7 +54,7 @@ TEST_CASE("Address / iteration", "[address]")
         else if ((*res5).empty()) {
             break;
         }
-        std::cout << "res5=" << *res5 << std::endl;
+        //std::cout << "res5=" << *res5 << std::endl;
         CHECK(previous != *res5);
         previous = *res5;
         count ++;

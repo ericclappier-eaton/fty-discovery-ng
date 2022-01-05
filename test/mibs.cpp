@@ -44,7 +44,6 @@ TEST_CASE("Mibs / get mibs", "[mibs]")
         "--agent-udpv4-endpoint=127.0.0.1:1161",
         "--logging-method=file:.snmpsim.txt",
         "--variation-modules-dir=root",
-        "--log-level=error"
     });
     // clang-format on
 
@@ -65,6 +64,10 @@ TEST_CASE("Mibs / get mibs", "[mibs]")
     };
 
     if (auto pid = proc.run()) {
+
+        // Wait a moment for snmpsim init
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+
         commands::mibs::In in;
         in.address = "127.0.0.1";
         in.port    = 1161;

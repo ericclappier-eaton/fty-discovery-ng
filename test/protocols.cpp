@@ -1,5 +1,6 @@
 #include "test-common.h"
 #include "../server/src/jobs/protocols.h"
+#include <fty/process.h>
 
 namespace fty::disco {
 
@@ -62,29 +63,48 @@ TEST_CASE("Protocols / Invalid ip", "[protocols]")
 
 TEST_CASE("Protocols / Fake request", "[protocols]")
 {
-    fty::disco::Message msg = Test::createMessage(commands::protocols::Subject);
+    // clang-format off
+    fty::Process proc("snmpsimd", {
+        "--data-dir=root",
+        "--agent-udpv4-endpoint=127.0.0.1:1161",
+        "--logging-method=file:.snmpsim.txt",
+        "--variation-modules-dir=root",
+    });
+    // clang-format on
 
-    commands::protocols::In in;
-    in.address = "127.0.0.1";
-    in.port = 1161;
-    msg.userData.setString(*pack::json::serialize(in));
+    if (auto pid = proc.run()) {
 
-    fty::Expected<fty::disco::Message> ret = Test::send(msg);
+        // Wait a moment for snmpsim init
+        std::this_thread::sleep_for(std::chrono::seconds(1));
 
-    CHECK(ret);
-    auto res = ret->userData.decode<commands::protocols::Out>();
-    CHECK(res);
-    CHECK(1 == res->size());
+        commands::protocols::In in;
+        in.address = "127.0.0.1";
+        in.port = 1161;
 
-    // TBD_MERGE
-    CHECK("nut_snmp" == (*res)[0].protocol);
-    CHECK(161 == (*res)[0].port);
-    CHECK(true == (*res)[0].reachable);
+        fty::disco::Message msg = Test::createMessage(commands::protocols::Subject);
+        msg.userData.setString(*pack::json::serialize(in));
 
-    // TBD_MERGE
-    //CHECK("nut_xml_pdc" == (*res)[1].protocol);
-    //CHECK(4321 == (*res)[1].port);
-    //CHECK(false == (*res)[1].reachable);
+        fty::Expected<fty::disco::Message> ret = Test::send(msg);
+
+        CHECK(ret);
+        auto res = ret->userData.decode<commands::protocols::Out>();
+        CHECK(res);
+        CHECK(1 == res->size());
+        // TBD_MERGE
+        CHECK("nut_snmp" == (*res)[0].protocol);
+        CHECK(161 == (*res)[0].port);
+        CHECK(true == (*res)[0].reachable);
+
+        // TBD_MERGE
+        //CHECK("nut_xml_pdc" == (*res)[1].protocol);
+        //CHECK(4321 == (*res)[1].port);
+        //CHECK(false == (*res)[1].reachable);
+
+        proc.interrupt();
+        proc.wait();
+    } else {
+        FAIL(pid.error());
+    }
 }
 
 TEST_CASE("Protocols / resolve", "[protocols]")

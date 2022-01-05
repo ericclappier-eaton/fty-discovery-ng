@@ -135,7 +135,7 @@ public:
                 logError(res.error());
             }
         } catch (const Error& err) {
-            logError("Error: %s", err.what());
+            logError("Error: {}", err.what());
             response.setError(err.what());
             if (auto res = m_bus->reply(Channel, m_in, response); !res) {
                 logError(res.error());
