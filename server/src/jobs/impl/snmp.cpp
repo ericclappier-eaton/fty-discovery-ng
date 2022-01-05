@@ -59,9 +59,9 @@ static Expected<oid*> authProt(secw::Snmpv3AuthProtocol proc)
         case secw::SHA:
             return usmHMACSHA1AuthProtocol;
         case secw::SHA256:
-            return usmHMAC256SHA384AuthProtocol;
+            return usmHMAC192SHA256AuthProtocol;
         case secw::SHA384:
-            return usmHMAC384SHA512AuthProtocol;
+            return usmHMAC256SHA384AuthProtocol;
         case secw::SHA512:
             return usmHMAC384SHA512AuthProtocol;
         case secw::MAX_AUTH_PROTOCOL:
@@ -140,20 +140,32 @@ public:
                 if (auto prot = authProt(credV3->getAuthProtocol())) {
                     m_sess.securityAuthProto  = *prot;
                     m_sess.securityAuthKeyLen = USM_AUTH_KU_LEN;
-                    if (m_sess.securityAuthProto == usmHMACMD5AuthProtocol)
+                    if (m_sess.securityAuthProto == usmHMACMD5AuthProtocol) {
                         m_sess.securityAuthProtoLen = sizeof(usmHMACMD5AuthProtocol) / sizeof(oid);
-                    else
+                    } else if (m_sess.securityAuthProto == usmHMACSHA1AuthProtocol) {
                         m_sess.securityAuthProtoLen = sizeof(usmHMACSHA1AuthProtocol) / sizeof(oid);
+                    } else if (m_sess.securityAuthProto == usmHMAC192SHA256AuthProtocol) {
+                        m_sess.securityAuthProtoLen = sizeof(usmHMAC192SHA256AuthProtocol) / sizeof(oid);
+                    } else if (m_sess.securityAuthProto == usmHMAC256SHA384AuthProtocol) {
+                        m_sess.securityAuthProtoLen = sizeof(usmHMAC256SHA384AuthProtocol) / sizeof(oid);
+                    } else if (m_sess.securityAuthProto == usmHMAC384SHA512AuthProtocol) {
+                        m_sess.securityAuthProtoLen = sizeof(usmHMAC384SHA512AuthProtocol) / sizeof(oid);
+                    }
                 }
 
                 if (auto prot = authPriv(credV3->getPrivProtocol())) {
                     m_sess.securityPrivProto  = *prot;
                     m_sess.securityPrivKeyLen = USM_PRIV_KU_LEN;
                     /* FIXME: see https://github.com/42ity/nut/blob/FTY/drivers/snmp-ups.c#L79 */
-                    if (m_sess.securityPrivProto == usmDESPrivProtocol)
+                    if (m_sess.securityPrivProto == usmDESPrivProtocol) {
                         m_sess.securityPrivProtoLen = sizeof(usmDESPrivProtocol) / sizeof(oid);
-                    else
+                    } else if (m_sess.securityPrivProto == usmAESPrivProtocol) {
                         m_sess.securityPrivProtoLen = sizeof(usmAESPrivProtocol) / sizeof(oid);
+                    } else if (m_sess.securityPrivProto == usmAES192PrivProtocol) {
+                        m_sess.securityPrivProtoLen = sizeof(usmAES192PrivProtocol) / sizeof(oid);
+                    } else if (m_sess.securityPrivProto == usmAES256PrivProtocol) {
+                        m_sess.securityPrivProtoLen = sizeof(usmAES256PrivProtocol) / sizeof(oid);
+                    }
                 }
 
                 if (generate_Ku(m_sess.securityAuthProto, u_int(m_sess.securityAuthProtoLen),
