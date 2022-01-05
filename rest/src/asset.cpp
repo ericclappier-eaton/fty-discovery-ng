@@ -22,6 +22,7 @@
 #include "asset.h"
 #include "message-bus.h"
 #include <fty/rest/component.h>
+#include <fty_log.h>
 
 namespace fty {
 
@@ -34,14 +35,16 @@ unsigned AssetRest::run()
 
     commands::assets::In param;
     if (auto res = pack::json::deserialize(m_request.body(), param); !res) {
-        throw rest::errors::BadRequestDocument(res.error());
+        logError("Request document has invalid syntax. {}", res.error());
+        throw rest::errors::BadRequestDocument("");
     }
 
     if (auto asset = assets(param)) {
         m_reply << *asset << "\n\n";
         return HTTP_OK;
     } else {
-        throw rest::errors::Internal(asset.error());
+        logError("Internal Server Error. {}", asset.error());
+        throw rest::errors::Internal("");
     }
 }
 
