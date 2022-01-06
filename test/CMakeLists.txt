@@ -22,6 +22,7 @@ etn_test(${PROJECT_NAME}-test
     USES
         ${PROJECT_NAME}-static
         Catch2::Catch2
+        pthread
         fty_security_wallet_server
         mlm
 )
