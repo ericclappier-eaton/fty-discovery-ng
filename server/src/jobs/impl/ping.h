@@ -23,41 +23,41 @@
 
 // =====================================================================================================================
 
-inline bool available(const std::string& address)
+inline bool available(const std::string& address_)
 {
-    static std::string httpPrefix = "http://";
+    static const std::string httpPrefix = "http://";
 
-    std::string checkAddress = address;
-    if (checkAddress.find(httpPrefix) == 0) {
-        checkAddress = checkAddress.substr(httpPrefix.size());
+    std::string address{address_};
+    if (address.find(httpPrefix) == 0) {
+        address = address.substr(httpPrefix.size());
     }
 
     addrinfo hints;
-    memset(&hints, 0, sizeof(addrinfo));
-
+    memset(&hints, 0, sizeof(hints));
     hints.ai_family   = AF_UNSPEC;
     hints.ai_socktype = SOCK_DGRAM;
     hints.ai_flags    = 0;
     hints.ai_protocol = 0;
 
-    addrinfo* result;
-    if (getaddrinfo(checkAddress.c_str(), nullptr, &hints, &result) != 0) {
+    addrinfo* result{nullptr};
+    if (getaddrinfo(address.c_str(), nullptr, &hints, &result) != 0) {
         return false;
     }
 
-    bool ret = false;
-    for (addrinfo* rp = result; rp != nullptr; rp = rp->ai_next) {
+    bool available = false;
+    for (addrinfo* rp = result; rp != nullptr && !available; rp = rp->ai_next) {
         int sock = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
-        if (sock == -1) {
-            continue;
+        if (sock != -1) {
+            if (connect(sock, rp->ai_addr, rp->ai_addrlen) != -1) {
+                available = true;
+            }
+            close(sock);
         }
-        if (connect(sock, rp->ai_addr, rp->ai_addrlen) != -1) {
-            ret = true;
-        }
-        close(sock);
     }
+
     freeaddrinfo(result);
 
-    return ret;}
+    return available;
+}
 
 // =====================================================================================================================

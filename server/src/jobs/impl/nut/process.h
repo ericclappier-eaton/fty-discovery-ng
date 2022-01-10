@@ -25,12 +25,12 @@ private:
     Expected<std::string> findExecutable(const std::string& name) const;
     Expected<void> setupSnmp(const std::string& address, uint16_t port);
     Expected<void> setupXmlPdc(const std::string& address, uint16_t port);
-    Expected<void> setupPowercom(const std::string& address);
+    Expected<void> setupPowercom(const std::string& address, uint16_t port);
 
 private:
-    std::string                   m_protocol;
+    std::string                   m_protocol; // "nut_snmp", "nut_xml_pdc", "nut_powercom", ...
     std::string                   m_root;
     std::unique_ptr<fty::Process> m_process;
 };
 
-} // namespace fty::protocol::nut
+} // namespace fty::impl::nut

@@ -20,4 +20,4 @@ namespace fty::impl {
 
 std::string generateUUID(const std::string& manufacturer, const std::string& model, const std::string& serial);
 
-}
+} // namespace fty::impl

@@ -21,7 +21,6 @@
 #include <fty_log.h>
 #include <iostream>
 
-
 namespace fty::impl {
 
 // =====================================================================================================================
@@ -172,6 +171,7 @@ Expected<MibsReader::MibList> MibsReader::read() const
                 }
             }
         }
+
         if (mibs.empty()) {
             return unexpected("Cannot fetch mibs from endpoint. Host is not available or SNMP is not supported.");
         }
@@ -188,6 +188,7 @@ Expected<std::string> MibsReader::readName() const
         }
         m_isOpen = true;
     }
+
     auto name = m_session->read("SNMPv2-MIB::sysDescr.0");
     if (!name) {
         return unexpected(name.error());
@@ -197,4 +198,4 @@ Expected<std::string> MibsReader::readName() const
 
 // =====================================================================================================================
 
-} // namespace fty::protocol
+} // namespace fty::impl

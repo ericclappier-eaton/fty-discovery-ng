@@ -67,4 +67,4 @@ namespace snmp {
 } // namespace snmp
 
 
-} // namespace fty::protocol
+} // namespace fty::impl
