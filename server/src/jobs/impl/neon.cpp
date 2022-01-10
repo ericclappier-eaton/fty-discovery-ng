@@ -50,11 +50,11 @@ fty::Expected<std::string> Neon::get(const std::string& path) const
             if (!status->code) {
                 return fty::unexpected(ne_get_error(m_session.get()));
             }
-            return fty::unexpected("{} {}", status->code, status->reason_phrase);
+            return fty::unexpected("non-NE_OK, status: {} {}", status->code, status->reason_phrase);
         }
 
         if (status->code != 200) {
-            return fty::unexpected("unsupported (status is not ok)");
+            return fty::unexpected("NE_OK, status: {} {}", status->code, status->reason_phrase);
         }
 
         body.clear();
@@ -64,7 +64,7 @@ fty::Expected<std::string> Neon::get(const std::string& path) const
         while ((bytes = ne_read_response_block(request.get(), buffer.data(), buffer.size())) > 0) {
             body += std::string(buffer.data(), size_t(bytes));
         }
-    } while(ne_end_request(request.get()) == NE_RETRY);
+    } while (ne_end_request(request.get()) == NE_RETRY);
 
     return fty::Expected<std::string>(body);
 }

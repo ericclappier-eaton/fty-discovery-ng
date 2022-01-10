@@ -227,12 +227,12 @@ public:
         oid    name[MAX_OID_LEN];
         size_t nameLen = MAX_OID_LEN;
 
-        bool running = true;
         if (!snmp_parse_oid(".1.3.6.1.2.1", name, &nameLen)) {
             return unexpected("Cannot parse root OID '.1.3.6.1.2.1'");
         }
 
-        std::array<char, 255> buff;
+        std::array<char, 255> buff; //NOTICE char VS. oid?
+        bool running = true;
 
         while (running) {
             netsnmp_pdu* pdu = snmp_pdu_create(SNMP_MSG_GETNEXT);
@@ -247,7 +247,10 @@ public:
             if (status == STAT_ERROR) {
                 return unexpected(snmp_errstring(snmp_errno));
             }
+
+            //NOTICE assume response is not NULL on success, else crash
             if (status == STAT_SUCCESS && response->errstat == SNMP_ERR_NOERROR) {
+                //NOTICE assume response->variables never empty, else while loop becomes infinite
                 for (auto vars = response->variables; vars; vars = vars->next_variable) {
                     snprint_objid(buff.data(), buff.size(), vars->name, vars->name_length);
                     func(buff.data());
@@ -292,7 +295,7 @@ private:
 
     Expected<std::string> readObjName(const netsnmp_variable_list* lst)
     {
-        std::array<char, 255> buff;
+        std::array<char, 255> buff; //NOTICE char VS. oid?
         snprint_objid(buff.data(), buff.size(), lst->val.objid, lst->val_len / sizeof(oid));
         return std::string(buff.data());
     }

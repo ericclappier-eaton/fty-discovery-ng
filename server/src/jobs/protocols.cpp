@@ -43,15 +43,17 @@ enum class Type
 inline std::ostream& operator<<(std::ostream& ss, Type type)
 {
     switch (type) {
-        case Type::Snmp:
-            ss << "Snmp";
+        case Type::Powercom:
+            ss << "GenApi";
             break;
         case Type::Xml:
             ss << "Xml";
             break;
-        case Type::Powercom:
-            ss << "GenApi";
+        case Type::Snmp:
+            ss << "Snmp";
             break;
+		default:
+			ss << "protocol-type-unknown";
     }
     return ss;
 }
@@ -140,7 +142,7 @@ Expected<void> Protocols::tryPowercom(const commands::protocols::In& in) const
     if (auto content = ne.get("etn/v1/comm/services/powerdistributions1")) {
         try {
             YAML::Node node = YAML::Load(*content);
-            
+
             if (node["device-type"].as<std::string>() == "ups") {
                 return {};
             }
@@ -243,10 +245,9 @@ Expected<void> Protocols::trySnmp(const commands::protocols::In& in) const
 
 void Protocols::sortProtocols(std::vector<Type>& protocols)
 {
-    // Just prefer XML_PDC
-    std::sort(protocols.begin(), protocols.end());
+    // ascent order on Type
+    std::sort(protocols.begin(), protocols.end(), std::less<Type>());
 }
-
 
 // =====================================================================================================================
 
