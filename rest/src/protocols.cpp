@@ -38,7 +38,7 @@ unsigned Protocols::run()
     commands::protocols::In param;
     if (auto res = pack::json::deserialize(m_request.body(), param); !res) {
         logError("Request document has invalid syntax. {}", res.error());
-        throw rest::errors::BadRequestDocument("");
+        throw rest::errors::BadRequestDocument("Protocols request failed, for more information see log"_tr);
     }
 
     if (auto list = protocols(param)) {
@@ -46,7 +46,7 @@ unsigned Protocols::run()
         return HTTP_OK;
     } else {
         logError("Internal Server Error. {}", list.error());
-        throw rest::errors::Internal("");
+        throw rest::errors::Internal("Protocols request failed, for more information see log"_tr);
     }
 }
 

@@ -36,7 +36,7 @@ unsigned AssetRest::run()
     commands::assets::In param;
     if (auto res = pack::json::deserialize(m_request.body(), param); !res) {
         logError("Request document has invalid syntax. {}", res.error());
-        throw rest::errors::BadRequestDocument("");
+        throw rest::errors::BadRequestDocument("Asset creation failed, for more information see log"_tr);
     }
 
     if (auto asset = assets(param)) {
@@ -44,7 +44,7 @@ unsigned AssetRest::run()
         return HTTP_OK;
     } else {
         logError("Internal Server Error. {}", asset.error());
-        throw rest::errors::Internal("");
+        throw rest::errors::Internal("Asset creation failed, for more information see log"_tr);
     }
 }
 
