@@ -92,7 +92,7 @@ public:
 class XmlPdc
 {
 public:
-    XmlPdc(const std::string& address);
+    XmlPdc(const std::string& scheme, const std::string& address, uint16_t port);
 
     template <typename T>
     Expected<T> get(const std::string& uri) const

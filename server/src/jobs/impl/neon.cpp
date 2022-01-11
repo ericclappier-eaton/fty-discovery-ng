@@ -24,9 +24,10 @@
 
 namespace neon {
 
-Neon::Neon(const std::string& address, uint16_t port, uint16_t timeout)
-    : m_session(ne_session_create("http", address.c_str(), port), &closeSession)
+Neon::Neon(const std::string& scheme, const std::string& address, uint16_t port, uint16_t timeout)
+    : m_session(ne_session_create(scheme.c_str(), address.c_str(), port), &closeSession)
 {
+    //if (scheme == "https") ne_set_session_flag(m_session.get(), NE_SESSFLAG_SSLv2, 0);
     ne_set_connect_timeout(m_session.get(), timeout);
     ne_set_read_timeout(m_session.get(), timeout);
 }

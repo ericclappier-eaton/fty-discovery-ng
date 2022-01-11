@@ -34,7 +34,7 @@ namespace neon {
 class Neon
 {
 public:
-    Neon(const std::string& address, uint16_t port = 80, uint16_t timeout = 15);
+    Neon(const std::string& protocol, const std::string& address, uint16_t port, uint16_t timeout = 15);
     ~Neon();
 
     fty::Expected<std::string> get(const std::string& path) const;

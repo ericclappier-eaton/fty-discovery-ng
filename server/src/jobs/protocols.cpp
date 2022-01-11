@@ -34,8 +34,8 @@ namespace fty::job {
 enum class Type
 {
     Powercom = 1,
-    Xml      = 2,
-    Snmp     = 3,
+    Snmp     = 2,
+    Xml      = 3,
 };
 
 // =====================================================================================================================
@@ -60,11 +60,12 @@ inline std::ostream& operator<<(std::ostream& ss, Type type)
 
 // =====================================================================================================================
 
-
 void Protocols::run(const commands::protocols::In& in, commands::protocols::Out& out)
 {
     if (in.address == "__fake__") {
-        out.setValue({"nut_snmp", "nut_xml_pdc"});
+        logInfo("{} address", in.address);
+        auto& x = out.append(); x.protocol = "nut_snmp";
+        auto& y = out.append(); y.protocol = "nut_xml_pdc";
         return;
     }
 
@@ -72,51 +73,67 @@ void Protocols::run(const commands::protocols::In& in, commands::protocols::Out&
         throw Error("Host is not available: {}", in.address.value());
     }
 
-    std::vector<Type> protocols;
+    // supported protocols, with defaults
+    struct {
+        Type protocol;
+        std::string protocolStr;
+        uint16_t port;
+    } tries[] = {
+        {Type::Powercom, "nut_powercom", 443},
+        {Type::Snmp, "nut_snmp", 161},
+        {Type::Xml, "nut_xml_pdc", 80},
+    };
 
-    if (auto res = tryXmlPdc(in)) {
-        protocols.emplace_back(Type::Xml);
-        log_info("Found XML device");
-    } else {
-        log_info("Skipped xml_pdc, reason: %s", res.error().c_str());
-    }
+    for (auto& aux : tries) {
+        auto& protocol = out.append();
+        protocol.protocol = aux.protocolStr;
+        protocol.port = aux.port;
+        protocol.reachable = false; // default, not reachable
 
-    if (auto res = trySnmp(in)) {
-        protocols.emplace_back(Type::Snmp);
-        log_info("Found SNMP device");
-    } else {
-        log_info("Skipped snmp, reason: %s", res.error().c_str());
-    }
-
-    if (auto res = tryPowercom(in)) {
-        protocols.emplace_back(Type::Powercom);
-        log_info("Found Powercon device");
-    } else {
-        log_info("Skipped GenApi, reason: %s", res.error().c_str());
-    }
-
-    sortProtocols(protocols);
-
-    for (const auto& prot : protocols) {
-        switch (prot) {
-            case Type::Snmp:
-                out.append("nut_snmp");
+		// try to reach server
+        switch (aux.protocol) {
+            case Type::Powercom: {
+                if (auto res = tryPowercom(in, aux.port)) {
+                    logInfo("Found Powercom device on port {}", aux.port);
+                    protocol.reachable = true; // port is reachable
+                }
+                else {
+                    logInfo("Skipped GenApi, reason: {}", res.error());
+                }
                 break;
-            case Type::Xml:
-                out.append("nut_xml_pdc");
+            }
+            case Type::Snmp: {
+                if (auto res = trySnmp(in, aux.port)) {
+                    logInfo("Found SNMP device on port {}", aux.port);
+                    protocol.reachable = true; // port is reachable
+                }
+                else {
+                    logInfo("Skipped SNMP, reason: {}", res.error());
+                }
                 break;
-            case Type::Powercom:
-                out.append("nut_powercom");
+            }
+            case Type::Xml: {
+                if (auto res = tryXmlPdc(in, aux.port)) {
+                    logInfo("Found XML device on port {}", aux.port);
+                    protocol.reachable = true; // port is reachable
+                }
+                else {
+                    logInfo("Skipped xml_pdc, reason: {}", res.error());
+                }
                 break;
+            }
+            default:
+                logError("protocol not handled (type: {})", aux.protocol);
         }
     }
-    std::string resp = *pack::json::serialize(out);
-    log_info("Return %s", resp.c_str());
+
+    std::string resp = *pack::json::serialize(out, pack::Option::WithDefaults);
+    logInfo("Return {}", resp);
 }
 
-Expected<void> Protocols::tryXmlPdc(const commands::protocols::In& in) const
+Expected<void> Protocols::tryXmlPdc(const commands::protocols::In& in, uint16_t port) const
 {
-    impl::XmlPdc xml(in.address);
+    impl::XmlPdc xml("http", in.address, port);
     if (auto prod = xml.get<impl::ProductInfo>("product.xml")) {
         if(!(prod->name == "Network Management Card" || prod->name == "HPE UPS Network Module")) {
             return unexpected("unsupported card type");
@@ -136,9 +153,9 @@ Expected<void> Protocols::tryXmlPdc(const commands::protocols::In& in) const
     }
 }
 
-Expected<void> Protocols::tryPowercom(const commands::protocols::In& in) const
+Expected<void> Protocols::tryPowercom(const commands::protocols::In& in, uint16_t port) const
 {
-    neon::Neon ne(in.address);
+    neon::Neon ne("https", in.address, port);
     if (auto content = ne.get("etn/v1/comm/services/powerdistributions1")) {
         try {
             YAML::Node node = YAML::Load(*content);
@@ -203,9 +220,9 @@ struct AutoRemove
     std::function<void()> m_deleter;
 };
 
-Expected<void> Protocols::trySnmp(const commands::protocols::In& in) const
+Expected<void> Protocols::trySnmp(const commands::protocols::In& in, uint16_t port) const
 {
-    std::string portStr = "161";
+    std::string portStr = std::to_string(port);
 
     addrinfo hints;
     memset(&hints, 0, sizeof(addrinfo));
@@ -245,12 +262,6 @@ Expected<void> Protocols::trySnmp(const commands::protocols::In& in) const
     }
 
     return {};
-}
-
-void Protocols::sortProtocols(std::vector<Type>& protocols)
-{
-    // ascent order on Type
-    std::sort(protocols.begin(), protocols.end(), std::less<Type>());
 }
 
 // =====================================================================================================================
