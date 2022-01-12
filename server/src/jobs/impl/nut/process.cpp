@@ -32,6 +32,7 @@ Expected<void> Process::setupSnmp(const std::string& address, uint16_t port)
 {
     if (!port) {
         port = 161;
+        logDebug("Set port to default ({})", port);
     }
 
     std::string toconnect = fmt::format("{}:{}", address, port);
@@ -56,6 +57,7 @@ Expected<void> Process::setupXmlPdc(const std::string& address, uint16_t port)
 {
     if (!port) {
         port = 80;
+        logDebug("Set port to default ({})", port);
     }
 
     std::string toconnect = fmt::format("{}:{}", address, port);
@@ -81,14 +83,17 @@ Expected<void> Process::setupXmlPdc(const std::string& address, uint16_t port)
 
 Expected<void> Process::setupPowercom(const std::string& address, uint16_t port)
 {
-    if (!port) { //NOTICE port ignored
-        port = 1883;
+    if (!port) {
+        port = 443;
+        logDebug("Set port to default ({})", port);
     }
+
+    std::string toconnect = fmt::format("{}:{}", address, port);
 
     if (auto path = findExecutable("etn-nut-powerconnect")) {
         // clang-format off
         m_process = std::unique_ptr<fty::Process>(new fty::Process(*path, {
-            "-x", fmt::format("port={}", address),
+            "-x", fmt::format("port={}", toconnect),
             "-d", "1"
         }));
         // clang-format on
@@ -100,6 +105,8 @@ Expected<void> Process::setupPowercom(const std::string& address, uint16_t port)
 
 Expected<void> Process::init(const std::string& address, uint16_t port)
 {
+    logInfo("init with protocol: {}, address: {}, port: {}", m_protocol, address, port);
+
     if (m_protocol == "nut_snmp") {
         if (auto ret = setupSnmp(address, port); !ret) {
             return unexpected(ret.error());
@@ -113,7 +120,7 @@ Expected<void> Process::init(const std::string& address, uint16_t port)
             return unexpected(ret.error());
         }
     } else {
-        return unexpected("Protocol {} is not supported", m_protocol);
+        return unexpected("Protocol '{}' is not supported", m_protocol);
     }
 
     return {}; // ok
@@ -252,6 +259,10 @@ Expected<void> Process::setCredentialId(const std::string& credential)
 
 Expected<void> Process::setCredential(const std::string& userName, const std::string& password)
 {
+    if (!m_process) {
+        return unexpected("uninitialized");
+    }
+
     if (m_protocol == "nut_powercom") {
         m_process->addArgument("-x");
         m_process->addArgument(fmt::format("username={}", userName));
@@ -312,6 +323,10 @@ Expected<void> Process::setMib(const std::string& mib)
 
 Expected<std::string> Process::run() const
 {
+    if (!m_process) {
+        return unexpected("uninitialized");
+    }
+
     if (auto pid = m_process->run()) {
         if (auto stat = m_process->wait(); *stat == 0) {
             return m_process->readAllStandardOutput();
