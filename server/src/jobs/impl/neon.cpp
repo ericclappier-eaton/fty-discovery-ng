@@ -22,15 +22,18 @@
 #include <pack/visitor.h>
 #include <iostream>
 
+static int verify_fn(void* /*userdata*/, int /*failures*/, const ne_ssl_certificate* /*cert*/)
+{
+    return 0; // trust cert
+}
+
 namespace neon {
 
 Neon::Neon(const std::string& scheme, const std::string& address, uint16_t port, uint16_t timeout)
     : m_session(ne_session_create(scheme.c_str(), address.c_str(), port), &closeSession)
 {
-    //ISSUE neon/https: SSL certificate check fails
-    //if (scheme == "https") {
-    //    ne_set_session_flag(m_session.get(), NE_SESSFLAG_SSLv2, 0);
-    //}
+    // trust any certificate
+    ne_ssl_set_verify(m_session.get(), verify_fn, nullptr);
 
     ne_set_connect_timeout(m_session.get(), timeout);
     ne_set_read_timeout(m_session.get(), timeout);
