@@ -31,6 +31,7 @@ void Assets::run(const commands::assets::In& in, commands::assets::Out& out)
     }
 
     m_params = in;
+
     // Workaround to check if snmp is available. Read mibs from asset
     if (m_params.protocol == "nut_snmp") {
         if (!m_params.port.hasValue()) {
@@ -62,6 +63,7 @@ void Assets::run(const commands::assets::In& in, commands::assets::Out& out)
 
     // Runs nut process
     impl::nut::Process proc(m_params.protocol);
+
     if (auto res = proc.init(m_params.address, uint16_t(m_params.port.value()))) {
         if (m_params.settings.credentialId.hasValue()) {
             if (auto set = proc.setCredentialId(m_params.settings.credentialId); !set) {
@@ -72,6 +74,7 @@ void Assets::run(const commands::assets::In& in, commands::assets::Out& out)
                 throw Error(set.error());
             }
         }
+
         if (m_params.settings.username.hasValue() && m_params.settings.password.hasValue()) {
             proc.setCredential(m_params.settings.username, m_params.settings.password);
         }
@@ -134,9 +137,9 @@ void Assets::parse(const std::string& cnt, commands::assets::Out& out)
                 }
             }
             enrichAsset(asset);
-
-        }
-    } else {
+        }//for
+    }
+	else {
         auto& asset      = out.append();
         asset.subAddress = "";
         asset.asset.type = "device";
