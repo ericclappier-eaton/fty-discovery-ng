@@ -63,9 +63,15 @@ inline std::ostream& operator<<(std::ostream& ss, Type type)
 void Protocols::run(const commands::protocols::In& in, commands::protocols::Out& out)
 {
     if (in.address == "__fake__") {
-        logInfo("{} address", in.address);
-        auto& x = out.append(); x.protocol = "nut_snmp";
-        auto& y = out.append(); y.protocol = "nut_xml_pdc";
+        logInfo("{} address (test)", in.address);
+        auto& x = out.append();
+        x.protocol = "nut_snmp";
+        x.port = 1234;
+        x.reachable = true;
+        auto& y = out.append();
+        y.protocol = "nut_xml_pdc";
+        y.port = 4321;
+        y.reachable = false;
         return;
     }
 
@@ -90,7 +96,7 @@ void Protocols::run(const commands::protocols::In& in, commands::protocols::Out&
         protocol.port = aux.port;
         protocol.reachable = false; // default, not reachable
 
-		// try to reach server
+        // try to reach server
         switch (aux.protocol) {
             case Type::Powercom: {
                 if (auto res = tryPowercom(in, aux.port)) {
