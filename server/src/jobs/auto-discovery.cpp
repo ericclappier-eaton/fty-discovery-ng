@@ -23,6 +23,7 @@
 //#include <fty_asset_dto.h>  // TBD Remove cxxtools ???
 #include <string>
 #include <sys/types.h>
+#include <fty_log.h>
 
 namespace fty::disco::job {
 
@@ -448,15 +449,55 @@ void AutoDiscovery::scan(AutoDiscovery* autoDiscovery, const std::string& ipAddr
 bool AutoDiscovery::scanCheck(AutoDiscovery* autoDiscovery) {
     if (!autoDiscovery) return true;
 
-    logTrace("AutoDiscovery scanCheck: pending tasks={}, active tasks={})",
-        autoDiscovery->m_poolScan->getCountPendingTasks(),
-        autoDiscovery->m_poolScan->getCountActiveTasks());
-    if (autoDiscovery->m_poolScan->getCountActiveTasks() == 0) {
+#undef WORK_AROUND_SCAN_BLOCKING
 
+#if WORK_AROUND_SCAN_BLOCKING
+    static size_t previousCounter = 0;
+    static std::chrono::steady_clock::time_point start;
+    static bool isBlockingDetected = false;
+#endif
+
+    auto countPendingTasks = autoDiscovery->m_poolScan->getCountPendingTasks();
+    auto countActiveTasks = autoDiscovery->m_poolScan->getCountActiveTasks();
+
+    logTrace("AutoDiscovery scanCheck: pending tasks={}, active tasks={})", countPendingTasks, countActiveTasks);
+    if (countActiveTasks == 0) {
         std::lock_guard<std::mutex> lock(autoDiscovery->m_mutex);
         autoDiscovery->m_statusDiscovery.state = State::Terminated;
+#if WORK_AROUND_SCAN_BLOCKING
+        if (isBlockingDetected) {
+            isBlockingDetected = false;
+        }
+#endif
         return true;
     }
+    // TBD: Workaround for scan blocking: if counter don't decrease during 60 sec, stop scan in progress
+#if WORK_AROUND_SCAN_BLOCKING
+    const uint32_t TIMEOUT_BLOCKING_SCAN_SEC = 60;
+    size_t counter = countPendingTasks + countActiveTasks;
+    if (previousCounter == counter) {
+        if (!isBlockingDetected) {
+            isBlockingDetected = true;
+            start = std::chrono::steady_clock::now();
+        }
+        else {
+            auto end = std::chrono::steady_clock::now();
+            if (std::chrono::duration_cast<std::chrono::seconds>(end - start).count() > TIMEOUT_BLOCKING_SCAN_SEC) {
+                autoDiscovery->stopPoolScan();
+                std::lock_guard<std::mutex> lock(autoDiscovery->m_mutex);
+                autoDiscovery->m_statusDiscovery.state = State::Terminated;
+                logWarn("Blocking scan detected (Timeout of {} sec). Stop scan with {} remaining tasks",
+                    TIMEOUT_BLOCKING_SCAN_SEC, countActiveTasks);
+                return true;
+            }
+        }
+    }
+    else {
+        if (isBlockingDetected) {
+            isBlockingDetected = false;
+        }
+    }
+#endif
     return false;
 }
 
