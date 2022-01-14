@@ -20,7 +20,7 @@ fty::Expected<void> ConfigDiscoveryManager::save(const std::string& path)
 
 fty::Expected<ConfigDiscovery> ConfigDiscoveryManager::load(const std::string& path)
 {
-    auto tmp = ConfigDiscovery();
+    ConfigDiscovery tmp;
     if (auto ret = tmp.load(path); !ret) {
         return fty::unexpected(ret.error());
     }
@@ -44,7 +44,7 @@ void ConfigDiscoveryManager::set(const ConfigDiscovery& config)
 
 fty::Expected<void> ConfigDiscoveryManager::commandCreate(const commands::config::Config& in)
 {
-    auto tmp = ConfigDiscovery();
+    ConfigDiscovery tmp;
 
     if (!m_config.has_value()) {
         if (auto ret = load(); !ret) {
@@ -66,7 +66,7 @@ fty::Expected<void> ConfigDiscoveryManager::commandCreate(const commands::config
     }
     if (in.ips.hasValue()) {
         for (const auto& ip : in.ips) {
-            if(!validateIp(ip)){
+            if (!validateIp(ip)) {
                 return fty::unexpected("invalid ip: {}", ip);
             }
         }
@@ -184,10 +184,9 @@ fty::Expected<void> ConfigDiscoveryManager::commandReadKey(const std::string& ke
 
 bool ConfigDiscoveryManager::validateIp(const std::string& ip)
 {
-    // return std::regex_match(ip,
-    // std::regex("(?=^.{4,253}$)(^((?!-)[a-zA-Z0-9-]{0,62}[a-zA-Z0-9]\\.)+[a-zA-Z]{2,63}$)"));
-    return std::regex_match(
-        ip, std::regex("(^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$)"));
+    static auto regex =
+        std::regex("(^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$)");
+    return std::regex_match(ip, regex);
 }
 
 

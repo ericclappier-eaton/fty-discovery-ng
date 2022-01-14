@@ -17,41 +17,41 @@
 
 <mapping>
     <target>discovery/config/create@lib${NAME}</target>
-    <url>^/api/v1/admin/config/create.*$</url>
+    <url>^/api/v1/admin/config-ng/create.*$</url>
     <method>POST</method>
 </mapping>
 <mapping>
     <target>discovery/config/read@lib${NAME}</target>
-    <url>^/api/v1/admin/config/read.*$</url>
+    <url>^/api/v1/admin/config-ng/read.*$</url>
     <method>GET</method>
 </mapping>
 <mapping>
     <target>discovery/config/read@lib${NAME}</target>
-    <url>^/api/v1/admin/config/read.*$</url>
+    <url>^/api/v1/admin/config-ng/read.*$</url>
     <method>POST</method>
 </mapping>
 
 <mapping>
   <target>discovery/scan/start@lib${NAME}</target>
-  <url>^/api/v1/admin/scan/new.*$</url>
+  <url>^/api/v1/admin/scan-ng.*$</url>
   <method>POST</method>
 </mapping>
 
 <mapping>
   <target>discovery/scan/status@lib${NAME}</target>
-  <url>^/api/v1/admin/scan/new.*$</url>
+  <url>^/api/v1/admin/scan-ng.*$</url>
   <method>GET</method>
 </mapping>
 
 <mapping>
     <target>discovery/scan/stop@lib${NAME}</target>
-    <url>^/api/v1/admin/scan/new.*$</url>
+    <url>^/api/v1/admin/scan-ng.*$</url>
     <method>DELETE</method>
 </mapping>
 
 <!-- TBD TO REMOVE -->
 <mapping>
     <target>discovery/auto@lib${NAME}</target>
-    <url>^/api/v1/admin/discovery/auto$</url>
+    <url>^/api/v1/admin/discovery-ng/auto$</url>
     <method>POST</method>
 </mapping>
