@@ -22,7 +22,7 @@ struct ConfigDiscovery : public pack::Node
     struct Discovery : public pack::Node
     {
         enum class Type
-        {
+        { 
             Unknown,
             Local,
             Ip,
