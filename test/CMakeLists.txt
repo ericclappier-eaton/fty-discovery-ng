@@ -13,7 +13,6 @@ etn_test(${PROJECT_NAME}-test
         protocols.cpp
         mibs.cpp
         test-common.h
-        # discovery-config.cpp
         discovery-config-manager.cpp
     USES
         ${PROJECT_NAME}-static
