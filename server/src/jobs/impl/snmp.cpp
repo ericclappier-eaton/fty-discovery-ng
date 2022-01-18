@@ -228,7 +228,6 @@ public:
         size_t nameLen = MAX_OID_LEN;
 
         bool running = true;
-        snmp_parse_oid(".1.3.6.1.2.1", name, &nameLen);
         if (!snmp_parse_oid(".1.3.6.1.2.1", name, &nameLen)) {
             return unexpected("Cannot parse root OID '.1.3.6.1.2.1'");
         }
