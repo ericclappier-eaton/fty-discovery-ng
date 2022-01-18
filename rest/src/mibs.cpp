@@ -36,16 +36,14 @@ unsigned Mibs::run()
 
     commands::mibs::In param;
     if (auto res = pack::json::deserialize(m_request.body(), param); !res) {
-        logError("Request document has invalid syntax. {}", res.error());
-        throw rest::errors::BadRequestDocument("Mibs request failed, for more information see log"_tr);
+        throw rest::errors::BadRequestDocument(res.error());
     }
 
     if (auto list = mibs(param)) {
         m_reply << *list << "\n\n";
         return HTTP_OK;
     } else {
-        logError("Internal Server Error. {}", list.error());
-        throw rest::errors::Internal("Mibs request failed, for more information see log"_tr);
+        throw rest::errors::Internal(list.error());
     }
 }
 
