@@ -34,8 +34,8 @@ namespace fty::job {
 enum class Type
 {
     Powercom = 1,
-    Snmp     = 2,
-    Xml      = 3,
+    Xml      = 2,
+    Snmp     = 3,
 };
 
 // =====================================================================================================================
@@ -52,8 +52,8 @@ inline std::ostream& operator<<(std::ostream& ss, Type type)
         case Type::Snmp:
             ss << "Snmp";
             break;
-		default:
-			ss << "protocol-type-unknown";
+        default:
+            ss << "protocol-type-unknown";
     }
     return ss;
 }
@@ -79,15 +79,16 @@ void Protocols::run(const commands::protocols::In& in, commands::protocols::Out&
         throw Error("Host is not available: {}", in.address.value());
     }
 
-    // supported protocols, with defaults
+    // supported protocols, tokenized with default port
+    // in *order* of preferences
     struct {
         Type protocol;
         std::string protocolStr;
         uint16_t port;
     } tries[] = {
         {Type::Powercom, "nut_powercom", 443},
-        {Type::Snmp, "nut_snmp", 161},
         {Type::Xml, "nut_xml_pdc", 80},
+        {Type::Snmp, "nut_snmp", 161},
     };
 
     for (auto& aux : tries) {
@@ -108,16 +109,6 @@ void Protocols::run(const commands::protocols::In& in, commands::protocols::Out&
                 }
                 break;
             }
-            case Type::Snmp: {
-                if (auto res = trySnmp(in, aux.port)) {
-                    logInfo("Found SNMP device on port {}", aux.port);
-                    protocol.reachable = true; // port is reachable
-                }
-                else {
-                    logInfo("Skipped SNMP, reason: {}", res.error());
-                }
-                break;
-            }
             case Type::Xml: {
                 if (auto res = tryXmlPdc(in, aux.port)) {
                     logInfo("Found XML device on port {}", aux.port);
@@ -125,6 +116,16 @@ void Protocols::run(const commands::protocols::In& in, commands::protocols::Out&
                 }
                 else {
                     logInfo("Skipped xml_pdc, reason: {}", res.error());
+                }
+                break;
+            }
+            case Type::Snmp: {
+                if (auto res = trySnmp(in, aux.port)) {
+                    logInfo("Found SNMP device on port {}", aux.port);
+                    protocol.reachable = true; // port is reachable
+                }
+                else {
+                    logInfo("Skipped SNMP, reason: {}", res.error());
                 }
                 break;
             }
