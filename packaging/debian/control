@@ -17,6 +17,7 @@ Build-Depends:
     libfty-common-socket-dev,
     libcxxtools-dev,
     libyaml-cpp-dev,
+    libfty-asset-dev,
     uuid-dev
 Standards-Version: 1.0.0
 Section: devel
