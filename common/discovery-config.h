@@ -4,7 +4,7 @@
 
 namespace fty::disco {
 
-static constexpr const char* ConfigFile = "/etc/fty-discovery-ng/fty-discovery-ng.conf";
+static constexpr const char* ConfigFile = "/etc/fty-discovery-ng/discovery.conf";
 
 struct ConfigDiscovery : public pack::Node
 {
