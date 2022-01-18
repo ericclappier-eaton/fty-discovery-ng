@@ -166,13 +166,17 @@ Expected<void> Protocols::tryPowercom(const commands::protocols::In& in, uint16_
         try {
             YAML::Node node = YAML::Load(*content);
 
-            if (node["device-type"].as<std::string>() == "ups") {
+            auto deviceType{node["device-type"].as<std::string>()};
+            if (deviceType == "ups") {
+                return {};
+            }
+            if (deviceType == "ats") {
                 return {};
             }
 
-            return unexpected("not supported device");
+            return unexpected("not supported device (" + deviceType + ")");
         } catch (const std::exception& e) {
-            return unexpected("not supported device: {}", e.what());
+            return unexpected("not supported device (" + std::string{e.what()} + ")");
         }
     } else {
         return unexpected(content.error());
