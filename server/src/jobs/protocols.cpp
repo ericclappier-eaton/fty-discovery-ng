@@ -49,24 +49,6 @@ inline std::ostream& operator<<(std::ostream& ss, Type type)
     return ss;
 }
 
-// =====================================================================================================================
-std::string Protocols::getProtocolStr(const Type type)
-{
-    std::string protocol;
-    switch (type) {
-        case Type::Snmp:
-            protocol = "nut_snmp";
-            break;
-        case Type::Xml:
-            protocol = "nut_xml_pdc";
-            break;
-        case Type::Powercom:
-            protocol = "nut_powercom";
-            break;
-    }
-    return protocol;
-}
-
 const std::pair<std::string, std::string> Protocols::splitPortFromProtocol(const std::string &str) {
     // split protocol and port with format "<protocol>:<port>"
     std::string protocol, port;
@@ -116,26 +98,27 @@ Expected<commands::protocols::Out> Protocols::getProtocols(const commands::proto
     // supported protocols, tokenized with default port
     // in *order* of preferences
     struct {
-        Type protocol;
+        Type        protocol;
         std::string protocolStr;
-        uint16_t port;
+        uint16_t    defaultPort;
     } tries[] = {
         {Type::Powercom, "nut_powercom", 443},
-        {Type::Xml, "nut_xml_pdc", 80},
-        {Type::Snmp, "nut_snmp", 161},
+        {Type::Xml,      "nut_xml_pdc",   80},
+        {Type::Snmp,     "nut_snmp",     161},
     };
 
     for (auto& aux : tries) {
         auto& protocol = out.append();
-        protocol.protocol = aux.protocolStr;
-        protocol.port = aux.port;
+        auto port = Protocols::getPort(aux.protocolStr, in);
+        protocol.protocol  = aux.protocolStr;
+        protocol.port      = (port != std::nullopt) ? *port : aux.defaultPort;
         protocol.reachable = false; // default, not reachable
 
         // try to reach server
         switch (aux.protocol) {
             case Type::Powercom: {
-                if (auto res = tryPowercom(in, aux.port)) {
-                    logInfo("Found Powercom device on port {}", aux.port);
+                if (auto res = tryPowercom(in, static_cast<uint16_t>(protocol.port))) {
+                    logInfo("Found Powercom device on port {}", protocol.port);
                     protocol.reachable = true; // port is reachable
                 }
                 else {
@@ -144,8 +127,8 @@ Expected<commands::protocols::Out> Protocols::getProtocols(const commands::proto
                 break;
             }
             case Type::Xml: {
-                if (auto res = tryXmlPdc(in, aux.port)) {
-                    logInfo("Found XML device on port {}", aux.port);
+                if (auto res = tryXmlPdc(in, static_cast<uint16_t>(protocol.port))) {
+                    logInfo("Found XML device on port {}", protocol.port);
                     protocol.reachable = true; // port is reachable
                 }
                 else {
@@ -154,8 +137,8 @@ Expected<commands::protocols::Out> Protocols::getProtocols(const commands::proto
                 break;
             }
             case Type::Snmp: {
-                if (auto res = trySnmp(in, aux.port)) {
-                    logInfo("Found SNMP device on port {}", aux.port);
+                if (auto res = trySnmp(in, static_cast<uint16_t>(protocol.port))) {
+                    logInfo("Found SNMP device on port {}", protocol.port);
                     protocol.reachable = true; // port is reachable
                 }
                 else {
@@ -184,9 +167,6 @@ void Protocols::run(const commands::protocols::In& in, commands::protocols::Out&
 
 Expected<void> Protocols::tryXmlPdc(const commands::protocols::In& in, uint16_t port) const
 {
-    // TBD_MERGE
-    //auto port = Protocols::getPort("nut_xml_pdc", in);
-    //impl::XmlPdc xml(in.address , (port != std::nullopt) ? *port : 80);
     impl::XmlPdc xml("http", in.address, port);
     if (auto prod = xml.get<impl::ProductInfo>("product.xml")) {
         if (!(prod->name == "Network Management Card" || prod->name == "HPE UPS Network Module")) {
@@ -209,9 +189,6 @@ Expected<void> Protocols::tryXmlPdc(const commands::protocols::In& in, uint16_t 
 
 Expected<void> Protocols::tryPowercom(const commands::protocols::In& in, uint16_t port) const
 {
-    // TBD_MERGE
-    //auto port = getPort("nut_powercom", in);
-    //neon::Neon ne(in.address, (port != std::nullopt) ? *port : 80);
     neon::Neon ne("https", in.address, port);
     if (auto content = ne.get("etn/v1/comm/services/powerdistributions1")) {
         try {
@@ -279,10 +256,6 @@ struct AutoRemove
 
 Expected<void> Protocols::trySnmp(const commands::protocols::In& in, uint16_t port) const
 {
-    // TBD_MERGE
-    //auto port = getPort("nut_snmp", in);
-    //std::string portStr = (port != std::nullopt) ? std::to_string(*port) : "161";
-    //logDebug("getPort: portStr={}", portStr);
     std::string portStr = std::to_string(port);
 
     addrinfo hints;
