@@ -49,13 +49,13 @@ public:
 
 private:
     /// Try out if endpoint support xml pdc protocol
-    Expected<void> tryXmlPdc(const commands::protocols::In& in, uint16_t port) const;
+    Expected<void> tryXmlPdc(const std::string& address, uint16_t port) const;
 
     /// Try out if endpoint support xnmp protocol
-    Expected<void> trySnmp(const commands::protocols::In& in, uint16_t port) const;
+    Expected<void> trySnmp(const std::string& address, uint16_t port) const;
 
     /// Try out if endpoint support genapi protocol
-    Expected<void> tryPowercom(const commands::protocols::In& in, uint16_t port) const;
+    Expected<void> tryPowercom(const std::string& address, uint16_t port) const;
 };
 
 } // namespace fty::disco::job
