@@ -117,7 +117,7 @@ Expected<commands::protocols::Out> Protocols::getProtocols(const commands::proto
         // try to reach server
         switch (aux.protocol) {
             case Type::Powercom: {
-                if (auto res = tryPowercom(in, static_cast<uint16_t>(protocol.port))) {
+                if (auto res = tryPowercom(in.address.value(), static_cast<uint16_t>(protocol.port))) {
                     logInfo("Found Powercom device on port {}", protocol.port);
                     protocol.reachable = true; // port is reachable
                 }
@@ -127,7 +127,7 @@ Expected<commands::protocols::Out> Protocols::getProtocols(const commands::proto
                 break;
             }
             case Type::Xml: {
-                if (auto res = tryXmlPdc(in, static_cast<uint16_t>(protocol.port))) {
+                if (auto res = tryXmlPdc(in.address.value(), static_cast<uint16_t>(protocol.port))) {
                     logInfo("Found XML device on port {}", protocol.port);
                     protocol.reachable = true; // port is reachable
                 }
@@ -137,7 +137,7 @@ Expected<commands::protocols::Out> Protocols::getProtocols(const commands::proto
                 break;
             }
             case Type::Snmp: {
-                if (auto res = trySnmp(in, static_cast<uint16_t>(protocol.port))) {
+                if (auto res = trySnmp(in.address.value(), static_cast<uint16_t>(protocol.port))) {
                     logInfo("Found SNMP device on port {}", protocol.port);
                     protocol.reachable = true; // port is reachable
                 }
@@ -169,9 +169,9 @@ void Protocols::run(const commands::protocols::In& in, commands::protocols::Out&
     }
 }
 
-Expected<void> Protocols::tryXmlPdc(const commands::protocols::In& in, uint16_t port) const
+Expected<void> Protocols::tryXmlPdc(const std::string& address, uint16_t port) const
 {
-    impl::XmlPdc xml("http", in.address, port);
+    impl::XmlPdc xml("http", address, port);
     if (auto prod = xml.get<impl::ProductInfo>("product.xml")) {
         if (!(prod->name == "Network Management Card" || prod->name == "HPE UPS Network Module")) {
             return unexpected("unsupported card type");
@@ -191,9 +191,9 @@ Expected<void> Protocols::tryXmlPdc(const commands::protocols::In& in, uint16_t 
     }
 }
 
-Expected<void> Protocols::tryPowercom(const commands::protocols::In& in, uint16_t port) const
+Expected<void> Protocols::tryPowercom(const std::string& address, uint16_t port) const
 {
-    neon::Neon ne("https", in.address, port);
+    neon::Neon ne("https", address, port);
     if (auto content = ne.get("etn/v1/comm/services/powerdistributions1")) {
         try {
             YAML::Node node = YAML::Load(*content);
@@ -258,7 +258,7 @@ struct AutoRemove
     std::function<void()> m_deleter;
 };
 
-Expected<void> Protocols::trySnmp(const commands::protocols::In& in, uint16_t port) const
+Expected<void> Protocols::trySnmp(const std::string& address, uint16_t port) const
 {
     std::string portStr = std::to_string(port);
 
@@ -270,7 +270,7 @@ Expected<void> Protocols::trySnmp(const commands::protocols::In& in, uint16_t po
     hints.ai_protocol = IPPROTO_UDP;
 
     addrinfo* addrInfo;
-    if (int ret = getaddrinfo(in.address.value().c_str(), portStr.c_str(), &hints, &addrInfo); ret != 0) {
+    if (int ret = getaddrinfo(address.c_str(), portStr.c_str(), &hints, &addrInfo); ret != 0) {
         return unexpected(gai_strerror(ret));
     }
     AutoRemove addInfoRem(addrInfo, &freeaddrinfo);
