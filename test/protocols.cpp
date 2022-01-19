@@ -46,7 +46,18 @@ TEST_CASE("Protocols / Not asset", "[protocols]")
     CHECK(ret);
     auto res = ret->userData.decode<commands::protocols::Out>();
     CHECK(res);
-    CHECK(0 == res->size());
+    CHECK(3 == res->size());
+    CHECK("nut_powercom" == (*res)[0].protocol);
+    CHECK(443 == (*res)[0].port);
+    CHECK(false == (*res)[0].reachable);
+
+    CHECK("nut_xml_pdc" == (*res)[1].protocol);
+    CHECK(80 == (*res)[1].port);
+    CHECK(false == (*res)[1].reachable);
+
+    CHECK("nut_snmp" == (*res)[2].protocol);
+    CHECK(161 == (*res)[2].port);
+    CHECK(false == (*res)[2].reachable);
 }
 
 TEST_CASE("Protocols / Invalid ip", "[protocols]")
@@ -77,28 +88,65 @@ TEST_CASE("Protocols / Fake request", "[protocols]")
         // Wait a moment for snmpsim init
         std::this_thread::sleep_for(std::chrono::seconds(1));
 
-        commands::protocols::In in;
-        in.address = "127.0.0.1";
-        in.port = 1161;
+        // with a global port defined
+        {
+            commands::protocols::In in;
+            in.address = "127.0.0.1";
+            in.port = 1161;
 
-        fty::disco::Message msg = Test::createMessage(commands::protocols::Subject);
-        msg.userData.setString(*pack::json::serialize(in));
+            fty::disco::Message msg = Test::createMessage(commands::protocols::Subject);
+            msg.userData.setString(*pack::json::serialize(in));
 
-        fty::Expected<fty::disco::Message> ret = Test::send(msg);
+            fty::Expected<fty::disco::Message> ret = Test::send(msg);
 
-        CHECK(ret);
-        auto res = ret->userData.decode<commands::protocols::Out>();
-        CHECK(res);
-        CHECK(1 == res->size());
-        // TBD_MERGE
-        CHECK("nut_snmp" == (*res)[0].protocol);
-        CHECK(161 == (*res)[0].port);
-        CHECK(true == (*res)[0].reachable);
+            CHECK(ret);
+            auto res = ret->userData.decode<commands::protocols::Out>();
+            CHECK(res);
+            CHECK(3 == res->size());
 
-        // TBD_MERGE
-        //CHECK("nut_xml_pdc" == (*res)[1].protocol);
-        //CHECK(4321 == (*res)[1].port);
-        //CHECK(false == (*res)[1].reachable);
+            CHECK("nut_powercom" == (*res)[0].protocol);
+            CHECK(1161  == (*res)[0].port);
+            CHECK(false == (*res)[0].reachable);
+
+            CHECK("nut_xml_pdc" == (*res)[1].protocol);
+            CHECK(1161  == (*res)[1].port);
+            CHECK(false == (*res)[1].reachable);
+
+            CHECK("nut_snmp" == (*res)[2].protocol);
+            CHECK(1161 == (*res)[2].port);
+            CHECK(true == (*res)[2].reachable);
+        }
+
+        // with the port defined in protocol
+        {
+            commands::protocols::In in;
+            in.address = "127.0.0.1";
+            in.protocols.append("nut_powercom:4443");
+            in.protocols.append("nut_xml_pdc:8080");
+            in.protocols.append("nut_snmp:1161");
+
+            fty::disco::Message msg = Test::createMessage(commands::protocols::Subject);
+            msg.userData.setString(*pack::json::serialize(in));
+
+            fty::Expected<fty::disco::Message> ret = Test::send(msg);
+
+            CHECK(ret);
+            auto res = ret->userData.decode<commands::protocols::Out>();
+            CHECK(res);
+            CHECK(3 == res->size());
+
+            CHECK("nut_powercom" == (*res)[0].protocol);
+            CHECK(4443  == (*res)[0].port);
+            CHECK(false == (*res)[0].reachable);
+
+            CHECK("nut_xml_pdc" == (*res)[1].protocol);
+            CHECK(8080  == (*res)[1].port);
+            CHECK(false == (*res)[1].reachable);
+
+            CHECK("nut_snmp" == (*res)[2].protocol);
+            CHECK(1161 == (*res)[2].port);
+            CHECK(true == (*res)[2].reachable);
+        }
 
         proc.interrupt();
         proc.wait();
@@ -122,16 +170,6 @@ TEST_CASE("Protocols / resolve", "[protocols]")
     msg.userData.setString(*pack::json::serialize(in2));
 
     fty::Expected<fty::disco::Message> ret2 = Test::send(msg);
-}
-
-TEST_CASE("Protocols / getProtocolStr", "[protocols]")
-{
-    auto res = fty::disco::job::Protocols::getProtocolStr(fty::disco::job::Type::Powercom);
-    CHECK(res == "nut_powercom");
-    res = fty::disco::job::Protocols::getProtocolStr(fty::disco::job::Type::Xml);
-    CHECK(res == "nut_xml_pdc");
-    res = fty::disco::job::Protocols::getProtocolStr(fty::disco::job::Type::Snmp);
-    CHECK(res == "nut_snmp");
 }
 
 TEST_CASE("Protocols / splitPortFromProtocol", "[protocols]")
