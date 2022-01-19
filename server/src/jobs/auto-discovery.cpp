@@ -298,20 +298,18 @@ void AutoDiscovery::scan(AutoDiscovery* autoDiscovery, const std::string& ipAddr
             autoDiscovery->updateStatusDiscoveryProgress();
             return;
         }
-        std::ostringstream listStr;
-        std::for_each((*listProtocols).begin(), (*listProtocols).end(), [&listStr](const job::Type& type) {
-            listStr << Protocols::getProtocolStr(type) << " ";
-        });
-        logDebug("Found protocols [ {}] for {}", listStr.str(), ipAddress);
-
-        Assets assets;
+        if (auto listStr = pack::json::serialize(*listProtocols, pack::Option::WithDefaults)) {
+            logDebug("Found protocols for {}:\n{}", ipAddress, *listStr);
+        }
 
         bool found = false;
+        Assets assets;
+
         // For each protocols read, get assets list available
         // Note: stop when found first assets with the protocol in progress
-        for (const auto& protocol : *listProtocols) {
+        for (const auto& elt : *listProtocols) {
             std::string strPort;
-            auto strProtocol = Protocols::getProtocolStr(protocol);
+            auto strProtocol = elt.protocol;
 
             // Test if protocol tested is requested
             auto& listProtocolRequested = autoDiscovery->m_params.protocols;

@@ -458,7 +458,7 @@ void Assets::enrichAsset(commands::assets::Return& asset)
         auto serial = getAssetVal(asset.asset, "serial_no");
         std::string uuid; //empty
         if (manufacturer && model && serial) {
-            uuid = fty::impl::generateUUID(*manufacturer, *model, *serial), false);
+            uuid = impl::generateUUID(*manufacturer, *model, *serial);
         }
         addAssetVal(asset.asset, "uuid", uuid, false);
     }
