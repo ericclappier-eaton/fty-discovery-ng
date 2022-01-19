@@ -167,8 +167,12 @@ void Protocols::run(const commands::protocols::In& in, commands::protocols::Out&
         throw Error(protocols.error().c_str());
     }
     out = *protocols;
-    std::string resp = *pack::json::serialize(out, pack::Option::WithDefaults);
-    logInfo("Return {}", resp);
+    if (auto resp = pack::json::serialize(out, pack::Option::WithDefaults)) {
+        logInfo("Return {}", *resp);
+    }
+    else {
+        logError("Error during serialisation: {}", resp.error());
+    }
 }
 
 Expected<void> Protocols::tryXmlPdc(const commands::protocols::In& in, uint16_t port) const
