@@ -47,6 +47,9 @@ public:
     // Get optional port
     static std::optional<uint16_t> getPort(const std::string& protocolIn, const commands::protocols::In& in);
 
+    // Test input option (protocol filter and port)
+    //static std::optional<const commands::protocols::Option> getOption(const std::string& protocolIn, const commands::protocols::In& in);
+
 private:
     /// Try out if endpoint support xml pdc protocol
     Expected<void> tryXmlPdc(const std::string& address, uint16_t port) const;

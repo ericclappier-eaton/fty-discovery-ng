@@ -12,16 +12,28 @@ static constexpr const char* Channel = "discovery";
 namespace commands::protocols {
     static constexpr const char* Subject = "protocols";
 
+    // TBD: To be reworked with scan auto interface
+    /*class Option: public pack::Node
+    {
+    public:
+        pack::String protocol = FIELD("protocol");
+        pack::UInt32 port     = FIELD("port", 0);
+        pack::Bool   ignore   = FIELD("ignore");
+    public:
+        using pack::Node::Node;
+        META(Option, protocol, port, ignore);
+    };*/
+
     class In : public pack::Node
     {
     public:
-        pack::String address       = FIELD("address");
-        pack::UInt32 port          = FIELD("port", 0);   // optional
+        pack::String     address   = FIELD("address");
         pack::StringList protocols = FIELD("protocols"); // optional
+        //pack::ObjectList<Option> options = FIELD("options"); // optional
 
     public:
         using pack::Node::Node;
-        META(In, address, port, protocols);
+        META(In, address, protocols);
     };
 
     class Return: public pack::Node

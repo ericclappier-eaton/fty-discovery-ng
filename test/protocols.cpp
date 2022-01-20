@@ -88,42 +88,13 @@ TEST_CASE("Protocols / Fake request", "[protocols]")
         // Wait a moment for snmpsim init
         std::this_thread::sleep_for(std::chrono::seconds(1));
 
-        // with a global port defined
-        {
-            commands::protocols::In in;
-            in.address = "127.0.0.1";
-            in.port = 1161;
-
-            fty::disco::Message msg = Test::createMessage(commands::protocols::Subject);
-            msg.userData.setString(*pack::json::serialize(in));
-
-            fty::Expected<fty::disco::Message> ret = Test::send(msg);
-
-            CHECK(ret);
-            auto res = ret->userData.decode<commands::protocols::Out>();
-            CHECK(res);
-            CHECK(3 == res->size());
-
-            CHECK("nut_powercom" == (*res)[0].protocol);
-            CHECK(1161  == (*res)[0].port);
-            CHECK(false == (*res)[0].reachable);
-
-            CHECK("nut_xml_pdc" == (*res)[1].protocol);
-            CHECK(1161  == (*res)[1].port);
-            CHECK(false == (*res)[1].reachable);
-
-            CHECK("nut_snmp" == (*res)[2].protocol);
-            CHECK(1161 == (*res)[2].port);
-            CHECK(true == (*res)[2].reachable);
-        }
-
         // with the port defined in protocol
         {
             commands::protocols::In in;
             in.address = "127.0.0.1";
             in.protocols.append("nut_powercom:4443");
             in.protocols.append("nut_xml_pdc:8080");
-            in.protocols.append("nut_snmp:1161");
+            in.protocols.append("nut_snmp:1161");  // Only this one will match
 
             fty::disco::Message msg = Test::createMessage(commands::protocols::Subject);
             msg.userData.setString(*pack::json::serialize(in));
@@ -190,15 +161,9 @@ TEST_CASE("Protocols / getPort", "[protocols]")
     fty::disco::commands::protocols::In in;
     auto res = fty::disco::job::Protocols::getPort("", in);
     CHECK(res == std::nullopt);
-    in.port = 162;
-    res = fty::disco::job::Protocols::getPort("", in);
-    CHECK(*res == 162);
     in.protocols.append("nut_snmp:163");
     res = fty::disco::job::Protocols::getPort("", in);
-    CHECK(*res == 162);
-    res = fty::disco::job::Protocols::getPort("nut_snmp", in);
-    CHECK(*res == 162);
-    in.port = 0;
+    CHECK(res == std::nullopt);
     res = fty::disco::job::Protocols::getPort("nut_snmp", in);
     CHECK(*res == 163);
     res = fty::disco::job::Protocols::getPort("nut_bad", in);

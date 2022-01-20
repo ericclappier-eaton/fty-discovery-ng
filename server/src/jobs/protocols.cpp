@@ -68,11 +68,7 @@ const std::pair<std::string, std::string> Protocols::splitPortFromProtocol(const
 }
 
 std::optional<uint16_t> Protocols::getPort(const std::string& protocolIn, const commands::protocols::In& in) {
-    if (in.port != 0) {
-        logDebug("getPort: get port={}", in.port.value());
-        return in.port;
-    }
-    else if (in.protocols.size() != 0) {
+    if (in.protocols.size() != 0) {
         for (const auto& protocolRequested : in.protocols) {
             auto split = Protocols::splitPortFromProtocol(protocolRequested);
             std::string protocol = split.first;
@@ -86,6 +82,21 @@ std::optional<uint16_t> Protocols::getPort(const std::string& protocolIn, const 
     }
     return std::nullopt;
 }
+
+// TBD: To be reworked with scan auto interface
+/*std::optional<const commands::protocols::Option> Protocols::getOption(const std::string& protocolIn, const commands::protocols::In& in) {
+    if (in.options.size() != 0) {
+        for (const auto& option : in.options) {
+            // test if option found in options
+            if (option.protocol == protocolIn) {
+                // return option found in options
+                return option;
+            }
+        }
+    }
+    // no option avaliable, any protocol filtered
+    return std::nullopt;
+}*/
 
 // =====================================================================================================================
 Expected<commands::protocols::Out> Protocols::getProtocols(const commands::protocols::In& in) const
@@ -116,6 +127,14 @@ Expected<commands::protocols::Out> Protocols::getProtocols(const commands::proto
         protocol.port      = (port != std::nullopt) ? *port : aux.defaultPort;
         protocol.reachable = false; // default, port is not reachable
         protocol.available = Return::Available::No; // and protocol is not available
+        // TBD: To be reworked with scan auto interface
+        /*protocol.ignored  = false; // default, not filtered
+        auto option = Protocols::getOption(aux.protocolStr, in);
+        if (!option || !option->ignore) {
+            protocol.protocol  = aux.protocolStr;
+            protocol.port      = (option && (option->port != 0)) ? option->port : aux.defaultPort;
+            protocol.ignored   = option ? option->ignore : false;
+            protocol.reachable = false; // default, not reachable*/
 
         // try to reach server
         switch (aux.protocol) {
@@ -156,7 +175,6 @@ Expected<commands::protocols::Out> Protocols::getProtocols(const commands::proto
                 logError("protocol not handled (type: {})", aux.protocol);
         }
     }
-
     return out;
 }
 
