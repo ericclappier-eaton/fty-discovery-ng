@@ -246,11 +246,11 @@ namespace commands::scan {
 
             pack::Enum<Status> status     = FIELD("status");
             pack::String       progress   = FIELD("progress");
-            pack::Int64        discovered = FIELD("discovered");
-            pack::Int64        ups        = FIELD("ups-discovered");
-            pack::Int64        epdu       = FIELD("epdu-discovered");
-            pack::Int64        sts        = FIELD("sts-discovered");
-            pack::Int64        sensors    = FIELD("sensors-discovered");
+            pack::UInt32       discovered = FIELD("discovered");
+            pack::UInt32       ups        = FIELD("ups-discovered");
+            pack::UInt32       epdu       = FIELD("epdu-discovered");
+            pack::UInt32       sts        = FIELD("sts-discovered");
+            pack::UInt32       sensors    = FIELD("sensors-discovered");
 
         public:
             using pack::Node::Node;
@@ -266,7 +266,7 @@ namespace commands::scan {
         enum class Status
         {
             Success,
-            Fail,
+            Failure,
             Unknown
         };
 
@@ -300,7 +300,7 @@ namespace commands::scan {
                 Unknown,
                 Local,
                 Ip,
-                Multy,
+                Multi,
                 Full
             };
             pack::StringList linkSrc       = FIELD("linkSrc");

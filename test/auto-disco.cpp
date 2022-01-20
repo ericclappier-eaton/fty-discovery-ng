@@ -368,7 +368,7 @@ TEST_CASE("Auto disco / Test real scan auto with simulation", "[auto]")
     discoAuto.statusDiscoveryInit();
 
     auto initStatus = [](status::Out::Status status,
-            int discovered, int ups, int epdu, int sts, int sensors) -> const status::Out {
+        uint32_t discovered, uint32_t ups, uint32_t epdu, uint32_t sts, uint32_t sensors) -> const status::Out {
         status::Out out;
         out.status     = status;
         out.discovered = discovered;

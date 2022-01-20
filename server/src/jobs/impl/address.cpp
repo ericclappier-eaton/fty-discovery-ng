@@ -11,7 +11,6 @@
 
 namespace address {
 
-// return the first ip from iteration
 fty::Expected<std::string> AddressParser::itIpInit(const std::string& startIP, const std::string& stopIP) {
 
 	if (startIP.empty()) {
@@ -66,7 +65,6 @@ fty::Expected<std::string> AddressParser::itIpInit(const std::string& startIP, c
     return *host;
 }
 
-// return the next IP from iteration
 fty::Expected<std::string> AddressParser::itIpNext() {
 
     if (start.s_addr == 0 && stop.s_addr == 0) {
@@ -88,18 +86,15 @@ fty::Expected<std::string> AddressParser::itIpNext() {
     return *res;
 }
 
-// test if it is a cidr address
 bool AddressParser::isCidr(const std::string& cidr) {
     return (!cidr.empty() && cidr.find("/") != std::string::npos) ? true : false;
 }
 
-// test if it is a range address
 bool AddressParser::isRange(const std::string& range) {
     return (!range.empty() && range.find("-") != std::string::npos) ? true : false;
 }
 
 // TBD: remove minus subnet and broadcast address ???
-// get string start and stop addresses from cdir
 fty::Expected<std::pair<std::string, std::string>> AddressParser::cidrToLimits(const std::string& cidr) {
 
     if (cidr.empty()) {
@@ -160,7 +155,6 @@ fty::Expected<std::pair<std::string, std::string>> AddressParser::cidrToLimits(c
     return std::make_pair(*startIp, *stopIp);
 }
 
-// get string start and stop addresses from range
 fty::Expected<std::pair<std::string, std::string>> AddressParser::rangeToLimits(const std::string& range) {
 
     if (range.empty()) {
@@ -186,7 +180,6 @@ fty::Expected<std::pair<std::string, std::string>> AddressParser::rangeToLimits(
     return std::make_pair(startIp, stopIp);
 }
 
-// get range ip list
 fty::Expected<std::vector<std::string>> AddressParser::getRangeIp(const std::string& range) {
 
     std::pair<std::string, std::string> addrLimits;
@@ -236,7 +229,6 @@ fty::Expected<std::vector<std::string>> AddressParser::getRangeIp(const std::str
     return listIp;
 }
 
-// get local range ip list
 fty::Expected<std::vector<std::string>> AddressParser::getLocalRangeIp() {
 
     std::vector<std::string> fullListIp;
@@ -318,8 +310,7 @@ fty::Expected<std::vector<std::string>> AddressParser::getLocalRangeIp() {
     return fullListIp;
 }
 
-// get address from cidr
-fty::Expected<std::string> AddressParser::getAddrCidr(const std::string address, uint prefix) {
+fty::Expected<std::string> AddressParser::getAddrCidr(const std::string& address, uint prefix) {
 
     auto isValid = [](CIDR* cidr) {
         in_addr  inAddr;
@@ -353,8 +344,6 @@ fty::Expected<std::string> AddressParser::getAddrCidr(const std::string address,
     return addr;
 }
 
-
-// return string ip address from address struct
 fty::Expected<std::string> AddressParser::ntop(struct in_addr ip) {
 
     char hbuf[NI_MAXHOST];
@@ -370,14 +359,14 @@ fty::Expected<std::string> AddressParser::ntop(struct in_addr ip) {
     return std::string(hbuf);
 }
 
-// return mask computed
-int AddressParser::maskNbBit(std::string mask)
+int AddressParser::maskNbBit(const std::string& mask)
 {
     size_t      pos;
     int         res = 0;
     std::string part;
-    while ((pos = mask.find(".")) != std::string::npos) {
-        part = mask.substr(0, pos);
+    std::string maskComputed { mask };
+    while ((pos = maskComputed.find(".")) != std::string::npos) {
+        part = maskComputed.substr(0, pos);
         if (part == "255")
             res += 8;
         else if (part == "254")
@@ -399,26 +388,26 @@ int AddressParser::maskNbBit(std::string mask)
         else // error
             return -1;
 
-        mask.erase(0, pos + 1);
+        maskComputed.erase(0, pos + 1);
     }
 
-    if (mask == "255")
+    if (maskComputed == "255")
         res += 8;
-    else if (mask == "254")
+    else if (maskComputed == "254")
         res += 7;
-    else if (mask == "252")
+    else if (maskComputed == "252")
         res += 6;
-    else if (mask == "248")
+    else if (maskComputed == "248")
         res += 5;
-    else if (mask == "240")
+    else if (maskComputed == "240")
         res += 4;
-    else if (mask == "224")
+    else if (maskComputed == "224")
         res += 3;
-    else if (mask == "192")
+    else if (maskComputed == "192")
         res += 2;
-    else if (mask == "128")
+    else if (maskComputed == "128")
         res += 1;
-    else if (mask == "0")
+    else if (maskComputed == "0")
         return res;
     else
         return -1;

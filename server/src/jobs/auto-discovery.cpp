@@ -156,7 +156,7 @@ Expected<void> AutoDiscovery::readConfig(const disco::commands::scan::start::In&
         }
     }
     // Multi scan
-    else if (in.type == commands::scan::start::In::Type::Multy) {
+    else if (in.type == commands::scan::start::In::Type::Multi) {
         if (in.scans.size() == 0) {
             fty::unexpected("Scans list empty");
         }
