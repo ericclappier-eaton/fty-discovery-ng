@@ -13,7 +13,7 @@ namespace commands::scan::start {
                     return "localscan";
                 case Type::Ip:
                     return "ipscan";
-                case Type::Multy:
+                case Type::Multi:
                     return "multiscan";
                 case Type::Full:
                     return "fullscan";
@@ -36,7 +36,7 @@ namespace commands::scan::start {
         } else if (strval == "ipscan") {
             value = Type::Ip;
         } else if (strval == "multiscan") {
-            value = Type::Multy;
+            value = Type::Multi;
         } else if (strval == "fullscan") {
             value = Type::Full;
         } else {
@@ -95,8 +95,8 @@ namespace commands::scan {
             switch (value) {
                 case Status::Success:
                     return "success";
-                case Status::Fail:
-                    return "fail";
+                case Status::Failure:
+                    return "failure";
                 case Status::Unknown:
                     return "unknown";
             }
@@ -112,8 +112,8 @@ namespace commands::scan {
         ss >> strval;
         if (strval == "success") {
             value = Status::Success;
-        } else if (strval == "fail") {
-            value = Status::Fail;
+        } else if (strval == "failure") {
+            value = Status::Failure;
         } else {
             value = Status::Unknown;
         }

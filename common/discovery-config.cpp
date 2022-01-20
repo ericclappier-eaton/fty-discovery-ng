@@ -30,9 +30,9 @@ std::ostream& operator<<(std::ostream& ss, ConfigDiscovery::Discovery::Type valu
             case Type::Full:
                 return "fullscan";
             case Type::Unknown:
-                return "UNKNOWN";
+                return "unknown";
         }
-        return "Unknown";
+        return "unknown";
     }();
     return ss;
 }

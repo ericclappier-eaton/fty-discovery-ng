@@ -9,8 +9,7 @@
 #include <catch2/catch.hpp>
 #include <fty_log.h>
 #include <thread>
-#include <mlm_library.h>
-#include <mlm_server.h>
+#include <malamute.h>
 
 class Test
 {
