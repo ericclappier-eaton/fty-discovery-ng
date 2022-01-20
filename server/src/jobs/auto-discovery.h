@@ -30,7 +30,6 @@ public:
     static const uint32_t SCAN_CHECK_PERIOD_MS = 1000;
     static const uint32_t SCAN_MIN_NUM_THREAD  = 5;
 
-    // TBD: To centralise with rest status ???
     enum class State {
         Unknown,
         CancelledByUser,
@@ -38,13 +37,13 @@ public:
         InProgress
     };
     struct StatusDiscovery {
-        State           state;
-        uint32_t        progress;
-        uint32_t        discovered;
-        uint32_t        ups;
-        uint32_t        epdu;
-        uint32_t        sts;
-        uint32_t        sensors;
+        State    state;
+        uint32_t progress;
+        uint32_t discovered;
+        uint32_t ups;
+        uint32_t epdu;
+        uint32_t sts;
+        uint32_t sensors;
     };
 
     enum class AssetStatus
@@ -65,6 +64,7 @@ public:
     // Stop current discover
     Expected<void> stop();
 
+    // Get current discover status
     const StatusDiscovery& getStatus() { return m_statusDiscovery; };
 
     inline void initListIpAddressNb(uint64_t listIpAddressNb) { m_listIpAddressNb = listIpAddressNb; };

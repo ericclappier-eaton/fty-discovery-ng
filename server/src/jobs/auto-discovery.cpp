@@ -20,7 +20,6 @@
 #include "src/config.h"
 #include "impl/address.h"
 #include <asset/asset-manager.h>
-//#include <fty_asset_dto.h>  // TBD Remove cxxtools ???
 #include <string>
 #include <sys/types.h>
 #include <fty_log.h>
@@ -392,7 +391,6 @@ void AutoDiscovery::scan(AutoDiscovery* autoDiscovery, const std::string& ipAddr
 
                         // Now create sensors attached to the asset
                         for (auto& sensor : asset.sensors) {
-                            // TBD add a function ???
                             asset::create::Request reqSensor;
                             reqSensor.type     = sensor.type;
                             reqSensor.sub_type = sensor.subtype;
