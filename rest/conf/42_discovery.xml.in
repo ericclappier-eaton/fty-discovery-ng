@@ -49,9 +49,3 @@
     <method>DELETE</method>
 </mapping>
 
-<!-- TBD TO REMOVE -->
-<mapping>
-    <target>discovery/auto@lib${NAME}</target>
-    <url>^/api/v1/admin/discovery-ng/auto$</url>
-    <method>POST</method>
-</mapping>
