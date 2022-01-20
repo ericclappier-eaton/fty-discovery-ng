@@ -32,22 +32,33 @@ public:
     AddressParser(const AddressParser&);
     ~AddressParser() = default;
 
+    // return the first ip from iteration
     fty::Expected<std::string> itIpInit(const std::string& startIP, const std::string& stopIP);
+    // return the next IP from iteration
     fty::Expected<std::string> itIpNext();
 
+    // test if it is a cidr address
     static bool isCidr(const std::string& cidr);
+    // test if it is a range address
     static bool isRange(const std::string& range);
 
+    // get string start and stop addresses from cdir
     static fty::Expected<std::pair<std::string, std::string>> cidrToLimits(const std::string& cidr);
+    // get string start and stop addresses from range
     static fty::Expected<std::pair<std::string, std::string>> rangeToLimits(const std::string& range);
 
+    // get range ip list
     static fty::Expected<std::vector<std::string>> getRangeIp(const std::string& range);
+    // get local range ip list
     static fty::Expected<std::vector<std::string>> getLocalRangeIp();
 
 private:
+    // get address from cidr
+    static fty::Expected<std::string> getAddrCidr(const std::string& address, uint prefix);
+    // return string ip address from address struct
     static fty::Expected<std::string> ntop(struct in_addr ip);
-    static int maskNbBit(std::string mask);
-    static fty::Expected<std::string> getAddrCidr(const std::string address, uint prefix);
+    // return mask computed
+    static int maskNbBit(const std::string& mask);
 
     struct in_addr start;
 	struct in_addr stop;
