@@ -40,7 +40,7 @@ unsigned Mibs::run()
     }
 
     if (auto list = mibs(param)) {
-        m_reply << *list << "\n\n";
+        m_reply << *list;
         return HTTP_OK;
     } else {
         throw rest::errors::Internal(list.error());
@@ -49,16 +49,18 @@ unsigned Mibs::run()
 
 Expected<std::string> Mibs::mibs(const commands::mibs::In& param)
 {
+    static constexpr const char* ACTOR_NAME = "fty-discovery-ng-rest_mibs";
+
     disco::MessageBus bus;
-    if (auto res = bus.init("discovery_rest"); !res) {
+    if (auto res = bus.init(ACTOR_NAME); !res) {
         return unexpected(res.error());
     }
 
     disco::Message msg;
     msg.userData.setString(*pack::json::serialize(param));
+
     msg.meta.to      = "discovery-ng";
     msg.meta.subject = commands::mibs::Subject;
-    msg.meta.from    = "discovery_rest";
 
     if (Expected<disco::Message> resp = bus.send(fty::Channel, msg)) {
         if (resp->meta.status == disco::Message::Status::Error) {

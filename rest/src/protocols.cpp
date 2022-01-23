@@ -40,7 +40,7 @@ unsigned Protocols::run()
     }
 
     if (auto list = protocols(param)) {
-        m_reply << *list << "\n\n";
+        m_reply << *list;
         return HTTP_OK;
     } else {
         throw rest::errors::Internal(list.error());
@@ -49,8 +49,10 @@ unsigned Protocols::run()
 
 Expected<std::string> Protocols::protocols(const commands::protocols::In& param)
 {
+    static constexpr const char* ACTOR_NAME = "fty-discovery-ng-rest_protocols";
+
     disco::MessageBus bus;
-    if (auto res = bus.init("discovery_rest"); !res) {
+    if (auto res = bus.init(ACTOR_NAME); !res) {
         return unexpected(res.error());
     }
 
@@ -59,7 +61,6 @@ Expected<std::string> Protocols::protocols(const commands::protocols::In& param)
 
     msg.meta.to      = "discovery-ng";
     msg.meta.subject = commands::protocols::Subject;
-    msg.meta.from    = "discovery_rest";
 
     if (Expected<disco::Message> resp = bus.send(fty::Channel, msg)) {
         if (resp->meta.status == disco::Message::Status::Error) {

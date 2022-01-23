@@ -45,8 +45,10 @@ void Discovery::doStop()
 
 bool Discovery::loadConfig()
 {
+    logDebug("Load config from '{}'", m_configPath);
+
     if (auto ret = pack::yaml::deserializeFile(m_configPath, Config::instance()); !ret) {
-        log_error(ret.error().c_str());
+        logError(ret.error());
         return false;
     }
     return true;
@@ -79,14 +81,17 @@ int Discovery::run()
 
 void Discovery::discover(const disco::Message& msg)
 {
-    log_debug("Discovery: got message %s", msg.dump().c_str());
-    log_debug("Payload: %s", msg.userData.asString().c_str());
+    logDebug("Discovery: got message {}", msg.dump());
+    logDebug("Payload: {}", msg.userData.asString());
+
     if (msg.meta.subject == commands::protocols::Subject) {
         m_pool.pushWorker<job::Protocols>(msg, m_bus);
     } else if (msg.meta.subject == commands::mibs::Subject) {
         m_pool.pushWorker<job::Mibs>(msg, m_bus);
     } else if (msg.meta.subject == commands::assets::Subject) {
         m_pool.pushWorker<job::Assets>(msg, m_bus);
+    } else {
+        logError("Subject not handled {}", msg.meta.subject);
     }
 }
 
