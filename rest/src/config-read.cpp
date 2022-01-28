@@ -10,27 +10,14 @@ unsigned ConfigRead::run()
     rest::User user(m_request);
     if (auto ret = checkPermissions(user.profile(), m_permissions); !ret) {
         throw rest::Error(ret.error());
-    } 
-
-    commands::config::read::In in;
-
-    if (auto key = m_request.queryArg<std::string>("key"); !key) {
-        if (auto body = m_request.body(); body.empty()) {
-            throw rest::errors::RequestParamRequired("key");
-        } else if (auto ret = pack::json::deserialize(body, in); !ret) {
-            throw rest::errors::Internal(ret.error());
-        }
-    } else {
-        in.append(*key);
     }
-
+    
     commands::config::read::Out out;
-    ConfigDiscoveryManager::instance().load();
 
-    if (auto ret = ConfigDiscoveryManager::instance().commandRead(in); !ret) {
-        throw rest::errors::Internal(ret.error());
+    if (auto conf = ConfigDiscoveryManager::instance().load(); !conf) {
+        throw rest::errors::Internal(conf.error());
     } else {
-        out = *ret;
+        out = *conf;
     }
 
     m_reply << *pack::json::serialize(out, pack::Option::PrettyPrint);
