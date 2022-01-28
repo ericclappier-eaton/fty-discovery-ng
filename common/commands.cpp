@@ -2,50 +2,6 @@
 
 namespace fty::disco {
 
-namespace commands::scan::start {
-    std::ostream& operator<<(std::ostream& ss, In::Type value)
-    {
-        using Type = In::Type;
-
-        ss << [&]() {
-            switch (value) {
-                case Type::Local:
-                    return "localscan";
-                case Type::Ip:
-                    return "ipscan";
-                case Type::Multi:
-                    return "multiscan";
-                case Type::Full:
-                    return "fullscan";
-                case Type::Unknown:
-                    return "unknown";
-            }
-            return "unknown";
-        }();
-        return ss;
-    }
-
-    std::istream& operator>>(std::istream& ss, In::Type& value)
-    {
-        using Type = In::Type;
-
-        std::string strval;
-        ss >> strval;
-        if (strval == "localscan") {
-            value = Type::Local;
-        } else if (strval == "ipscan") {
-            value = Type::Ip;
-        } else if (strval == "multiscan") {
-            value = Type::Multi;
-        } else if (strval == "fullscan") {
-            value = Type::Full;
-        } else {
-            value = Type::Unknown;
-        }
-        return ss;
-    }
-} // namespace commands::scan::start
-
 namespace commands::scan::status {
     std::ostream& operator<<(std::ostream& ss, Out::Status value)
     {

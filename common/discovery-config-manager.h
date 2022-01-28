@@ -17,11 +17,6 @@ public:
 
     void set(const ConfigDiscovery& config);
 
-    fty::Expected<void>                     commandCreate(const commands::config::Config& in);
-    fty::Expected<commands::config::Config> commandRead(const pack::StringList& keys) const;
-
-    fty::Expected<void> commandReadKey(const std::string& key, commands::config::Config& out) const;
-
 private:
     ConfigDiscoveryManager() = default;
 

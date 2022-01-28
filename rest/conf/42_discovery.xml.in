@@ -17,35 +17,31 @@
 
 <mapping>
     <target>discovery/config/create@lib${NAME}</target>
-    <url>^/api/v1/admin/config-ng/create.*$</url>
-    <method>POST</method>
+    <url>^/api/v1/admin/discovery/auto-discovery-config$</url>
+    <method>PUT</method>
 </mapping>
+
 <mapping>
     <target>discovery/config/read@lib${NAME}</target>
-    <url>^/api/v1/admin/config-ng/read.*$</url>
+    <url>^/api/v1/admin/discovery/auto-discovery-config$</url>
     <method>GET</method>
-</mapping>
-<mapping>
-    <target>discovery/config/read@lib${NAME}</target>
-    <url>^/api/v1/admin/config-ng/read.*$</url>
-    <method>POST</method>
 </mapping>
 
 <mapping>
   <target>discovery/scan/start@lib${NAME}</target>
-  <url>^/api/v1/admin/scan-ng.*$</url>
+  <url>^/api/v1/admin/discovery/auto-discovery-scan$</url>
   <method>POST</method>
 </mapping>
 
 <mapping>
   <target>discovery/scan/status@lib${NAME}</target>
-  <url>^/api/v1/admin/scan-ng.*$</url>
+  <url>^/api/v1/admin/discovery/auto-discovery-scan$</url>
   <method>GET</method>
 </mapping>
 
 <mapping>
     <target>discovery/scan/stop@lib${NAME}</target>
-    <url>^/api/v1/admin/scan-ng.*$</url>
+    <url>^/api/v1/admin/discovery/auto-discovery-scan$</url>
     <method>DELETE</method>
 </mapping>
 
