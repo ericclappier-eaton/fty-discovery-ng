@@ -8,17 +8,6 @@ static constexpr const char* ConfigFile = "/etc/fty-discovery-ng/discovery.conf"
 
 struct ConfigDiscovery : public pack::Node
 {
-    struct Server : public pack::Node
-    {
-        pack::Int64  timeout    = FIELD("timeout");
-        pack::Int32  background = FIELD("background");
-        pack::String workdir    = FIELD("workdir");
-        pack::Int32  verbose    = FIELD("verbose");
-
-        using pack::Node::Node;
-        META(Server, timeout, background, workdir, verbose);
-    };
-
     struct Discovery : public pack::Node
     {
         enum class Type
@@ -71,18 +60,6 @@ struct ConfigDiscovery : public pack::Node
         META(DefaultValuesLink, src, type);
     };
 
-    struct Parameters : public pack::Node
-    {
-        pack::String mappingFile       = FIELD("mappingFile");
-        pack::Int32  maxDumpPoolNumber = FIELD("maxDumpPoolNumber");
-        pack::Int32  maxScanPoolNumber = FIELD("maxScanPoolNumber");
-        pack::Int32  nutScannerTimeOut = FIELD("nutScannerTimeOut");
-        pack::Int32  dumpDataLoopTime  = FIELD("dumpDataLoopTime");
-
-        using pack::Node::Node;
-        META(Parameters, mappingFile, maxDumpPoolNumber, maxScanPoolNumber, nutScannerTimeOut, dumpDataLoopTime);
-    };
-
     struct DefaultValuesExt : public pack::Node
     {
         pack::String key   = FIELD("key");
@@ -92,18 +69,16 @@ struct ConfigDiscovery : public pack::Node
         META(DefaultValuesExt, key, value);
     };
 
-    Server           server    = FIELD("server");
     Discovery        discovery = FIELD("discovery");
     Disabled         disabled  = FIELD("disabled");
     DefaultValuesAux aux       = FIELD("defaultValuesAux");
 
     pack::ObjectList<DefaultValuesLink> links = FIELD("defaultValuesLink");
 
-    Parameters      parameters = FIELD("parameters");
     pack::ObjectList<DefaultValuesExt> ext = FIELD("defaultValuesExt");
 
     using pack::Node::Node;
-    META(ConfigDiscovery, server, discovery, disabled, aux, links, parameters, ext);
+    META(ConfigDiscovery, discovery, disabled, aux, links, ext);
 
     fty::Expected<void> save(const std::string& path = ConfigFile);
     fty::Expected<void> load(const std::string& path = ConfigFile);

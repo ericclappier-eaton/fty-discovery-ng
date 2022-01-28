@@ -84,7 +84,7 @@ TEST_CASE("Config manager load")
     }
 
     auto load = manager.load("config-discovery.conf");
-    REQUIRE(load.value().parameters.dumpDataLoopTime == 9988);
+    REQUIRE(load.value().aux.createUser == "somesome");
 }
 
 TEST_CASE("Config manager save/load")

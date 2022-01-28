@@ -100,18 +100,6 @@ fty::Expected<void> ConfigDiscoveryManager::commandCreate(const commands::config
     if (in.protocols.hasValue()) {
         tmp.discovery.protocols = in.protocols;
     }
-    if (in.dumpPool.hasValue()) {
-        tmp.parameters.maxDumpPoolNumber = in.dumpPool;
-    }
-    if (in.scanPool.hasValue()) {
-        tmp.parameters.maxScanPoolNumber = in.scanPool;
-    }
-    if (in.scanTimeout.hasValue()) {
-        tmp.parameters.nutScannerTimeOut = in.scanTimeout;
-    }
-    if (in.dumpLooptime.hasValue()) {
-        tmp.parameters.dumpDataLoopTime = in.dumpLooptime;
-    }
 
     m_config = tmp;
 
@@ -167,14 +155,6 @@ fty::Expected<void> ConfigDiscoveryManager::commandReadKey(const std::string& ke
         out.ipsDisabled = conf.disabled.ips;
     } else if (out.protocols.key() == key) {
         out.protocols = conf.discovery.protocols;
-    } else if (out.dumpPool.key() == key) {
-        out.dumpPool = conf.parameters.maxDumpPoolNumber;
-    } else if (out.scanPool.key() == key) {
-        out.scanPool = conf.parameters.maxScanPoolNumber;
-    } else if (out.scanTimeout.key() == key) {
-        out.scanTimeout = conf.parameters.nutScannerTimeOut;
-    } else if (out.dumpLooptime.key() == key) {
-        out.dumpLooptime = conf.parameters.dumpDataLoopTime;
     } else {
         return fty::unexpected("key does not exist: {}", key);
     }
