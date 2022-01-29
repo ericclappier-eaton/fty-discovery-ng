@@ -18,6 +18,7 @@
 #include "impl/mibs.h"
 #include "impl/ping.h"
 #include "impl/xml-pdc.h"
+#include "impl/snmp.h"
 #include <fty/string-utils.h>
 #include <netdb.h>
 #include <netinet/ip_icmp.h>
@@ -27,7 +28,6 @@
 #include <yaml-cpp/yaml.h>
 
 namespace fty::job {
-
 
 // =====================================================================================================================
 
@@ -105,7 +105,7 @@ void Protocols::run(const commands::protocols::In& in, commands::protocols::Out&
                     protocol.reachable = true; // port is reachable
                 }
                 else {
-                    logInfo("Skipped GenApi, reason: {}", res.error());
+                    logInfo("Skipped GenApi/{}, reason: {}", aux.port, res.error());
                 }
                 break;
             }
@@ -115,7 +115,7 @@ void Protocols::run(const commands::protocols::In& in, commands::protocols::Out&
                     protocol.reachable = true; // port is reachable
                 }
                 else {
-                    logInfo("Skipped xml_pdc, reason: {}", res.error());
+                    logInfo("Skipped xml_pdc/{}, reason: {}", aux.port, res.error());
                 }
                 break;
             }
@@ -125,7 +125,7 @@ void Protocols::run(const commands::protocols::In& in, commands::protocols::Out&
                     protocol.reachable = true; // port is reachable
                 }
                 else {
-                    logInfo("Skipped SNMP, reason: {}", res.error());
+                    logInfo("Skipped SNMP/{}, reason: {}", aux.port, res.error());
                 }
                 break;
             }
@@ -229,46 +229,73 @@ struct AutoRemove
 
 Expected<void> Protocols::trySnmp(const commands::protocols::In& in, uint16_t port) const
 {
-    std::string portStr = std::to_string(port);
+    // quick check (no timeout, quite unreliable)
+    // connect with a DGRAM socket, multiple tries to write in, check errors
+    {
+        addrinfo hints;
+        memset(&hints, 0, sizeof(addrinfo));
+        hints.ai_family   = AF_UNSPEC;
+        hints.ai_socktype = SOCK_DGRAM;
+        hints.ai_protocol = IPPROTO_UDP;
 
-    addrinfo hints;
-    memset(&hints, 0, sizeof(addrinfo));
+        addrinfo* addrInfo = nullptr;
+        if (int ret = getaddrinfo(in.address.value().c_str(), std::to_string(port).c_str(), &hints, &addrInfo); ret != 0) {
+            return unexpected(gai_strerror(ret));
+        }
+        AutoRemove addrInfoRem(addrInfo, &freeaddrinfo);
 
-    hints.ai_family   = AF_UNSPEC;
-    hints.ai_socktype = SOCK_DGRAM;
-    hints.ai_protocol = IPPROTO_UDP;
+        int sock = socket(addrInfo->ai_family, addrInfo->ai_socktype | SOCK_NONBLOCK, addrInfo->ai_protocol);
+        if (sock == -1) {
+            return unexpected(strerror(errno));
+        }
+        AutoRemove sockRem(sock, &close);
 
-    addrinfo* addrInfo;
-    if (int ret = getaddrinfo(in.address.value().c_str(), portStr.c_str(), &hints, &addrInfo); ret != 0) {
-        return unexpected(gai_strerror(ret));
+        if (auto ret = timeoutConnect(sock, addrInfo->ai_addr, addrInfo->ai_addrlen); !ret) {
+            return unexpected(strerror(errno));
+        }
+
+        // write in, check errors
+        // we need at least N tries to have a chance to get an error (experimental)
+        const int N = 20;
+        for (int i = 0; i < N; i++) {
+            auto r = write(sock, "X", 1);
+            //logTrace("trySnmp {}:{} i: {}, r: {}", in.address, port, i, r);
+            if (r == -1) {
+                // here, we are sure that the device@port is not reachable
+                return unexpected("Socket write failed");
+            }
+        }
+        // here, we are not sure that the device@port is reachable
     }
-    AutoRemove addInfoRem(addrInfo, &freeaddrinfo);
 
-    int sock = 0;
-
-    if ((sock = socket(addrInfo->ai_family, addrInfo->ai_socktype | SOCK_NONBLOCK, addrInfo->ai_protocol)) == -1) {
-        return unexpected(strerror(errno));
-    }
-    AutoRemove sockRem(sock, &close);
-
-    if (timeoutConnect(sock, addrInfo->ai_addr, addrInfo->ai_addrlen) == 0) {
-        return unexpected(strerror(errno));
-    }
-
-    int ret = 1;
-    for (int i = 0; i <= 3; i++) {
-        if (write(sock, "X", 1) == 1) {
-            ret = 1;
-        } else {
-            ret = -1;
+    // reliable check (possible timeout) assuming SNMPv1/public
+    // minimalistic SNMPv1 public introspection
+    {
+        auto session = fty::impl::Snmp::instance().session(in.address, port);
+        if (!session) {
+            logTrace("Create session failed");
+            return unexpected("Create session failed");
+        }
+        if (auto ret = session->setCommunity("public"); !ret) {
+            logTrace("session->setCommunitity failed ({})", ret.error());
+            return unexpected(ret.error());
+        }
+        if (auto ret = session->setTimeout(500); !ret) { // msec
+            logTrace("session->setTimeout failed ({})", ret.error());
+            return unexpected(ret.error());
+        }
+        if (auto ret = session->open(); !ret) {
+            logTrace("session->open() failed ({})", ret.error());
+            return unexpected(ret.error());
+        }
+        const std::string sysOid{".1.3.6.1.2.1.1.2.0"};
+        if (auto ret = session->read(sysOid); !ret) {
+            logTrace("session->read() failed ({})", ret.error());
+            return unexpected(ret.error());
         }
     }
 
-    if (ret == -1) {
-        return unexpected("cannot write");
-    }
-
-    return {};
+    return {}; // ok
 }
 
 // =====================================================================================================================

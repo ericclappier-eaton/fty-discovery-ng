@@ -18,7 +18,6 @@
 
 #include <fty/expected.h>
 #include <functional>
-#include <memory>
 
 namespace fty::impl {
 
@@ -31,7 +30,6 @@ namespace snmp {
 
 class Snmp
 {
-public:
 public:
     ~Snmp();
     static Snmp&     instance();
@@ -55,6 +53,7 @@ namespace snmp {
         Expected<void>        open();
         Expected<std::string> read(const std::string& oid) const;
         Expected<void>        walk(std::function<void(const std::string&)>&& func) const;
+        void                  close();
 
     protected:
         Session(const std::string& address, uint16_t port);

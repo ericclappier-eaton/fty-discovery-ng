@@ -15,7 +15,7 @@
 */
 
 #include "snmp.h"
-// Config should be firt
+// Config should be first
 #include <net-snmp/net-snmp-config.h>
 // Snmp stuff
 #include <net-snmp/mib_api.h>
@@ -26,9 +26,7 @@
 #include <fty_common_socket_sync_client.h>
 #include <fty_log.h>
 #include <fty_security_wallet.h>
-#include <iostream>
-#include <regex>
-#include <set>
+#include <array>
 
 namespace fty::impl {
 
@@ -92,21 +90,32 @@ public:
 
         m_sess.peername = const_cast<char*>(m_addr.c_str());
         m_sess.retries  = 1;
-        m_sess.timeout  = 500 * 1000; // 500 ms
+
+        setTimeout(500); // default (msec)
     }
 
     virtual ~Impl()
     {
-        if (m_handle) {
-            snmp_sess_close(m_handle);
-        }
+        close();
+
+        // m_sess, release strdup'ed members
+        if (m_sess.community) { free(m_sess.community); m_sess.community = nullptr; }
+        if (m_sess.securityName) { free(m_sess.securityName); m_sess.securityName = nullptr; }
     }
 
     Expected<void> setCommunity(const std::string& community)
     {
+        if (m_sess.community) { free(m_sess.community); m_sess.community = nullptr; }
+
         m_sess.version       = SNMP_VERSION_1;
-        m_sess.community     = const_cast<u_char*>(reinterpret_cast<const u_char*>(community.c_str()));
+        m_sess.community     = const_cast<u_char*>(reinterpret_cast<const u_char*>(strdup(community.c_str())));
         m_sess.community_len = strlen(reinterpret_cast<const char*>(m_sess.community));
+        return {};
+    }
+
+    Expected<void> setTimeout(uint32_t milliseconds)
+    {
+        m_sess.timeout = long(milliseconds) * 1000;
         return {};
     }
 
@@ -120,6 +129,7 @@ public:
             if (auto credV3 = secw::Snmpv3::tryToCast(secCred)) {
                 m_sess.version = SNMP_VERSION_3;
 
+                if (m_sess.securityName) free(m_sess.securityName);
                 m_sess.securityName    = strdup(credV3->getSecurityName().c_str());
                 m_sess.securityNameLen = credV3->getSecurityName().size();
 
@@ -131,9 +141,9 @@ public:
                     m_sess.securityAuthProto  = *prot;
                     m_sess.securityAuthKeyLen = USM_AUTH_KU_LEN;
                     if (m_sess.securityAuthProto == usmHMACMD5AuthProtocol)
-                        m_sess.securityAuthProtoLen = sizeof(usmHMACMD5AuthProtocol) / sizeof(oid);
+                        m_sess.securityAuthProtoLen = OID_LENGTH(usmHMACMD5AuthProtocol);
                     else
-                        m_sess.securityAuthProtoLen = sizeof(usmHMACSHA1AuthProtocol) / sizeof(oid);
+                        m_sess.securityAuthProtoLen = OID_LENGTH(usmHMACSHA1AuthProtocol);
                 }
 
                 if (auto prot = authPriv(credV3->getPrivProtocol())) {
@@ -141,9 +151,9 @@ public:
                     m_sess.securityPrivKeyLen = USM_PRIV_KU_LEN;
                     /* FIXME: see https://github.com/42ity/nut/blob/FTY/drivers/snmp-ups.c#L79 */
                     if (m_sess.securityPrivProto == usmDESPrivProtocol)
-                        m_sess.securityPrivProtoLen = sizeof(usmDESPrivProtocol) / sizeof(oid);
+                        m_sess.securityPrivProtoLen = OID_LENGTH(usmDESPrivProtocol);
                     else
-                        m_sess.securityPrivProtoLen = sizeof(usmAESPrivProtocol) / sizeof(oid);
+                        m_sess.securityPrivProtoLen = OID_LENGTH(usmAESPrivProtocol);
                 }
 
                 if (generate_Ku(m_sess.securityAuthProto, u_int(m_sess.securityAuthProtoLen),
@@ -159,10 +169,8 @@ public:
                     log_error("Error generating Ku from privacy pass phrase.");
                 }
             } else if (auto credV1 = secw::Snmpv1::tryToCast(secCred)) {
+                setCommunity(credV1->getCommunityName());
                 m_sess.version = SNMP_VERSION_1;
-                m_sess.community =
-                    const_cast<u_char*>(reinterpret_cast<const u_char*>(strdup(credV1->getCommunityName().c_str())));
-                m_sess.community_len = credV1->getCommunityName().size();
             }
         } catch (const secw::SecwException& err) {
             return unexpected(err.what());
@@ -170,14 +178,18 @@ public:
         return {};
     }
 
-    Expected<void> setTimeout(uint32_t milliseconds)
+    void close()
     {
-        m_sess.timeout = long(milliseconds) * 1000;
-        return {};
+        if (m_handle) {
+            snmp_sess_close(m_handle);
+            m_handle = nullptr;
+        }
     }
 
     Expected<void> open()
     {
+        close(); // eg. reopen
+
         m_handle = snmp_sess_open(&m_sess);
         if (!m_handle) {
             log_error("Snmp error: %s", snmp_api_errstring(snmp_errno));
@@ -199,21 +211,25 @@ public:
             return unexpected("Cannot parse OID '{}'", stroid);
         }
 
+        // create protocol data unit
         netsnmp_pdu* pdu = snmp_pdu_create(SNMP_MSG_GET);
         snmp_add_null_var(pdu, name, nameLen);
 
         netsnmp_pdu* response = nullptr;
         int          status   = snmp_sess_synch_response(m_handle, pdu, &response);
-        std::unique_ptr<netsnmp_pdu, std::function<void(netsnmp_pdu*)>> rptr(response, [](netsnmp_pdu* p) {
-            snmp_free_pdu(p);
+        std::unique_ptr<netsnmp_pdu, std::function<void(netsnmp_pdu*)>> delr(response, [](netsnmp_pdu* p) {
+            if (p) { snmp_free_pdu(p); }
         });
 
         if (status == STAT_SUCCESS) {
-            if (response->errstat == SNMP_ERR_NOERROR) {
-                if (response->variables->val_len > 0) {
+            if (!response) {
+                return unexpected("Unexpected null response");
+            }
+            else if (response->errstat == SNMP_ERR_NOERROR) {
+                if (response->variables && (response->variables->val_len > 0)) {
                     return readVal(response->variables);
                 } else {
-                    unexpected("Wrong value type");
+                    return unexpected("Wrong value type");
                 }
             } else {
                 return unexpected(snmp_errstring(int(response->errstat)));
@@ -227,21 +243,24 @@ public:
         oid    name[MAX_OID_LEN];
         size_t nameLen = MAX_OID_LEN;
 
-        if (!snmp_parse_oid(".1.3.6.1.2.1", name, &nameLen)) {
-            return unexpected("Cannot parse root OID '.1.3.6.1.2.1'");
+        const char* rootOid = ".1.3.6.1.2.1";
+        if (!snmp_parse_oid(rootOid, name, &nameLen)) {
+            return unexpected("Cannot parse root OID '{}'", rootOid);
         }
 
         std::array<char, 255> buff; //NOTICE char VS. oid?
-        bool running = true;
 
-        while (running) {
+        while (true) {
             netsnmp_pdu* pdu = snmp_pdu_create(SNMP_MSG_GETNEXT);
             snmp_add_null_var(pdu, name, nameLen);
+            std::unique_ptr<netsnmp_pdu, std::function<void(netsnmp_pdu*)>> delp(pdu, [](netsnmp_pdu* p) {
+                if (p) { snmp_free_pdu(p); }
+            });
 
             netsnmp_pdu* response = nullptr;
             int          status   = snmp_sess_synch_response(m_handle, pdu, &response);
-            std::unique_ptr<netsnmp_pdu, std::function<void(netsnmp_pdu*)>> rptr(response, [](netsnmp_pdu* p) {
-                snmp_free_pdu(p);
+            std::unique_ptr<netsnmp_pdu, std::function<void(netsnmp_pdu*)>> delr(response, [](netsnmp_pdu* p) {
+                if (p) { snmp_free_pdu(p); }
             });
 
             if (status == STAT_ERROR) {
@@ -250,7 +269,7 @@ public:
 
             //NOTICE assume response is not NULL on success, else crash
             if (status == STAT_SUCCESS && response->errstat == SNMP_ERR_NOERROR) {
-                //NOTICE assume response->variables never empty, else while loop becomes infinite
+                //NOTICE assume response->variables never empty, else the while loop becomes infinite
                 for (auto vars = response->variables; vars; vars = vars->next_variable) {
                     snprint_objid(buff.data(), buff.size(), vars->name, vars->name_length);
                     func(buff.data());
@@ -259,11 +278,11 @@ public:
                         memmove(name, vars->name, vars->name_length * sizeof(oid));
                         nameLen = vars->name_length;
                     } else {
-                        break;
+                        break; //for
                     }
                 }
             } else {
-                break;
+                break; //while
             }
         }
         return {};
@@ -272,6 +291,10 @@ public:
 private:
     Expected<std::string> readVal(const netsnmp_variable_list* lst)
     {
+        if (!lst) {
+            return unexpected("readVal null value");
+        }
+
         switch (lst->type) {
             case ASN_BOOLEAN:
             case ASN_INTEGER:
@@ -289,8 +312,9 @@ private:
                     lst->val.string[3]);
             case ASN_OBJECT_ID:
                 return readObjName(lst);
+            default:;
         }
-        return unexpected("Unsupported type or null value");
+        return unexpected("Unsupported type");
     }
 
     Expected<std::string> readObjName(const netsnmp_variable_list* lst)
@@ -301,7 +325,7 @@ private:
     }
 
 private:
-    void*           m_handle = nullptr;
+    void*           m_handle{nullptr};
     netsnmp_session m_sess;
     std::string     m_addr;
 };
@@ -318,6 +342,11 @@ snmp::Session::Session(const std::string& addr, uint16_t port)
 Expected<void> snmp::Session::open()
 {
     return m_impl->open();
+}
+
+void snmp::Session::close()
+{
+    return m_impl->close();
 }
 
 Expected<std::string> snmp::Session::read(const std::string& oid) const
@@ -366,13 +395,15 @@ Snmp& Snmp::instance()
 
 void Snmp::init(const std::string& mibsPath)
 {
+    logInfo("Snmp::init (mibsPath: {})", mibsPath);
+
     setenv("MIBS", "ALL", 1);
     netsnmp_get_mib_directory();
     netsnmp_set_mib_directory(mibsPath.c_str());
     add_mibdir(mibsPath.c_str());
 
     netsnmp_init_mib();
-    init_snmp("fty-discovery");
+    init_snmp("fty-discovery-ng");
 
     read_all_mibs();
 }
