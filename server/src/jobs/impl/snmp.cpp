@@ -98,16 +98,16 @@ public:
     {
         close();
 
-        // m_sess, release strdup'ed members
+        // release m_sess strdup'ed members
         if (m_sess.community) { free(m_sess.community); m_sess.community = nullptr; }
         if (m_sess.securityName) { free(m_sess.securityName); m_sess.securityName = nullptr; }
     }
 
     Expected<void> setCommunity(const std::string& community)
     {
-        if (m_sess.community) { free(m_sess.community); m_sess.community = nullptr; }
+        m_sess.version = SNMP_VERSION_1;
 
-        m_sess.version       = SNMP_VERSION_1;
+        if (m_sess.community) { free(m_sess.community); }
         m_sess.community     = const_cast<u_char*>(reinterpret_cast<const u_char*>(strdup(community.c_str())));
         m_sess.community_len = strlen(reinterpret_cast<const char*>(m_sess.community));
         return {};
@@ -129,7 +129,7 @@ public:
             if (auto credV3 = secw::Snmpv3::tryToCast(secCred)) {
                 m_sess.version = SNMP_VERSION_3;
 
-                if (m_sess.securityName) free(m_sess.securityName);
+                if (m_sess.securityName) { free(m_sess.securityName); }
                 m_sess.securityName    = strdup(credV3->getSecurityName().c_str());
                 m_sess.securityNameLen = credV3->getSecurityName().size();
 
@@ -292,7 +292,7 @@ private:
     Expected<std::string> readVal(const netsnmp_variable_list* lst)
     {
         if (!lst) {
-            return unexpected("readVal null value");
+            return unexpected("insconsistent arg");
         }
 
         switch (lst->type) {

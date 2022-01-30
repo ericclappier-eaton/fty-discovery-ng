@@ -52,7 +52,9 @@ void Assets::run(const commands::assets::In& in, commands::assets::Out& out)
             throw Error("Credential or community must be set");
         }
 
+        logDebug("Reading mibs...");
         if (auto mibs = reader.read(); !mibs) {
+            logDebug("mibs not found ({})", mibs.error());
             throw Error(mibs.error());
         } else {
             if (!m_params.settings.mib.hasValue()) {
@@ -139,7 +141,7 @@ void Assets::parse(const std::string& cnt, commands::assets::Out& out)
             enrichAsset(asset);
         }//for
     }
-	else {
+    else {
         auto& asset      = out.append();
         asset.subAddress = "";
         asset.asset.type = "device";

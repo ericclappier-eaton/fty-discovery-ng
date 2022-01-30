@@ -229,7 +229,7 @@ struct AutoRemove
 
 Expected<void> Protocols::trySnmp(const commands::protocols::In& in, uint16_t port) const
 {
-    // quick check (no timeout, quite unreliable)
+    // fast check (no timeout, quite unreliable)
     // connect with a DGRAM socket, multiple tries to write in, check errors
     {
         addrinfo hints;
@@ -255,21 +255,21 @@ Expected<void> Protocols::trySnmp(const commands::protocols::In& in, uint16_t po
         }
 
         // write in, check errors
-        // we need at least N tries to have a chance to get an error (experimental)
+        // we need a large number of tries to have a chance to get an error (experimentally 20)
         const int N = 20;
         for (int i = 0; i < N; i++) {
             auto r = write(sock, "X", 1);
             //logTrace("trySnmp {}:{} i: {}, r: {}", in.address, port, i, r);
             if (r == -1) {
-                // here, we are sure that the device@port is not reachable
+                // here, we are sure that the device@port is not responsive
                 return unexpected("Socket write failed");
             }
         }
-        // here, we are not sure that the device@port is reachable
+        // here, we are not sure that the device@port is responsive
     }
 
-    // reliable check (possible timeout) assuming SNMPv1/public
-    // minimalistic SNMPv1 public introspection
+    // reliable check (possible timeout) assuming SNMP v1/public
+    // minimalistic SNMP v1 public introspection
     {
         auto session = fty::impl::Snmp::instance().session(in.address, port);
         if (!session) {
@@ -293,6 +293,7 @@ Expected<void> Protocols::trySnmp(const commands::protocols::In& in, uint16_t po
             logTrace("session->read() failed ({})", ret.error());
             return unexpected(ret.error());
         }
+        // here, we are sure that the device@port is responsive
     }
 
     return {}; // ok
