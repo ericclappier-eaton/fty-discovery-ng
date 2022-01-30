@@ -17,7 +17,7 @@ public:
     Expected<void>        setCredentialId(const std::string& credential);
     Expected<void>        setCredential(const std::string& userName, const std::string& password);
     Expected<void>        setCommunity(const std::string& community);
-    Expected<void>        setTimeout(uint milliseconds);
+    Expected<void>        setTimeout(uint32_t milliseconds);
     Expected<void>        setMib(const std::string& mib);
     Expected<std::string> run() const;
 

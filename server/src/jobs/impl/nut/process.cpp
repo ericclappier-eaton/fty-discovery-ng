@@ -129,7 +129,6 @@ Expected<void> Process::init(const std::string& address, uint16_t port)
 Expected<std::string> Process::findExecutable(const std::string& name) const
 {
     static std::vector<std::filesystem::path> paths = {"/lib/nut"};
-    //DBG static std::vector<std::filesystem::path> paths = {"/lib/nut", "/usr/lib/nut", "/home/jes/workspace/fty/build/Debug/deps-runtime/bin"};
 
     for (const auto& path : paths) {
         auto check = path / name;
@@ -138,7 +137,7 @@ Expected<std::string> Process::findExecutable(const std::string& name) const
         }
     }
 
-    return unexpected("Executable {} was not found", name);
+    return unexpected("Executable '{}' was not found", name);
 }
 
 Expected<void> Process::setCredentialId(const std::string& credential)
@@ -193,7 +192,7 @@ Expected<void> Process::setCredentialId(const std::string& credential)
             auto secCred = client.getDocumentWithPrivateData("default", credential);
 
             if (auto credV3 = secw::Snmpv3::tryToCast(secCred)) {
-                log_debug("Init from wallet for snmp v3");
+                log_debug("Init from wallet for SNMP v3");
 
                 m_process->setEnvVar("SU_VAR_VERSION", "v3");
                 m_process->addArgument("-x");
@@ -227,10 +226,10 @@ Expected<void> Process::setCredentialId(const std::string& credential)
                     m_process->addArgument(fmt::format("privProtocol={}", *prot));
                 }
             } else if (auto credV1 = secw::Snmpv1::tryToCast(secCred)) {
-                log_debug("Init from wallet for snmp v1");
+                log_debug("Init from wallet for SNMP v1");
                 setCommunity(credV1->getCommunityName());
             } else {
-                return unexpected("Wrong wallet configuratoion");
+                return unexpected(fmt::format("Wallet credential not handled ({})", credential));
             }
         } catch (const secw::SecwException& err) {
             return unexpected(err.what());
@@ -290,7 +289,7 @@ Expected<void> Process::setCommunity(const std::string& community)
     return {};
 }
 
-Expected<void> Process::setTimeout(uint milliseconds)
+Expected<void> Process::setTimeout(uint32_t milliseconds)
 {
     if (!m_process) {
         return unexpected("uninitialized");
@@ -332,12 +331,19 @@ Expected<std::string> Process::run() const
             return m_process->readAllStandardOutput();
         } else {
             std::string stdError = m_process->readAllStandardError();
-            // workaround with nut_powercom: Test first if the credentials are correct
-            if (m_protocol == "nut_powercom" && stdError.find("Error when get client token on") != std::string::npos) {
-                return unexpected("Bad login or password");
-            } else {
-                return unexpected(stdError);
+            logDebug("Run failed:\n{}", stdError);
+
+            // post-treatment for readability
+            if (m_protocol == "nut_powercom") {
+                if (stdError.find("Error when get client token on") != std::string::npos) {
+                    return unexpected("Invalid credentials.");
+                }
+                if (stdError.find("Could not connect to device") != std::string::npos) {
+                    return unexpected("Connection failed.");
+                }
             }
+            // default
+            return unexpected(stdError);
         }
     } else {
         log_error("Run error: %s", pid.error().c_str());
