@@ -25,7 +25,7 @@ namespace fty::impl {
 
 // =====================================================================================================================
 
-bool filterMib(const std::string& mib)
+static bool filterMib(const std::string& mib)
 {
     static std::regex rex("^(IP-MIB|DISMAN-EVENT-MIB|RFC1213-MIB|SNMP-|TCP-MIB|UDP-MIB).*");
     return !std::regex_match(mib, rex);
@@ -55,11 +55,6 @@ static const std::vector<std::string>& knownMibs()
         "XPPC-MIB::ppc"                            // xppx
     };
     return mibs;
-}
-
-bool isSnmpSupported(const std::string& mib)
-{
-    return !mapMibToLegacy(mib).empty();
 }
 
 std::string mapMibToLegacy(const std::string& mib)
@@ -102,7 +97,7 @@ std::string mapMibToLegacy(const std::string& mib)
     };
     // clang-format on
     auto it = mibs.find(mib);
-    return it != mibs.end() ? it->second : "";
+    return (it != mibs.end()) ? it->second : "";
 }
 
 // =====================================================================================================================
@@ -122,7 +117,7 @@ Expected<void> MibsReader::setCommunity(const std::string& community)
     return m_session->setCommunity(community);
 }
 
-Expected<void> MibsReader::setTimeout(uint miliseconds)
+Expected<void> MibsReader::setTimeout(uint32_t miliseconds)
 {
     return m_session->setTimeout(miliseconds);
 }
@@ -131,50 +126,66 @@ Expected<MibsReader::MibList> MibsReader::read() const
 {
     if (!m_isOpen) {
         if (auto res = m_session->open(); !res) {
+            logTrace("session open() failed ({})", res.error());
             return unexpected(res.error());
         }
         m_isOpen = true;
     }
 
+    // check first the device is responsive
+    {
+        const std::string sysOid{".1.3.6.1.2.1.1.2.0"};
+        if (auto res = m_session->read(sysOid); !res) {
+            logTrace("sysOid read() failed ({})", res.error());
+            return unexpected("Connection failed.");
+        }
+    }
+
     MibList mibs;
 
-    auto oid = m_session->read("RFC1213-MIB::sysObjectID.0");
+    const std::string RFCMib{"RFC1213-MIB::sysObjectID.0"};
+    logTrace("read {}", RFCMib);
+    auto oid = m_session->read(RFCMib);
     if (oid) {
         size_t pos;
         if (pos = oid->find("."); pos != std::string::npos) {
             mibs.insert(oid->substr(0, pos));
-        } else {
+        }
+        else {
             mibs.insert(*oid);
         }
-    } else {
-        if (fty::Config::instance().tryAll) {
-            auto res = m_session->walk([&](const std::string& mib) {
-                if (filterMib(mib)) {
-                    size_t pos;
-                    if (pos = mib.find("::"); pos != std::string::npos) {
-                        mibs.insert(mib.substr(0, pos));
-                    }
-                }
-            });
-            if (!res) {
-                return unexpected(res.error());
-            }
-        } else {
-            for (const std::string& mib : knownMibs()) {
-                if (auto val = m_session->read(mib); !val) {
-                    continue;
-                }
-
+    }
+    else if (fty::Config::instance().tryAll) {
+        logTrace("read allMibs walk");
+        auto res = m_session->walk([&](const std::string& mib) {
+            if (filterMib(mib)) {
                 size_t pos;
                 if (pos = mib.find("::"); pos != std::string::npos) {
                     mibs.insert(mib.substr(0, pos));
                 }
             }
+        });
+        if (!res) {
+            return unexpected(res.error());
         }
+    }
+    else {
+        logTrace("read knownMibs");
+        for (const std::string& mib : knownMibs()) {
+            if (auto val = m_session->read(mib); !val) {
+                continue;
+            }
 
-        if (mibs.empty()) {
-            return unexpected("Cannot fetch mibs from endpoint. Host is not available or SNMP is not supported.");
+            size_t pos;
+            if (pos = mib.find("::"); pos != std::string::npos) {
+                mibs.insert(mib.substr(0, pos));
+            }
         }
+    }
+
+    if (mibs.empty()) {
+        logTrace("Cannot fetch any mibs from device");
+        return unexpected("SNMP device is not supported.");
     }
 
     return std::move(mibs);
@@ -184,12 +195,15 @@ Expected<std::string> MibsReader::readName() const
 {
     if (!m_isOpen) {
         if (auto res = m_session->open(); !res) {
+            logTrace("session open() failed ({})", res.error());
             return unexpected(res.error());
         }
         m_isOpen = true;
     }
 
-    auto name = m_session->read("SNMPv2-MIB::sysDescr.0");
+    const std::string MibName{"SNMPv2-MIB::sysDescr.0"};
+    logTrace("read {}", MibName);
+    auto name = m_session->read(MibName);
     if (!name) {
         return unexpected(name.error());
     }
