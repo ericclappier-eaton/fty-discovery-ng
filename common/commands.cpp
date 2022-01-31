@@ -2,6 +2,45 @@
 
 namespace fty::disco {
 
+
+namespace commands::protocols {
+    std::ostream& operator<<(std::ostream& ss, In::Protocol::Type value){
+        using Type = In::Protocol::Type;
+
+        ss << [&]() {
+            switch (value) {
+                case Type::Powercom:
+                    return "nut_powercom";
+                case Type::XML_pdc:
+                    return "nut_xml_pdc";
+                case Type::SNMP:
+                    return "nut_snmp";
+                case Type::Unknown:
+                    return "unknown";
+            }
+            return "Unknown";
+        }();
+        return ss;
+    }
+    std::istream& operator>>(std::istream& ss, In::Protocol::Type& value){
+        using Type = In::Protocol::Type;
+
+        std::string strval;
+        ss >> strval;
+        if (strval == "nut_powercom") {
+            value = Type::Powercom;
+        } else if (strval == "nut_xml_pdc") {
+            value = Type::XML_pdc;
+        } else if (strval == "nut_snmp") {
+            value = Type::SNMP;
+        } else {
+            value = Type::Unknown;
+        }
+        return ss;
+    }
+
+} // namespace commands::protocols
+
 namespace commands::scan::status {
     std::ostream& operator<<(std::ostream& ss, Out::Status value)
     {
