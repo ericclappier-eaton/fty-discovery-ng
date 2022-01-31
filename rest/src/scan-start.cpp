@@ -17,9 +17,6 @@ unsigned Scan::run()
     if (auto ret = pack::json::deserialize(m_request.body(), in); !ret) {
         throw rest::errors::Internal(ret.error());
     }
-    if (in.type == commands::scan::start::In::Type::Unknown) {
-        throw rest::errors::Internal("Invalid scan type");
-    }
 
     fty::disco::MessageBus bus;
     if (auto res = bus.init(AgentName); !res) {
@@ -45,7 +42,7 @@ unsigned Scan::run()
         throw rest::errors::Internal(data.data.value());
     }
 
-    return HTTP_OK;
+    return HTTP_ACCEPTED;
 }
 
 } // namespace fty::disco::start

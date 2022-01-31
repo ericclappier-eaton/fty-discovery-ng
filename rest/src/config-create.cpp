@@ -1,7 +1,7 @@
 #include "config-create.h"
 #include "commands.h"
-#include "discovery-config.h"
 #include "discovery-config-manager.h"
+#include "discovery-config.h"
 #include <fty/rest/component.h>
 
 namespace fty::disco {
@@ -18,13 +18,14 @@ unsigned ConfigCreate::run()
         throw rest::errors::Internal(ret.error());
     }
 
-    if (auto ret = ConfigDiscoveryManager::instance().commandCreate(in); !ret) {
+    ConfigDiscoveryManager::instance().set(in);
+    if (auto ret = ConfigDiscoveryManager::instance().save(); !ret) {
         throw rest::errors::Internal(ret.error());
-    } 
+    }
 
     if (auto ret = ConfigDiscoveryManager::instance().save(); !ret) {
         throw rest::errors::Internal(ret.error());
-    } 
+    }
 
     return HTTP_OK;
 }

@@ -1,4 +1,5 @@
 #pragma once
+#include "discovery-config.h"
 #include <pack/pack.h>
 
 namespace fty::disco {
@@ -27,22 +28,44 @@ namespace commands::protocols {
     class In : public pack::Node
     {
     public:
-        pack::String     address   = FIELD("address");
-        pack::StringList protocols = FIELD("protocols"); // optional
-        //pack::ObjectList<Option> options = FIELD("options"); // optional
+        class Protocol : public pack::Node
+        {
+        public:
+            enum class Type
+            {
+                Unknown,
+                Powercom,
+                XML_pdc,
+                SNMP
+            };
+
+            pack::Enum<Type> protocol = FIELD("protocol");
+            pack::Int32List  ports    = FIELD("ports");
+
+        public:
+            using pack::Node::Node;
+            META(Protocol, protocol, ports);
+        };
+
+        pack::String               address   = FIELD("address");
+        pack::ObjectList<Protocol> protocols = FIELD("protocols"); // optional
 
     public:
         using pack::Node::Node;
         META(In, address, protocols);
     };
 
-    class Return: public pack::Node
+    std::ostream& operator<<(std::ostream& ss, In::Protocol::Type value);
+    std::istream& operator>>(std::istream& ss, In::Protocol::Type& value);
+
+    class Return : public pack::Node
     {
     public:
-        pack::String protocol  = FIELD("protocol");
-        pack::UInt32 port      = FIELD("port");
-        //pack::Bool   ignored   = FIELD("ignored");
-        pack::Bool   reachable = FIELD("reachable");
+        pack::String protocol = FIELD("protocol");
+        pack::UInt32 port     = FIELD("port");
+        // pack::Bool   ignored   = FIELD("ignored");
+        pack::Bool reachable = FIELD("reachable");
+
     public:
         using pack::Node::Node;
         META(Return, protocol, port, reachable);
@@ -143,41 +166,16 @@ namespace commands::assets {
 // =====================================================================================================================
 
 namespace commands::config {
-
-    struct Config : public pack::Node
-    {
-        pack::String     type          = FIELD("FTY_DISCOVERY_TYPE");
-        pack::StringList scans         = FIELD("FTY_DISCOVERY_SCANS");
-        pack::StringList ips           = FIELD("FTY_DISCOVERY_IPS");
-        pack::StringList docs          = FIELD("FTY_DISCOVERY_DOCUMENTS");
-        pack::String     status        = FIELD("FTY_DISCOVERY_DEFAULT_VALUES_STATUS");
-        pack::Int32      priority      = FIELD("FTY_DISCOVERY_DEFAULT_VALUES_PRIORITY");
-        pack::String     parent        = FIELD("FTY_DISCOVERY_DEFAULT_VALUES_PARENT");
-        pack::StringList links         = FIELD("FTY_DISCOVERY_DEFAULT_VALUES_LINK_SRC");
-        pack::StringList scansDisabled = FIELD("FTY_DISCOVERY_SCANS_DISABLED");
-        pack::StringList ipsDisabled   = FIELD("FTY_DISCOVERY_IPS_DISABLED");
-        pack::StringList protocols     = FIELD("FTY_DISCOVERY_PROTOCOLS");
-        pack::Int32      dumpPool      = FIELD("FTY_DISCOVERY_DUMP_POOL");
-        pack::Int32      scanPool      = FIELD("FTY_DISCOVERY_SCAN_POOL");
-        pack::Int32      scanTimeout   = FIELD("FTY_DISCOVERY_SCAN_TIMEOUT");
-        pack::Int32      dumpLooptime  = FIELD("FTY_DISCOVERY_DUMP_LOOPTIME");
-
-        using pack::Node::Node;
-        META(Config, type, scans, ips, docs, status, priority, parent, links, scansDisabled, ipsDisabled, protocols,
-            dumpPool, scanPool, scanTimeout, dumpLooptime);
-    };
-
     namespace read {
         static constexpr const char* Subject = "config-read";
 
-        using Out = Config;
-        using In  = pack::StringList;
+        using Out = ConfigDiscovery;
     } // namespace read
 
     namespace create {
         static constexpr const char* Subject = "config-create";
 
-        using In = Config;
+        using In = ConfigDiscovery;
     } // namespace create
 
 } // namespace commands::config
@@ -199,17 +197,19 @@ namespace commands::scan {
                 InProgress
             };
 
-            pack::Enum<Status> status     = FIELD("status");
-            pack::String       progress   = FIELD("progress");
-            pack::UInt32       discovered = FIELD("discovered");
-            pack::UInt32       ups        = FIELD("ups-discovered");
-            pack::UInt32       epdu       = FIELD("epdu-discovered");
-            pack::UInt32       sts        = FIELD("sts-discovered");
-            pack::UInt32       sensors    = FIELD("sensors-discovered");
+            pack::Enum<Status> status         = FIELD("status");
+            pack::String       progress       = FIELD("progress");
+            pack::UInt32       discovered     = FIELD("discovered");
+            pack::UInt32       ups            = FIELD("ups-discovered");
+            pack::UInt32       epdu           = FIELD("epdu-discovered");
+            pack::UInt32       sts            = FIELD("sts-discovered");
+            pack::UInt32       sensors        = FIELD("sensors-discovered");
+            pack::UInt32       numOfAddress   = FIELD("number-of-address");
+            pack::UInt32       addressScanned = FIELD("address-scanned");
 
         public:
             using pack::Node::Node;
-            META(Out, status, progress, discovered, ups, epdu, sts, sensors);
+            META(Out, status, progress, discovered, ups, epdu, sts, sensors, numOfAddress, addressScanned);
         };
         std::ostream& operator<<(std::ostream& ss, Out::Status value);
         std::istream& operator>>(std::istream& ss, Out::Status& value);
@@ -246,36 +246,7 @@ namespace commands::scan {
         static constexpr const char* Subject = "scan-start";
 
         using Out = Response;
-
-        class In : public pack::Node
-        {
-        public:
-            enum class Type
-            {
-                Unknown,
-                Local,
-                Ip,
-                Multi,
-                Full
-            };
-            pack::StringList linkSrc       = FIELD("linkSrc");
-            pack::String     parent        = FIELD("parent");
-            pack::Int32      priority      = FIELD("priority");
-            pack::StringList documents     = FIELD("documents");
-            pack::StringList ips           = FIELD("ips");
-            pack::StringList ipsDisabled   = FIELD("ipsDisabled");
-            pack::StringList scans         = FIELD("scans");
-            pack::StringList scansDisabled = FIELD("scansDisabled");
-            pack::StringList protocols     = FIELD("protocols");
-            pack::Enum<Type> type          = FIELD("type");
-
-        public:
-            using pack::Node::Node;
-            META(In, linkSrc, parent, priority, documents, ips, ipsDisabled, scans, scansDisabled, protocols, type);
-        };
-
-        std::ostream& operator<<(std::ostream& ss, In::Type value);
-        std::istream& operator>>(std::istream& ss, In::Type& value);
+        using In  = ConfigDiscovery;
 
     } // namespace start
 } // namespace commands::scan

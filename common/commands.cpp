@@ -2,49 +2,44 @@
 
 namespace fty::disco {
 
-namespace commands::scan::start {
-    std::ostream& operator<<(std::ostream& ss, In::Type value)
-    {
-        using Type = In::Type;
+
+namespace commands::protocols {
+    std::ostream& operator<<(std::ostream& ss, In::Protocol::Type value){
+        using Type = In::Protocol::Type;
 
         ss << [&]() {
             switch (value) {
-                case Type::Local:
-                    return "localscan";
-                case Type::Ip:
-                    return "ipscan";
-                case Type::Multi:
-                    return "multiscan";
-                case Type::Full:
-                    return "fullscan";
+                case Type::Powercom:
+                    return "nut_powercom";
+                case Type::XML_pdc:
+                    return "nut_xml_pdc";
+                case Type::SNMP:
+                    return "nut_snmp";
                 case Type::Unknown:
                     return "unknown";
             }
-            return "unknown";
+            return "Unknown";
         }();
         return ss;
     }
-
-    std::istream& operator>>(std::istream& ss, In::Type& value)
-    {
-        using Type = In::Type;
+    std::istream& operator>>(std::istream& ss, In::Protocol::Type& value){
+        using Type = In::Protocol::Type;
 
         std::string strval;
         ss >> strval;
-        if (strval == "localscan") {
-            value = Type::Local;
-        } else if (strval == "ipscan") {
-            value = Type::Ip;
-        } else if (strval == "multiscan") {
-            value = Type::Multi;
-        } else if (strval == "fullscan") {
-            value = Type::Full;
+        if (strval == "nut_powercom") {
+            value = Type::Powercom;
+        } else if (strval == "nut_xml_pdc") {
+            value = Type::XML_pdc;
+        } else if (strval == "nut_snmp") {
+            value = Type::SNMP;
         } else {
             value = Type::Unknown;
         }
         return ss;
     }
-} // namespace commands::scan::start
+
+} // namespace commands::protocols
 
 namespace commands::scan::status {
     std::ostream& operator<<(std::ostream& ss, Out::Status value)
