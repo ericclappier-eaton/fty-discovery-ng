@@ -28,14 +28,35 @@ namespace commands::protocols {
     class In : public pack::Node
     {
     public:
-        pack::String     address   = FIELD("address");
-        pack::StringList protocols = FIELD("protocols"); // optional
-        // pack::ObjectList<Option> options = FIELD("options"); // optional
+        class Protocol : public pack::Node
+        {
+        public:
+            enum class Type
+            {
+                Unknown,
+                Powercom,
+                XML_pdc,
+                SNMP
+            };
+
+            pack::Enum<Type> protocol = FIELD("protocol");
+            pack::Int32List  ports    = FIELD("ports");
+
+        public:
+            using pack::Node::Node;
+            META(Protocol, protocol, ports);
+        };
+
+        pack::String               address   = FIELD("address");
+        pack::ObjectList<Protocol> protocols = FIELD("protocols"); // optional
 
     public:
         using pack::Node::Node;
         META(In, address, protocols);
     };
+
+    std::ostream& operator<<(std::ostream& ss, In::Protocol::Type value);
+    std::istream& operator>>(std::istream& ss, In::Protocol::Type& value);
 
     class Return : public pack::Node
     {
@@ -149,7 +170,7 @@ namespace commands::config {
         static constexpr const char* Subject = "config-read";
 
         using Out = ConfigDiscovery;
-    }                                 // namespace read
+    } // namespace read
 
     namespace create {
         static constexpr const char* Subject = "config-create";
@@ -176,19 +197,19 @@ namespace commands::scan {
                 InProgress
             };
 
-            pack::Enum<Status> status        = FIELD("status");
-            pack::String       progress      = FIELD("progress");
-            pack::UInt32       discovered    = FIELD("discovered");
-            pack::UInt32       ups           = FIELD("ups-discovered");
-            pack::UInt32       epdu          = FIELD("epdu-discovered");
-            pack::UInt32       sts           = FIELD("sts-discovered");
-            pack::UInt32       sensors       = FIELD("sensors-discovered");
-            pack::UInt32       numOfAddress  = FIELD("number-of-address");
-            pack::UInt32       addressScaned = FIELD("address-scanned");
+            pack::Enum<Status> status         = FIELD("status");
+            pack::String       progress       = FIELD("progress");
+            pack::UInt32       discovered     = FIELD("discovered");
+            pack::UInt32       ups            = FIELD("ups-discovered");
+            pack::UInt32       epdu           = FIELD("epdu-discovered");
+            pack::UInt32       sts            = FIELD("sts-discovered");
+            pack::UInt32       sensors        = FIELD("sensors-discovered");
+            pack::UInt32       numOfAddress   = FIELD("number-of-address");
+            pack::UInt32       addressScanned = FIELD("address-scanned");
 
         public:
             using pack::Node::Node;
-            META(Out, status, progress, discovered, ups, epdu, sts, sensors, numOfAddress, addressScaned);
+            META(Out, status, progress, discovered, ups, epdu, sts, sensors, numOfAddress, addressScanned);
         };
         std::ostream& operator<<(std::ostream& ss, Out::Status value);
         std::istream& operator>>(std::istream& ss, Out::Status& value);
