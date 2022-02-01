@@ -24,9 +24,7 @@ namespace fty::impl {
 
 // =====================================================================================================================
 
-bool        isSnmpSupported(const std::string& mib);
 std::string mapMibToLegacy(const std::string& mib);
-bool        filterMib(const std::string& mib);
 
 // =====================================================================================================================
 
@@ -44,7 +42,7 @@ public:
     MibsReader(const std::string& address, uint16_t port);
     Expected<void> setCredentialId(const std::string& credentialId);
     Expected<void> setCommunity(const std::string& community);
-    Expected<void> setTimeout(uint miliseconds);
+    Expected<void> setTimeout(uint32_t miliseconds);
 
     Expected<MibList>     read() const;
     Expected<std::string> readName() const;

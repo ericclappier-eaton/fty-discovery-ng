@@ -59,7 +59,7 @@ public:
         msg.meta.status = status;
         if (status == disco::Message::Status::Ok) {
             if (out.hasValue()) {
-                msg.userData.setString(*pack::json::serialize(out));
+                msg.userData.setString(*pack::json::serialize(out, pack::Option::WithDefaults));
             } else {
                 if constexpr (std::is_base_of_v<pack::IList, T>) {
                     msg.userData.setString("[]");

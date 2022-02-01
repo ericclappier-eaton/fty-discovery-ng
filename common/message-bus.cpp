@@ -47,7 +47,7 @@ MessageBus::~MessageBus()
 {
 }
 
-Expected<Message> MessageBus::send(const std::string& queue, const Message& msg)
+Expected<Message> MessageBus::send(const std::string& queue, const Message& msg, int timeoutSec)
 {
     std::lock_guard<std::mutex> lock(m_mutex);
     if (msg.meta.correlationId.empty()) {
@@ -55,7 +55,7 @@ Expected<Message> MessageBus::send(const std::string& queue, const Message& msg)
     }
     msg.meta.from = m_actorName;
     try {
-        Message m(m_bus->request(queue, msg.toMessageBus(), 10));
+        Message m(m_bus->request(queue, msg.toMessageBus(), timeoutSec));
         if (m.meta.status == Message::Status::Error) {
             return unexpected(*m.userData.decode<std::string>());
         }

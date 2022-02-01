@@ -18,6 +18,7 @@
 #include "impl/mibs.h"
 #include "impl/ping.h"
 #include "impl/xml-pdc.h"
+#include "impl/snmp.h"
 #include <fty/string-utils.h>
 #include <netdb.h>
 #include <netinet/ip_icmp.h>
@@ -27,7 +28,6 @@
 #include <yaml-cpp/yaml.h>
 
 namespace fty::job {
-
 
 // =====================================================================================================================
 
@@ -43,26 +43,35 @@ enum class Type
 inline std::ostream& operator<<(std::ostream& ss, Type type)
 {
     switch (type) {
-        case Type::Snmp:
-            ss << "Snmp";
+        case Type::Powercom:
+            ss << "GenApi";
             break;
         case Type::Xml:
             ss << "Xml";
             break;
-        case Type::Powercom:
-            ss << "GenApi";
+        case Type::Snmp:
+            ss << "Snmp";
             break;
+        default:
+            ss << "protocol-type-unknown";
     }
     return ss;
 }
 
 // =====================================================================================================================
 
-
 void Protocols::run(const commands::protocols::In& in, commands::protocols::Out& out)
 {
     if (in.address == "__fake__") {
-        out.setValue({"nut_snmp", "nut_xml_pdc"});
+        logInfo("{} address (test)", in.address);
+        auto& x = out.append();
+        x.protocol = "nut_snmp";
+        x.port = 1234;
+        x.reachable = true;
+        auto& y = out.append();
+        y.protocol = "nut_xml_pdc";
+        y.port = 4321;
+        y.reachable = false;
         return;
     }
 
@@ -70,51 +79,68 @@ void Protocols::run(const commands::protocols::In& in, commands::protocols::Out&
         throw Error("Host is not available: {}", in.address.value());
     }
 
-    std::vector<Type> protocols;
+    // supported protocols, tokenized with default port
+    // in *order* of preferences
+    struct {
+        Type protocol;
+        std::string protocolStr;
+        uint16_t port;
+    } tries[] = {
+        {Type::Powercom, "nut_powercom", 443},
+        {Type::Xml, "nut_xml_pdc", 80},
+        {Type::Snmp, "nut_snmp", 161},
+    };
 
-    if (auto res = tryXmlPdc(in)) {
-        protocols.emplace_back(Type::Xml);
-        log_info("Found XML device");
-    } else {
-        log_info("Skipped xml_pdc, reason: %s", res.error().c_str());
-    }
+    for (auto& aux : tries) {
+        auto& protocol = out.append();
+        protocol.protocol = aux.protocolStr;
+        protocol.port = aux.port;
+        protocol.reachable = false; // default, not reachable
 
-    if (auto res = trySnmp(in)) {
-        protocols.emplace_back(Type::Snmp);
-        log_info("Found SNMP device");
-    } else {
-        log_info("Skipped snmp, reason: %s", res.error().c_str());
-    }
-
-    if (auto res = tryPowercom(in)) {
-        protocols.emplace_back(Type::Powercom);
-        log_info("Found Powercon device");
-    } else {
-        log_info("Skipped GenApi, reason: %s", res.error().c_str());
-    }
-
-    sortProtocols(protocols);
-
-    for (const auto& prot : protocols) {
-        switch (prot) {
-            case Type::Snmp:
-                out.append("nut_snmp");
+        // try to reach server
+        switch (aux.protocol) {
+            case Type::Powercom: {
+                if (auto res = tryPowercom(in, aux.port)) {
+                    logInfo("Found Powercom device on port {}", aux.port);
+                    protocol.reachable = true; // port is reachable
+                }
+                else {
+                    logInfo("Skipped GenApi/{}, reason: {}", aux.port, res.error());
+                }
                 break;
-            case Type::Xml:
-                out.append("nut_xml_pdc");
+            }
+            case Type::Xml: {
+                if (auto res = tryXmlPdc(in, aux.port)) {
+                    logInfo("Found XML device on port {}", aux.port);
+                    protocol.reachable = true; // port is reachable
+                }
+                else {
+                    logInfo("Skipped xml_pdc/{}, reason: {}", aux.port, res.error());
+                }
                 break;
-            case Type::Powercom:
-                out.append("nut_powercom");
+            }
+            case Type::Snmp: {
+                if (auto res = trySnmp(in, aux.port)) {
+                    logInfo("Found SNMP device on port {}", aux.port);
+                    protocol.reachable = true; // port is reachable
+                }
+                else {
+                    logInfo("Skipped SNMP/{}, reason: {}", aux.port, res.error());
+                }
                 break;
+            }
+            default:
+                logError("protocol not handled (type: {})", aux.protocol);
         }
     }
-    std::string resp = *pack::json::serialize(out);
-    log_info("Return %s", resp.c_str());
+
+    std::string resp = *pack::json::serialize(out, pack::Option::WithDefaults);
+    logInfo("Return {}", resp);
 }
 
-Expected<void> Protocols::tryXmlPdc(const commands::protocols::In& in) const
+Expected<void> Protocols::tryXmlPdc(const commands::protocols::In& in, uint16_t port) const
 {
-    impl::XmlPdc xml(in.address);
+    impl::XmlPdc xml("http", in.address, port);
     if (auto prod = xml.get<impl::ProductInfo>("product.xml")) {
         if(!(prod->name == "Network Management Card" || prod->name == "HPE UPS Network Module")) {
             return unexpected("unsupported card type");
@@ -134,20 +160,24 @@ Expected<void> Protocols::tryXmlPdc(const commands::protocols::In& in) const
     }
 }
 
-Expected<void> Protocols::tryPowercom(const commands::protocols::In& in) const
+Expected<void> Protocols::tryPowercom(const commands::protocols::In& in, uint16_t port) const
 {
-    neon::Neon ne(in.address);
+    neon::Neon ne("https", in.address, port);
     if (auto content = ne.get("etn/v1/comm/services/powerdistributions1")) {
         try {
             YAML::Node node = YAML::Load(*content);
-            
-            if (node["device-type"].as<std::string>() == "ups") {
+
+            auto deviceType{node["device-type"].as<std::string>()};
+            if (deviceType == "ups") {
+                return {};
+            }
+            if (deviceType == "ats") {
                 return {};
             }
 
-            return unexpected("not supported device");
-        } catch (const std::exception&) {
-            return unexpected("not supported device");
+            return unexpected("not supported device (" + deviceType + ")");
+        } catch (const std::exception& e) {
+            return unexpected("not supported device (" + std::string{e.what()} + ")");
         }
     } else {
         return unexpected(content.error());
@@ -197,56 +227,77 @@ struct AutoRemove
     std::function<void()> m_deleter;
 };
 
-Expected<void> Protocols::trySnmp(const commands::protocols::In& in) const
+Expected<void> Protocols::trySnmp(const commands::protocols::In& in, uint16_t port) const
 {
-    std::string portStr = "161";
+    // fast check (no timeout, quite unreliable)
+    // connect with a DGRAM socket, multiple tries to write in, check errors
+    {
+        addrinfo hints;
+        memset(&hints, 0, sizeof(addrinfo));
+        hints.ai_family   = AF_UNSPEC;
+        hints.ai_socktype = SOCK_DGRAM;
+        hints.ai_protocol = IPPROTO_UDP;
 
-    addrinfo hints;
-    memset(&hints, 0, sizeof(addrinfo));
-
-    hints.ai_family   = AF_UNSPEC;
-    hints.ai_socktype = SOCK_DGRAM;
-    hints.ai_protocol = IPPROTO_UDP;
-
-    addrinfo* addrInfo;
-    if (int ret = getaddrinfo(in.address.value().c_str(), portStr.c_str(), &hints, &addrInfo); ret != 0) {
-        return unexpected(gai_strerror(ret));
-    }
-    AutoRemove addInfoRem(addrInfo, &freeaddrinfo);
-
-    int sock = 0;
-
-    if ((sock = socket(addrInfo->ai_family, addrInfo->ai_socktype | SOCK_NONBLOCK, addrInfo->ai_protocol)) == -1) {
-        return unexpected(strerror(errno));
-    }
-    AutoRemove sockRem(sock, &close);
-
-    if (timeoutConnect(sock, addrInfo->ai_addr, addrInfo->ai_addrlen) == 0) {
-        return unexpected(strerror(errno));
-    }
-
-    int ret = 1;
-    for (int i = 0; i <= 3; i++) {
-        if (write(sock, "X", 1) == 1) {
-            ret = 1;
-        } else {
-            ret = -1;
+        addrinfo* addrInfo = nullptr;
+        if (int ret = getaddrinfo(in.address.value().c_str(), std::to_string(port).c_str(), &hints, &addrInfo); ret != 0) {
+            return unexpected(gai_strerror(ret));
         }
+        AutoRemove addrInfoRem(addrInfo, &freeaddrinfo);
+
+        int sock = socket(addrInfo->ai_family, addrInfo->ai_socktype | SOCK_NONBLOCK, addrInfo->ai_protocol);
+        if (sock == -1) {
+            return unexpected(strerror(errno));
+        }
+        AutoRemove sockRem(sock, &close);
+
+        if (auto ret = timeoutConnect(sock, addrInfo->ai_addr, addrInfo->ai_addrlen); !ret) {
+            return unexpected(strerror(errno));
+        }
+
+        // write in, check errors
+        // we need a large number of tries to have a chance to get an error (experimentally 20)
+        const int N = 20;
+        for (int i = 0; i < N; i++) {
+            auto r = write(sock, "X", 1);
+            //logTrace("trySnmp {}:{} i: {}, r: {}", in.address, port, i, r);
+            if (r == -1) {
+                // here, we are sure that the device@port is not responsive
+                return unexpected("Socket write failed");
+            }
+        }
+        // here, we are not sure that the device@port is responsive
     }
 
-    if (ret == -1) {
-        return unexpected("cannot write");
+    // reliable check (possible timeout) assuming SNMP v1/public
+    // minimalistic SNMP v1 public introspection
+    {
+        auto session = fty::impl::Snmp::instance().session(in.address, port);
+        if (!session) {
+            logTrace("Create session failed");
+            return unexpected("Create session failed");
+        }
+        if (auto ret = session->setCommunity("public"); !ret) {
+            logTrace("session->setCommunitity failed ({})", ret.error());
+            return unexpected(ret.error());
+        }
+        if (auto ret = session->setTimeout(500); !ret) { // msec
+            logTrace("session->setTimeout failed ({})", ret.error());
+            return unexpected(ret.error());
+        }
+        if (auto ret = session->open(); !ret) {
+            logTrace("session->open() failed ({})", ret.error());
+            return unexpected(ret.error());
+        }
+        const std::string sysOid{".1.3.6.1.2.1.1.2.0"};
+        if (auto ret = session->read(sysOid); !ret) {
+            logTrace("session->read() failed ({})", ret.error());
+            return unexpected(ret.error());
+        }
+        // here, we are sure that the device@port is responsive
     }
 
-    return {};
+    return {}; // ok
 }
-
-void Protocols::sortProtocols(std::vector<Type>& protocols)
-{
-    // Just prefer XML_PDC
-    std::sort(protocols.begin(), protocols.end());
-}
-
 
 // =====================================================================================================================
 

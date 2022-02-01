@@ -22,8 +22,18 @@ namespace commands::protocols {
         META(In, address);
     };
 
-    using Out = pack::StringList;
+    class Return: public pack::Node
+    {
+    public:
+        pack::String protocol = FIELD("protocol");
+        pack::UInt32 port     = FIELD("port");
+        pack::Bool reachable  = FIELD("reachable");
+    public:
+        using pack::Node::Node;
+        META(Return, protocol, port, reachable);
+    };
 
+    using Out = pack::ObjectList<Return>;
 } // namespace commands::protocols
 
 // =====================================================================================================================
