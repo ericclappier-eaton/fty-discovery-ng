@@ -31,6 +31,7 @@ void Assets::run(const commands::assets::In& in, commands::assets::Out& out)
     }
 
     m_params = in;
+
     // Workaround to check if snmp is available. Read mibs from asset
     if (m_params.protocol == "nut_snmp") {
         if (!m_params.port.hasValue()) {
@@ -51,7 +52,9 @@ void Assets::run(const commands::assets::In& in, commands::assets::Out& out)
             throw Error("Credential or community must be set");
         }
 
+        logDebug("Reading mibs...");
         if (auto mibs = reader.read(); !mibs) {
+            logDebug("mibs not found ({})", mibs.error());
             throw Error(mibs.error());
         } else {
             if (!m_params.settings.mib.hasValue()) {
@@ -62,6 +65,7 @@ void Assets::run(const commands::assets::In& in, commands::assets::Out& out)
 
     // Runs nut process
     impl::nut::Process proc(m_params.protocol);
+
     if (auto res = proc.init(m_params.address, uint16_t(m_params.port.value()))) {
         if (m_params.settings.credentialId.hasValue()) {
             if (auto set = proc.setCredentialId(m_params.settings.credentialId); !set) {
@@ -72,6 +76,7 @@ void Assets::run(const commands::assets::In& in, commands::assets::Out& out)
                 throw Error(set.error());
             }
         }
+
         if (m_params.settings.username.hasValue() && m_params.settings.password.hasValue()) {
             proc.setCredential(m_params.settings.username, m_params.settings.password);
         }
@@ -134,9 +139,9 @@ void Assets::parse(const std::string& cnt, commands::assets::Out& out)
                 }
             }
             enrichAsset(asset);
-
-        }
-    } else {
+        }//for
+    }
+    else {
         auto& asset      = out.append();
         asset.subAddress = "";
         asset.asset.type = "device";
@@ -160,7 +165,7 @@ void Assets::addAssetVal(commands::assets::Return::Asset& asset, const std::stri
 
 void Assets::enrichAsset(commands::assets::Return& asset)
 {
-    if(asset.asset.subtype.empty()) {
+    if (asset.asset.subtype.empty()) {
         auto type = asset.asset.ext.find([](const pack::StringMap& info) {
             return info.contains("device.type");
         });
@@ -178,48 +183,70 @@ void Assets::enrichAsset(commands::assets::Return& asset)
     }
 
     addAssetVal(asset.asset, "ip.1", m_params.address, false);
+
+    // uuid attribute
+    {
+        auto manufacturer = asset.asset.ext.find([](const pack::StringMap& info) {
+            return info.contains("manufacturer");
+        });
+
+        auto model = asset.asset.ext.find([](const pack::StringMap& info) {
+            return info.contains("model");
+        });
+
+        auto serial = asset.asset.ext.find([](const pack::StringMap& info) {
+            return info.contains("serial_no");
+        });
+
+        std::string uuid; //empty
+        if (manufacturer != std::nullopt && model != std::nullopt && serial != std::nullopt) {
+            uuid = fty::impl::generateUUID((*manufacturer)["manufacturer"], (*model)["model"], (*serial)["serial_no"]);
+        }
+        addAssetVal(asset.asset, "uuid", uuid, false);
+    }
+
+    // max_power attribute
+    {
+        auto realpower_nominal = asset.asset.ext.find([](const pack::StringMap& info) {
+            return info.contains("realpower.nominal");
+        });
+
+        std::string max_power; //empty
+
+        // try to get realpower.nominal
+        if (realpower_nominal !=  std::nullopt) {
+            max_power = (*realpower_nominal)["realpower.nominal"];
+        } else {
+            // try to get realpower.default.nominal
+            auto realpower_default_nominal = asset.asset.ext.find([](const pack::StringMap& info) {
+                return info.contains("realpower.default.nominal");
+            });
+
+            if (realpower_default_nominal !=  std::nullopt) {
+                max_power = (*realpower_default_nominal)["realpower.default.nominal"];
+            }
+        }
+
+        if (!max_power.empty()) {
+            addAssetVal(asset.asset, "max_power", max_power, false);
+        }
+    }
+
+    // epdu daisy_chain attribute
+    if (asset.asset.subtype == "epdu") {
+        std::string daisyChain = "0";
+        if(!asset.subAddress.empty()){
+            daisyChain = asset.subAddress;
+        }
+        addAssetVal(asset.asset, "daisy_chain", daisyChain);
+    }
+
+    // endpoint.1 attributes (monitoring)
     addAssetVal(asset.asset, "endpoint.1.protocol", m_params.protocol, false);
     addAssetVal(asset.asset, "endpoint.1.port", std::to_string(m_params.port), false);
     addAssetVal(asset.asset, "endpoint.1.sub_address", asset.subAddress, false);
     addAssetVal(asset.asset, "endpoint.1.status.operating", "IN_SERVICE", false);
     addAssetVal(asset.asset, "endpoint.1.status.error_msg", "", false);
-
-    auto manufacturer = asset.asset.ext.find([](const pack::StringMap& info) {
-        return info.contains("manufacturer");
-    });
-
-    auto model = asset.asset.ext.find([](const pack::StringMap& info) {
-        return info.contains("model");
-    });
-
-    auto serial = asset.asset.ext.find([](const pack::StringMap& info) {
-        return info.contains("serial_no");
-    });
-
-    if (manufacturer != std::nullopt && model != std::nullopt && serial != std::nullopt) {
-        addAssetVal(asset.asset, "uuid",
-            fty::impl::generateUUID((*manufacturer)["manufacturer"], (*model)["model"], (*serial)["serial_no"]), false);
-    } else {
-        addAssetVal(asset.asset, "uuid", "", false);
-    }
-
-    //try to get realpower.nominal fro max_power
-    auto realpower_nominal = asset.asset.ext.find([](const pack::StringMap& info) {
-        return info.contains("realpower.nominal");
-    });
-
-    if( realpower_nominal !=  std::nullopt) {
-        addAssetVal(asset.asset, "max_power", (*realpower_nominal)["realpower.nominal"] , false);
-    } else {
-        //try to get realpower.default.nominal fro max_power
-        auto realpower_default_nominal = asset.asset.ext.find([](const pack::StringMap& info) {
-            return info.contains("realpower.default.nominal");
-        });
-
-        if( realpower_default_nominal !=  std::nullopt) {
-            addAssetVal(asset.asset, "max_power", (*realpower_default_nominal)["realpower.default.nominal"] , false);
-        } 
-    }
 
     if (m_params.protocol == "nut_snmp") {
         if (m_params.settings.credentialId.hasValue()) {
@@ -233,16 +260,14 @@ void Assets::enrichAsset(commands::assets::Return& asset)
         }
     }
 
-    //epdu daisy_chaine attribut
-    if(asset.asset.subtype == "epdu") {
-
-        std::string daisyChain = "0";
-        if(!asset.subAddress.empty()){
-            daisyChain = asset.subAddress;
+    // endpoint.2 attributes (mass management)
+    {
+        std::string port = "443"; // secure port default
+        if (m_params.protocol == "nut_powercom") {
+            port = std::to_string(m_params.port);
         }
-        addAssetVal(asset.asset, "daisy_chain", daisyChain);
+        addAssetVal(asset.asset, "endpoint.2.port", port, false);
     }
 }
-
 
 } // namespace fty::job

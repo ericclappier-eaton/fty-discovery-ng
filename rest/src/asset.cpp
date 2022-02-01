@@ -38,7 +38,7 @@ unsigned AssetRest::run()
     }
 
     if (auto asset = assets(param)) {
-        m_reply << *asset << "\n\n";
+        m_reply << *asset;
         return HTTP_OK;
     } else {
         throw rest::errors::Internal(asset.error());
@@ -47,16 +47,18 @@ unsigned AssetRest::run()
 
 Expected<std::string> AssetRest::assets(const commands::assets::In& param)
 {
+    static constexpr const char* ACTOR_NAME = "fty-discovery-ng-rest_assets";
+
     disco::MessageBus bus;
-    if (auto res = bus.init("discovery_rest"); !res) {
+    if (auto res = bus.init(ACTOR_NAME); !res) {
         return unexpected(res.error());
     }
 
     disco::Message msg;
     msg.userData.setString(*pack::json::serialize(param));
+
     msg.meta.to      = "discovery-ng";
     msg.meta.subject = commands::assets::Subject;
-    msg.meta.from    = "discovery_rest";
 
     if (Expected<disco::Message> resp = bus.send(fty::Channel, msg)) {
         if (resp->meta.status == disco::Message::Status::Error) {

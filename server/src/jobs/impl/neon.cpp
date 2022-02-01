@@ -22,11 +22,19 @@
 #include <pack/visitor.h>
 #include <iostream>
 
+static int verify_fn(void* /*userdata*/, int /*failures*/, const ne_ssl_certificate* /*cert*/)
+{
+    return 0; // trust cert
+}
+
 namespace neon {
 
-Neon::Neon(const std::string& address, uint16_t port, uint16_t timeout)
-    : m_session(ne_session_create("http", address.c_str(), port), &closeSession)
+Neon::Neon(const std::string& scheme, const std::string& address, uint16_t port, uint16_t timeout)
+    : m_session(ne_session_create(scheme.c_str(), address.c_str(), port), &closeSession)
 {
+    // trust any certificate
+    ne_ssl_set_verify(m_session.get(), verify_fn, nullptr);
+
     ne_set_connect_timeout(m_session.get(), timeout);
     ne_set_read_timeout(m_session.get(), timeout);
 }
@@ -50,11 +58,11 @@ fty::Expected<std::string> Neon::get(const std::string& path) const
             if (!status->code) {
                 return fty::unexpected(ne_get_error(m_session.get()));
             }
-            return fty::unexpected("{} {}", status->code, status->reason_phrase);
+            return fty::unexpected("non-NE_OK, status: {} {}", status->code, status->reason_phrase);
         }
 
         if (status->code != 200) {
-            return fty::unexpected("unsupported (status is not ok)");
+            return fty::unexpected("NE_OK, status: {} {}", status->code, status->reason_phrase);
         }
 
         body.clear();
@@ -64,7 +72,7 @@ fty::Expected<std::string> Neon::get(const std::string& path) const
         while ((bytes = ne_read_response_block(request.get(), buffer.data(), buffer.size())) > 0) {
             body += std::string(buffer.data(), size_t(bytes));
         }
-    } while(ne_end_request(request.get()) == NE_RETRY);
+    } while (ne_end_request(request.get()) == NE_RETRY);
 
     return fty::Expected<std::string>(body);
 }

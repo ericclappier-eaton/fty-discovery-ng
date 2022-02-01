@@ -92,17 +92,17 @@ public:
 class XmlPdc
 {
 public:
-    XmlPdc(const std::string& address);
+    XmlPdc(const std::string& scheme, const std::string& address, uint16_t port);
 
     template <typename T>
     Expected<T> get(const std::string& uri) const
     {
-        auto cnt = m_ne.get(uri);
-        if (!cnt) {
-            return unexpected(cnt.error());
+        auto content = m_ne.get(uri);
+        if (!content) {
+            return unexpected(content.error());
         }
         T info;
-        neon::deserialize(*cnt, info);
+        neon::deserialize(*content, info);
         return std::move(info);
     }
 
@@ -112,4 +112,4 @@ private:
 
 // =====================================================================================================================
 
-} // namespace fty::protocol
+} // namespace fty::impl

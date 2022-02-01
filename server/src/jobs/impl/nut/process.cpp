@@ -9,6 +9,7 @@
 #include <unistd.h>
 
 namespace fty::impl::nut {
+
 Process::Process(const std::string& protocol)
     : m_protocol(protocol)
 {
@@ -31,6 +32,7 @@ Expected<void> Process::setupSnmp(const std::string& address, uint16_t port)
 {
     if (!port) {
         port = 161;
+        logDebug("Set port to default ({})", port);
     }
 
     std::string toconnect = fmt::format("{}:{}", address, port);
@@ -55,6 +57,7 @@ Expected<void> Process::setupXmlPdc(const std::string& address, uint16_t port)
 {
     if (!port) {
         port = 80;
+        logDebug("Set port to default ({})", port);
     }
 
     std::string toconnect = fmt::format("{}:{}", address, port);
@@ -78,12 +81,19 @@ Expected<void> Process::setupXmlPdc(const std::string& address, uint16_t port)
     }
 }
 
-Expected<void> Process::setupPowercom(const std::string& address)
+Expected<void> Process::setupPowercom(const std::string& address, uint16_t port)
 {
+    if (!port) {
+        port = 443;
+        logDebug("Set port to default ({})", port);
+    }
+
+    std::string toconnect = fmt::format("{}:{}", address, port);
+
     if (auto path = findExecutable("etn-nut-powerconnect")) {
         // clang-format off
         m_process = std::unique_ptr<fty::Process>(new fty::Process(*path, {
-            "-x", fmt::format("port={}", address),
+            "-x", fmt::format("port={}", toconnect),
             "-d", "1"
         }));
         // clang-format on
@@ -95,7 +105,8 @@ Expected<void> Process::setupPowercom(const std::string& address)
 
 Expected<void> Process::init(const std::string& address, uint16_t port)
 {
-    std::string driver;
+    logInfo("init with protocol: {}, address: {}, port: {}", m_protocol, address, port);
+
     if (m_protocol == "nut_snmp") {
         if (auto ret = setupSnmp(address, port); !ret) {
             return unexpected(ret.error());
@@ -105,19 +116,19 @@ Expected<void> Process::init(const std::string& address, uint16_t port)
             return unexpected(ret.error());
         }
     } else if (m_protocol == "nut_powercom") {
-        if (auto ret = setupPowercom(address); !ret) {
+        if (auto ret = setupPowercom(address, port); !ret) {
             return unexpected(ret.error());
         }
     } else {
-        return unexpected("Protocol {} is not supported", m_protocol);
+        return unexpected("Protocol '{}' is not supported", m_protocol);
     }
 
-    return {};
+    return {}; // ok
 }
 
 Expected<std::string> Process::findExecutable(const std::string& name) const
 {
-    static std::vector<std::filesystem::path> paths = {"/usr/lib/nut", "/lib/nut", "/home/jes/workspace/fty/build/Debug/deps-runtime/bin"};
+    static std::vector<std::filesystem::path> paths = {"/lib/nut"};
 
     for (const auto& path : paths) {
         auto check = path / name;
@@ -126,7 +137,7 @@ Expected<std::string> Process::findExecutable(const std::string& name) const
         }
     }
 
-    return unexpected("Executable {} was not found", name);
+    return unexpected("Executable '{}' was not found", name);
 }
 
 Expected<void> Process::setCredentialId(const std::string& credential)
@@ -191,12 +202,12 @@ Expected<void> Process::setCredentialId(const std::string& credential)
             auto secCred = client.getDocumentWithPrivateData("default", credential);
 
             if (auto credV3 = secw::Snmpv3::tryToCast(secCred)) {
-                log_debug("Init from wallet for snmp v3");
-                
+                log_debug("Init from wallet for SNMP v3");
+
                 m_process->setEnvVar("SU_VAR_VERSION", "v3");
                 m_process->addArgument("-x");
                 m_process->addArgument(fmt::format("snmp_version={}", "v3"));
-                
+
                 if (auto lvl = levelStr(credV3->getSecurityLevel())) {
                     m_process->setEnvVar("SU_VAR_SECLEVEL", *lvl);
                     m_process->addArgument("-x");
@@ -205,15 +216,15 @@ Expected<void> Process::setCredentialId(const std::string& credential)
                 m_process->setEnvVar("SU_VAR_SECNAME", credV3->getSecurityName());
                 m_process->addArgument("-x");
                 m_process->addArgument(fmt::format("secName={}", credV3->getSecurityName()));
-                
+
                 m_process->setEnvVar("SU_VAR_AUTHPASSWD", credV3->getAuthPassword());
                 m_process->addArgument("-x");
                 m_process->addArgument(fmt::format("authPassword={}", credV3->getAuthPassword()));
-                
+
                 m_process->setEnvVar("SU_VAR_PRIVPASSWD", credV3->getPrivPassword());
                 m_process->addArgument("-x");
                 m_process->addArgument(fmt::format("privPassword={}", credV3->getPrivPassword()));
-                
+
                 if (auto prot = authProtStr(credV3->getAuthProtocol())) {
                     m_process->setEnvVar("SU_VAR_AUTHPROT", *prot);
                     m_process->addArgument("-x");
@@ -225,10 +236,10 @@ Expected<void> Process::setCredentialId(const std::string& credential)
                     m_process->addArgument(fmt::format("privProtocol={}", *prot));
                 }
             } else if (auto credV1 = secw::Snmpv1::tryToCast(secCred)) {
-                log_debug("Init from wallet for snmp v1");
+                log_debug("Init from wallet for SNMP v1");
                 setCommunity(credV1->getCommunityName());
             } else {
-                return unexpected("Wrong wallet configuratoion");
+                return unexpected(fmt::format("Wallet credential not handled ({})", credential));
             }
         } catch (const secw::SecwException& err) {
             return unexpected(err.what());
@@ -257,6 +268,10 @@ Expected<void> Process::setCredentialId(const std::string& credential)
 
 Expected<void> Process::setCredential(const std::string& userName, const std::string& password)
 {
+    if (!m_process) {
+        return unexpected("uninitialized");
+    }
+
     if (m_protocol == "nut_powercom") {
         m_process->addArgument("-x");
         m_process->addArgument(fmt::format("username={}", userName));
@@ -284,7 +299,7 @@ Expected<void> Process::setCommunity(const std::string& community)
     return {};
 }
 
-Expected<void> Process::setTimeout(uint milliseconds)
+Expected<void> Process::setTimeout(uint32_t milliseconds)
 {
     if (!m_process) {
         return unexpected("uninitialized");
@@ -317,17 +332,28 @@ Expected<void> Process::setMib(const std::string& mib)
 
 Expected<std::string> Process::run() const
 {
+    if (!m_process) {
+        return unexpected("uninitialized");
+    }
+
     if (auto pid = m_process->run()) {
         if (auto stat = m_process->wait(); *stat == 0) {
             return m_process->readAllStandardOutput();
         } else {
             std::string stdError = m_process->readAllStandardError();
-            // workaround with nut_powercom: Test first if the credentials are correct
-            if (m_protocol == "nut_powercom" && stdError.find("Error when get client token on") != std::string::npos) {
-                return unexpected("Bad login or password");
-            } else {
-                return unexpected(stdError);
+            logDebug("Run failed:\n{}", stdError);
+
+            // post-treatment for readability
+            if (m_protocol == "nut_powercom") {
+                if (stdError.find("Error when get client token on") != std::string::npos) {
+                    return unexpected("Invalid credentials.");
+                }
+                if (stdError.find("Could not connect to device") != std::string::npos) {
+                    return unexpected("Connection failed.");
+                }
             }
+            // default
+            return unexpected(stdError);
         }
     } else {
         log_error("Run error: %s", pid.error().c_str());
