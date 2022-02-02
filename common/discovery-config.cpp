@@ -15,21 +15,56 @@ fty::Expected<void> ConfigDiscovery::load(const std::string& path)
     return pack::yaml::deserializeFile(path, *this);
 }
 
+std::ostream& operator<<(std::ostream& ss, ConfigDiscovery::Protocol::Type value){
+    using Type = ConfigDiscovery::Protocol::Type;
+
+    ss << [&]() {
+        switch (value) {
+            case Type::POWERCOM:
+                return "nut_powercom";
+            case Type::XML_PDC:
+                return "nut_xml_pdc";
+            case Type::SNMP:
+                return "nut_snmp";
+            case Type::UNKNOWN:
+                return "unknown";
+        }
+        return "unknown";
+    }();
+    return ss;
+}
+std::istream& operator>>(std::istream& ss, ConfigDiscovery::Protocol::Type& value){
+    using Type = ConfigDiscovery::Protocol::Type;
+
+    std::string strval;
+    ss >> strval;
+    if (strval == "nut_powercom") {
+        value = Type::POWERCOM;
+    } else if (strval == "nut_xml_pdc") {
+        value = Type::XML_PDC;
+    } else if (strval == "nut_snmp") {
+        value = Type::SNMP;
+    } else {
+        value = Type::UNKNOWN;
+    }
+    return ss;
+}
+
 std::ostream& operator<<(std::ostream& ss, ConfigDiscovery::Discovery::Type value)
 {
     using Type = ConfigDiscovery::Discovery::Type;
 
     ss << [&]() {
         switch (value) {
-            case Type::Local:
+            case Type::LOCAL:
                 return "localscan";
-            case Type::Ip:
+            case Type::IP:
                 return "ipscan";
-            case Type::Multy:
+            case Type::MULTI:
                 return "multiscan";
-            case Type::Full:
+            case Type::FULL:
                 return "fullscan";
-            case Type::Unknown:
+            case Type::UNKNOWN:
                 return "unknown";
         }
         return "unknown";
@@ -44,17 +79,19 @@ std::istream& operator>>(std::istream& ss, ConfigDiscovery::Discovery::Type& val
     std::string strval;
     ss >> strval;
     if (strval == "localscan") {
-        value = Type::Local;
+        value = Type::LOCAL;
     } else if (strval == "ipscan") {
-        value = Type::Ip;
+        value = Type::IP;
     } else if (strval == "multiscan") {
-        value = Type::Multy;
+        value = Type::MULTI;
     } else if (strval == "fullscan") {
-        value = Type::Full;
+        value = Type::FULL;
     } else {
-        value = Type::Unknown;
+        value = Type::UNKNOWN;
     }
     return ss;
 }
+
+
 
 } // namespace fty::disco

@@ -2,59 +2,18 @@
 
 namespace fty::disco {
 
-
-namespace commands::protocols {
-    std::ostream& operator<<(std::ostream& ss, In::Protocol::Type value){
-        using Type = In::Protocol::Type;
-
-        ss << [&]() {
-            switch (value) {
-                case Type::Powercom:
-                    return "nut_powercom";
-                case Type::XML_pdc:
-                    return "nut_xml_pdc";
-                case Type::SNMP:
-                    return "nut_snmp";
-                case Type::Unknown:
-                    return "unknown";
-            }
-            return "Unknown";
-        }();
-        return ss;
-    }
-    std::istream& operator>>(std::istream& ss, In::Protocol::Type& value){
-        using Type = In::Protocol::Type;
-
-        std::string strval;
-        ss >> strval;
-        if (strval == "nut_powercom") {
-            value = Type::Powercom;
-        } else if (strval == "nut_xml_pdc") {
-            value = Type::XML_pdc;
-        } else if (strval == "nut_snmp") {
-            value = Type::SNMP;
-        } else {
-            value = Type::Unknown;
-        }
-        return ss;
-    }
-
-} // namespace commands::protocols
-
 namespace commands::scan::status {
-    std::ostream& operator<<(std::ostream& ss, Out::Status value)
+    std::ostream& operator<<(std::ostream& ss, Status value)
     {
-        using Status = Out::Status;
-
         ss << [&]() {
             switch (value) {
-                case Status::CancelledByUser:
+                case Status::CANCELLED_BY_USER:
                     return "1";
-                case Status::Terminated:
+                case Status::TERMINATED:
                     return "2";
-                case Status::InProgress:
+                case Status::IN_PROGRESS:
                     return "3";
-                case Status::Unknown:
+                case Status::UNKNOWN:
                     return "0";
             }
             return "0";
@@ -62,20 +21,18 @@ namespace commands::scan::status {
         return ss;
     }
 
-    std::istream& operator>>(std::istream& ss, Out::Status& value)
+    std::istream& operator>>(std::istream& ss, Status& value)
     {
-        using Status = Out::Status;
-
         std::string strval;
         ss >> strval;
         if (strval == "1") {
-            value = Status::CancelledByUser;
+            value = Status::CANCELLED_BY_USER;
         } else if (strval == "2") {
-            value = Status::Terminated;
+            value = Status::TERMINATED;
         } else if (strval == "3") {
-            value = Status::InProgress;
+            value = Status::IN_PROGRESS;
         } else {
-            value = Status::Unknown;
+            value = Status::UNKNOWN;
         }
         return ss;
     }
@@ -88,11 +45,11 @@ namespace commands::scan {
 
         ss << [&]() {
             switch (value) {
-                case Status::Success:
+                case Status::SUCCESS:
                     return "success";
-                case Status::Failure:
+                case Status::FAILURE:
                     return "failure";
-                case Status::Unknown:
+                case Status::UNKNOWN:
                     return "unknown";
             }
             return "unknown";
@@ -106,11 +63,11 @@ namespace commands::scan {
         std::string strval;
         ss >> strval;
         if (strval == "success") {
-            value = Status::Success;
+            value = Status::SUCCESS ;
         } else if (strval == "failure") {
-            value = Status::Failure;
+            value = Status::FAILURE;
         } else {
-            value = Status::Unknown;
+            value = Status::UNKNOWN;
         }
         return ss;
     }

@@ -23,7 +23,7 @@ TEST_CASE("Protocols / Wrong request", "[protocols]")
     CHECK("Wrong input data: format of payload is incorrect" == ret.error());
 }
 
-TEST_CASE("Protocols / Unaviable host", "[protocols]")
+TEST_CASE("Protocols / Unavailable host", "[protocols]")
 {
     fty::disco::Message msg = Test::createMessage(commands::protocols::Subject);
 
@@ -92,9 +92,21 @@ TEST_CASE("Protocols / Fake request", "[protocols]")
         {
             commands::protocols::In in;
             in.address = "127.0.0.1";
-            in.protocols.append("nut_powercom:4443");
-            in.protocols.append("nut_xml_pdc:8080");
-            in.protocols.append("nut_snmp:1161");  // Only this one will match
+            ConfigDiscovery::Protocol nutPowercom;
+            nutPowercom.protocol = ConfigDiscovery::Protocol::Type::POWERCOM;
+            //nutPowercom.ports.append(4443);
+            nutPowercom.port = 4443;
+            in.protocols.append(nutPowercom);
+            ConfigDiscovery::Protocol nutXmlPdc;
+            nutXmlPdc.protocol = ConfigDiscovery::Protocol::Type::XML_PDC;
+            //nutXmlPdc.ports.append(8080);
+            nutXmlPdc.port = 8080;
+            in.protocols.append(nutXmlPdc);
+            ConfigDiscovery::Protocol nutSnmp;
+            nutSnmp.protocol = ConfigDiscovery::Protocol::Type::SNMP;
+            //nutSnmp.ports.append(1161);
+            nutSnmp.port = 1161;
+            in.protocols.append(nutSnmp);  // Only this one will match
 
             fty::disco::Message msg = Test::createMessage(commands::protocols::Subject);
             msg.userData.setString(*pack::json::serialize(in));
@@ -143,31 +155,32 @@ TEST_CASE("Protocols / resolve", "[protocols]")
     fty::Expected<fty::disco::Message> ret2 = Test::send(msg);
 }
 
-TEST_CASE("Protocols / splitPortFromProtocol", "[protocols]")
-{
-    auto res = fty::disco::job::Protocols::splitPortFromProtocol("");
-    CHECK(res.first == "");
-    CHECK(res.second == "");
-    res = fty::disco::job::Protocols::splitPortFromProtocol("nut_snmp");
-    CHECK(res.first == "nut_snmp");
-    CHECK(res.second == "");
-    res = fty::disco::job::Protocols::splitPortFromProtocol("nut_snmp:162");
-    CHECK(res.first == "nut_snmp");
-    CHECK(res.second == "162");
-}
-
-TEST_CASE("Protocols / getPort", "[protocols]")
+TEST_CASE("Protocols / findProtocol", "[protocols]")
 {
     fty::disco::commands::protocols::In in;
-    auto res = fty::disco::job::Protocols::getPort("", in);
-    CHECK(res == std::nullopt);
-    in.protocols.append("nut_snmp:163");
-    res = fty::disco::job::Protocols::getPort("", in);
-    CHECK(res == std::nullopt);
-    res = fty::disco::job::Protocols::getPort("nut_snmp", in);
-    CHECK(*res == 163);
-    res = fty::disco::job::Protocols::getPort("nut_bad", in);
-    CHECK(res == std::nullopt);
+    {
+        auto res = fty::disco::job::Protocols::findProtocol(ConfigDiscovery::Protocol::Type::UNKNOWN, in);
+        CHECK(res == std::nullopt);
+    }
+    ConfigDiscovery::Protocol nutSnmp;
+    nutSnmp.protocol = ConfigDiscovery::Protocol::Type::SNMP;
+    nutSnmp.port = 163;
+    //nutSnmp.ports.append(163);
+    in.protocols.append(nutSnmp);
+    {
+        auto res = fty::disco::job::Protocols::findProtocol(ConfigDiscovery::Protocol::Type::UNKNOWN, in);
+        CHECK(res == std::nullopt);
+    }
+    {
+        auto res = fty::disco::job::Protocols::findProtocol(ConfigDiscovery::Protocol::Type::SNMP, in);
+        CHECK(res->protocol == ConfigDiscovery::Protocol::Type::SNMP);
+        //CHECK(res->ports[0] == 163);
+        CHECK(res->port == 163);
+    }
+    {
+        auto res = fty::disco::job::Protocols::findProtocol(ConfigDiscovery::Protocol::Type::UNKNOWN, in);
+        CHECK(res == std::nullopt);
+    }
 }
 
 /*TEST_CASE("Protocols / powercom")

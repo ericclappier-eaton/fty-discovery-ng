@@ -8,23 +8,44 @@ static constexpr const char* ConfigFile = "/etc/fty-discovery-ng/discovery.conf"
 
 struct ConfigDiscovery : public pack::Node
 {
+    struct Protocol : public pack::Node
+    {
+    public:
+        enum class Type
+        {
+            UNKNOWN,
+            POWERCOM,
+            XML_PDC,
+            SNMP
+        };
+
+        pack::Enum<Type> protocol = FIELD("protocol");
+        pack::UInt32     port     = FIELD("port");
+        //pack::UInt32List ports  = FIELD("ports");
+
+    public:
+        using pack::Node::Node;
+        META(Protocol, protocol, port);
+    };
+
+    using Protocols = pack::ObjectList<Protocol>;
+
     struct Discovery : public pack::Node
     {
         enum class Type
-        { 
-            Unknown,
-            Local,
-            Ip,
-            Multy,
-            Full
+        {
+            UNKNOWN,
+            LOCAL,
+            IP,
+            MULTI,
+            FULL
         };
 
         pack::Enum<Type> type      = FIELD("type");
         pack::StringList scans     = FIELD("scans");
         pack::StringList ips       = FIELD("ips");
         pack::StringList documents = FIELD("documents");
-        pack::StringList protocols = FIELD("protocols");
-
+        Protocols        protocols = FIELD("protocols");
 
         using pack::Node::Node;
         META(Discovery, type, scans, ips, documents, protocols);
@@ -54,7 +75,7 @@ struct ConfigDiscovery : public pack::Node
     struct DefaultValuesLink : public pack::Node
     {
         pack::String src  = FIELD("src");
-        pack::Int32  type = FIELD("type");
+        pack::UInt32 type = FIELD("type");
 
         using pack::Node::Node;
         META(DefaultValuesLink, src, type);
@@ -83,6 +104,9 @@ struct ConfigDiscovery : public pack::Node
     fty::Expected<void> save(const std::string& path = ConfigFile);
     fty::Expected<void> load(const std::string& path = ConfigFile);
 };
+
+std::ostream& operator<<(std::ostream& ss, ConfigDiscovery::Protocol::Type value);
+std::istream& operator>>(std::istream& ss, ConfigDiscovery::Protocol::Type& value);
 
 std::ostream& operator<<(std::ostream& ss, ConfigDiscovery::Discovery::Type value);
 std::istream& operator>>(std::istream& ss, ConfigDiscovery::Discovery::Type& value);

@@ -16,6 +16,8 @@
 
 using namespace fty::disco;
 
+using fty::disco::commands::scan::status::Status;
+
 TEST_CASE("Auto disco / updateExt", "[auto]")
 {
     commands::assets::Ext in;
@@ -179,7 +181,7 @@ TEST_CASE("Auto disco / Test normal scan auto", "[auto]")
 
     // Test status before scan
     auto out = getStatus();
-    CHECK(out.status     == status::Out::Status::Unknown);
+    CHECK(out.status     == Status::UNKNOWN);
     CHECK(out.discovered == 0);
     CHECK(out.ups        == 0);
     CHECK(out.epdu       == 0);
@@ -189,12 +191,16 @@ TEST_CASE("Auto disco / Test normal scan auto", "[auto]")
     // Prepare discovery
     fty::disco::Message msg = Test::createMessage(start::Subject);
     start::In in;
-    in.type = start::In::Type::Ip;
+    in.discovery.type = ConfigDiscovery::Discovery::Type::IP;
     for (int i = 0; i < 100; i++) {
-        in.ips.append("127.0.0.1");
+        in.discovery.ips.append("127.0.0.1");
     }
-    in.protocols.append("nut_snmp:1161");
-    in.documents.append("no_id");
+    ConfigDiscovery::Protocol nutSnmp;
+    nutSnmp.protocol = ConfigDiscovery::Protocol::Type::SNMP;
+    //nutSnmp.ports.append(1161);
+    nutSnmp.port = 1161;
+    in.discovery.protocols.append(nutSnmp);
+    in.discovery.documents.append("no_id");
 
     // Execute discovery
     msg.userData.setString(*pack::json::serialize(in));
@@ -205,7 +211,7 @@ TEST_CASE("Auto disco / Test normal scan auto", "[auto]")
 
     // Check status (in progress)
     out = getStatus();
-    CHECK(out.status     == status::Out::Status::InProgress);
+    CHECK(out.status     == Status::IN_PROGRESS);
     //CHECK(out.progress == "0%");
     CHECK(out.discovered == 0);
     CHECK(out.ups        == 0);
@@ -216,7 +222,7 @@ TEST_CASE("Auto disco / Test normal scan auto", "[auto]")
     auto start = std::chrono::steady_clock::now();
     while(1) {
         out = getStatus();
-        if (out.status == status::Out::Status::Terminated) {
+        if (out.status == Status::TERMINATED) {
             break;
         }
         std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -228,7 +234,7 @@ TEST_CASE("Auto disco / Test normal scan auto", "[auto]")
 
     // Check status (terminated)
     out = getStatus();
-    CHECK(out.status == status::Out::Status::Terminated);
+    CHECK(out.status == Status::TERMINATED);
     CHECK(out.progress == "100%");
 }
 
@@ -239,65 +245,89 @@ TEST_CASE("Auto disco / Test stop scan auto", "[auto]")
 
     // Test status before scan
     auto out = getStatus();
-    CHECK(out.status     == status::Out::Status::Unknown);
+    CHECK(out.status     == Status::UNKNOWN);
     CHECK(out.discovered == 0);
     CHECK(out.ups        == 0);
     CHECK(out.epdu       == 0);
     CHECK(out.sts        == 0);
     CHECK(out.sensors    == 0);
 
-    // Prepare discovery
-    fty::disco::Message msg = Test::createMessage(start::Subject);
-    start::In in;
-    in.type = start::In::Type::Ip;
-    for (int i = 0; i < 100; i++) {
-        in.ips.append("127.0.0.1");
-    }
-    in.protocols.append("nut_snmp:1161");
-    in.documents.append("no_id");
+    // clang-format off
+    fty::Process proc("snmpsimd", {
+        "--data-dir=root",
+        "--agent-udpv4-endpoint=127.0.0.1:1161",
+        "--logging-method=file:.snmpsim.txt",
+        "--variation-modules-dir=root",
+    });
+    // clang-format on
 
-    // Execute discovery
-    msg.userData.setString(*pack::json::serialize(in));
-    fty::Expected<fty::disco::Message> ret = Test::send(msg);
-    if (!ret) {
-        FAIL(ret.error());
-    }
+    if (auto pid = proc.run()) {
 
-    // Check status (in progress)
-    out = getStatus();
-    CHECK(out.status == status::Out::Status::InProgress);
-    //CHECK(out.progress == "0%");
-    CHECK(out.discovered == 0);
-    CHECK(out.ups        == 0);
-    CHECK(out.epdu       == 0);
-    CHECK(out.sts        == 0);
-    CHECK(out.sensors    == 0);
-
-    // Stop discovery
-    fty::disco::Message msg2 = Test::createMessage(stop::Subject);
-    fty::Expected<fty::disco::Message> ret2 = Test::send(msg2);
-    if (!ret2) {
-        FAIL(ret2.error());
-    }
-
-    auto start = std::chrono::steady_clock::now();
-    while(1) {
-        out = getStatus();
-        if (out.status == status::Out::Status::Terminated ||
-            out.status == status::Out::Status::CancelledByUser) {
-            break;
-        }
+        // Wait a moment for snmpsim init
         std::this_thread::sleep_for(std::chrono::seconds(1));
-        auto end = std::chrono::steady_clock::now();
-        if (std::chrono::duration_cast<std::chrono::seconds>(end - start).count() > 10) {
-            FAIL("Timeout when wait terminated status");
-        }
-    }
 
-    // Check status (terminated)
-    out = getStatus();
-    CHECK(out.status     == status::Out::Status::CancelledByUser);
-    CHECK(!(out.progress == "100%"));  // normally not finished
+        // Prepare discovery
+        fty::disco::Message msg = Test::createMessage(start::Subject);
+        start::In in;
+        in.discovery.type = ConfigDiscovery::Discovery::Type::IP;
+        for (int i = 0; i < 100; i++) {
+            in.discovery.ips.append("127.0.0.1");
+        }
+        ConfigDiscovery::Protocol nutSnmp;
+        nutSnmp.protocol = ConfigDiscovery::Protocol::Type::SNMP;
+        //nutSnmp.ports.append(1161);
+        nutSnmp.port = 1161;
+        in.discovery.protocols.append(nutSnmp);
+        in.discovery.documents.append("no_id");
+
+        // Execute discovery
+        msg.userData.setString(*pack::json::serialize(in));
+        fty::Expected<fty::disco::Message> ret = Test::send(msg);
+        if (!ret) {
+            FAIL(ret.error());
+        }
+
+        // Check status (in progress)
+        out = getStatus();
+        CHECK(out.status == Status::IN_PROGRESS);
+        //CHECK(out.progress == "0%");
+        CHECK(out.discovered == 0);
+        CHECK(out.ups        == 0);
+        CHECK(out.epdu       == 0);
+        CHECK(out.sts        == 0);
+        CHECK(out.sensors    == 0);
+
+        // Stop discovery
+        fty::disco::Message msg2 = Test::createMessage(stop::Subject);
+        fty::Expected<fty::disco::Message> ret2 = Test::send(msg2);
+        if (!ret2) {
+            FAIL(ret2.error());
+        }
+
+        auto start = std::chrono::steady_clock::now();
+        while(1) {
+            out = getStatus();
+            if (out.status == Status::TERMINATED || out.status == Status::CANCELLED_BY_USER) {
+                break;
+            }
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+            auto end = std::chrono::steady_clock::now();
+            if (std::chrono::duration_cast<std::chrono::seconds>(end - start).count() > 10) {
+                FAIL("Timeout when wait terminated status");
+            }
+        }
+
+        // Check status (terminated)
+        out = getStatus();
+        CHECK(out.status == Status::CANCELLED_BY_USER);
+        //CHECK(!(out.progress == "100%"));  // normally not finished
+
+        // Stop snmp process
+        proc.interrupt();
+        proc.wait();
+    } else {
+        FAIL(pid.error());
+    }
 }
 
 class TestAuto {
@@ -312,6 +342,7 @@ void TestAuto::recAssets(const fty::disco::Message& msg)
 {
     messagebus::Message msg2 = msg.toMessageBus();
     if (msg2.metaData()[messagebus::Message::SUBJECT] == "CREATE") {
+        logDebug("Receive create asset message");
         messagebus::Message answ;
         answ.metaData().emplace(messagebus::Message::SUBJECT, msg2.metaData().find(messagebus::Message::SUBJECT)->second);
         answ.metaData().emplace(messagebus::Message::FROM, "asset-agent-ng");
@@ -367,7 +398,7 @@ TEST_CASE("Auto disco / Test real scan auto with simulation", "[auto]")
     auto& discoAuto = Test::instance().getDisco().getAutoDiscovery();
     discoAuto.statusDiscoveryInit();
 
-    auto initStatus = [](status::Out::Status status,
+    auto initStatus = [](Status status,
         uint32_t discovered, uint32_t ups, uint32_t epdu, uint32_t sts, uint32_t sensors) -> const status::Out {
         status::Out out;
         out.status     = status;
@@ -382,25 +413,25 @@ TEST_CASE("Auto disco / Test real scan auto with simulation", "[auto]")
     //for (const auto& testCases : std::vector<std::pair<std::vector<std::string>, const status::Out>>{
     for (const auto& testCases : std::vector<std::pair<std::string, const status::Out>>{
         // Daisy device epdu.147
-        { "epdu.147", initStatus(status::Out::Status::Terminated, 4, 0, 4, 0, 0
+        { "epdu.147", initStatus(Status::TERMINATED, 4, 0, 4, 0, 0
         )},
         // MG device mge.125
-        { "mge.125",  initStatus(status::Out::Status::Terminated, 1, 1, 0, 0, 0
+        { "mge.125",  initStatus(Status::TERMINATED, 1, 1, 0, 0, 0
         )},
         // MG device mge.191
-        { "mge.191",  initStatus(status::Out::Status::Terminated, 1, 1, 0, 0, 0
+        { "mge.191",  initStatus(Status::TERMINATED, 1, 1, 0, 0, 0
         )},
         // Genepi device xups.238
-        { "xups.238", initStatus(status::Out::Status::Terminated, 1, 1, 0, 0, 0
+        { "xups.238", initStatus(Status::TERMINATED, 1, 1, 0, 0, 0
         )},
         // Genepi device xups.159
-        { "xups.159", initStatus(status::Out::Status::Terminated, 2, 1, 0, 0, 1
+        { "xups.159", initStatus(Status::TERMINATED, 2, 1, 0, 0, 1
         )},
         // Ats device ats.100
-        { "ats.100",  initStatus(status::Out::Status::Terminated, 1, 0, 0, 1, 0
+        { "ats.100",  initStatus(Status::TERMINATED, 1, 0, 0, 1, 0
         )},
         // Genepi device xups.238 & Genepi device xups.159
-        /*{ {"xups.238", "xups.159"}, initStatus(status::Out::Status::Terminated, 3, 2, 0, 0, 1
+        /*{ {"xups.238", "xups.159"}, initStatus(Status::Terminated, 3, 2, 0, 0, 1
         )},*/
     }) {
         std::cout << "TEST #" << i << std::endl;
@@ -445,14 +476,18 @@ TEST_CASE("Auto disco / Test real scan auto with simulation", "[auto]")
         // Prepare discovery
         fty::disco::Message msg = Test::createMessage(start::Subject);
         start::In in;
-        in.type = start::In::Type::Ip;
+        in.discovery.type = ConfigDiscovery::Discovery::Type::IP;
         // TBD Use 169.254.50.X private address for multi scan
         // ip address add dev eth0 scope link $addr/16
         // ip address del $addr/16 dev eth0
-        in.ips.append("127.0.0.1");
-        in.protocols.append("nut_snmp:1161");
+        in.discovery.ips.append("127.0.0.1");
+        ConfigDiscovery::Protocol nutSnmp;
+        nutSnmp.protocol = ConfigDiscovery::Protocol::Type::SNMP;
+        //nutSnmp.ports.append(1161);
+        nutSnmp.port = 1161;
+        in.discovery.protocols.append(nutSnmp);
         for (const auto id : idList) {
-            in.documents.append(id);
+            in.discovery.documents.append(id);
         }
 
         // Execute discovery
@@ -467,7 +502,7 @@ TEST_CASE("Auto disco / Test real scan auto with simulation", "[auto]")
         auto start = std::chrono::steady_clock::now();
         while(1) {
             out = getStatus();
-            if (out.status == status::Out::Status::InProgress) {
+            if (out.status == Status::IN_PROGRESS) {
                 CHECK(out.progress   == "0%");
                 CHECK(out.discovered == 0);
                 CHECK(out.ups        == 0);
@@ -477,9 +512,9 @@ TEST_CASE("Auto disco / Test real scan auto with simulation", "[auto]")
                 break;
             }
             std::this_thread::sleep_for(std::chrono::seconds(1));
-            // Timeout of 20 sec
+            // Timeout of 100 sec
             auto end = std::chrono::steady_clock::now();
-            if (std::chrono::duration_cast<std::chrono::seconds>(end - start).count() > 20) {
+            if (std::chrono::duration_cast<std::chrono::seconds>(end - start).count() > 100) {
                 FAIL("Timeout when wait progress status");
             }
         }
@@ -488,7 +523,7 @@ TEST_CASE("Auto disco / Test real scan auto with simulation", "[auto]")
         start = std::chrono::steady_clock::now();
         while(1) {
             out = getStatus();
-            if (out.status == status::Out::Status::Terminated) {
+            if (out.status == Status::TERMINATED) {
                 break;
             }
             std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -501,7 +536,7 @@ TEST_CASE("Auto disco / Test real scan auto with simulation", "[auto]")
 
         // Check status (terminated)
         out = getStatus();
-        CHECK(out.status     == status::Out::Status::Terminated);
+        CHECK(out.status     == Status::TERMINATED);
         CHECK(out.progress   == "100%");
         CHECK(out.discovered == statusExpected.discovered);
         CHECK(out.ups        == statusExpected.ups);

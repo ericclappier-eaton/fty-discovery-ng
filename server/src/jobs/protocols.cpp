@@ -30,73 +30,21 @@
 namespace fty::disco::job {
 
 // =====================================================================================================================
-
-inline std::ostream& operator<<(std::ostream& ss, Type type)
-{
-    switch (type) {
-        case Type::Powercom:
-            ss << "GenApi";
-            break;
-        case Type::Xml:
-            ss << "Xml";
-            break;
-        case Type::Snmp:
-            ss << "Snmp";
-            break;
-        default:
-            ss << "protocol-type-unknown";
-    }
-    return ss;
-}
-
-const std::pair<std::string, std::string> Protocols::splitPortFromProtocol(const std::string &str) {
-    // split protocol and port with format "<protocol>:<port>"
-    std::string protocol, port;
-    auto pos = str.find(":");
-    // If port found,
-    if (pos != std::string::npos) {
-        // get first protocol
-        protocol = std::move(str.substr(0, pos));
-        // and get second port number
-        port = std::move(str.substr(pos + 1));
-    }
-    else {
-        // No port found, return only protocol
-        protocol = str;
-    }
-    return make_pair(protocol, port);
-}
-
-std::optional<uint16_t> Protocols::getPort(const std::string& protocolIn, const commands::protocols::In& in) {
+std::optional<const ConfigDiscovery::Protocol>
+Protocols::findProtocol(const ConfigDiscovery::Protocol::Type& protocolIn, const commands::protocols::In& in) {
     if (in.protocols.size() != 0) {
-        for (const auto& protocolRequested : in.protocols) {
-            auto split = Protocols::splitPortFromProtocol(protocolRequested);
-            std::string protocol = split.first;
-            if (protocol == protocolIn) {
-                if (!split.second.empty()) {
-                    logDebug("getPort: get port={} from {} protocol", split.second, protocolIn);
-                    return std::atoi(split.second.c_str());
-                }
-            }
-        }
-    }
-    return std::nullopt;
-}
+        for (const auto& protocol : in.protocols) {
 
-// TBD: To be reworked with scan auto interface
-/*std::optional<const commands::protocols::Option> Protocols::getOption(const std::string& protocolIn, const commands::protocols::In& in) {
-    if (in.options.size() != 0) {
-        for (const auto& option : in.options) {
             // test if option found in options
-            if (option.protocol == protocolIn) {
+            if (protocol.protocol == protocolIn) {
                 // return option found in options
-                return option;
+                return protocol;
             }
         }
     }
     // no option avaliable, any protocol filtered
     return std::nullopt;
-}*/
+}
 
 // =====================================================================================================================
 Expected<commands::protocols::Out> Protocols::getProtocols(const commands::protocols::In& in) const
@@ -109,71 +57,75 @@ Expected<commands::protocols::Out> Protocols::getProtocols(const commands::proto
     // supported protocols, tokenized with default port
     // in *order* of preferences
     struct {
-        Type        protocol;
-        std::string protocolStr;
-        uint16_t    defaultPort;
+        ConfigDiscovery::Protocol::Type protocol;
+        uint16_t                        defaultPort;
     } tries[] = {
-        {Type::Powercom, "nut_powercom", 443},
-        {Type::Xml,      "nut_xml_pdc",   80},
-        {Type::Snmp,     "nut_snmp",     161},
+        {ConfigDiscovery::Protocol::Type::POWERCOM, 443},
+        {ConfigDiscovery::Protocol::Type::XML_PDC,   80},
+        {ConfigDiscovery::Protocol::Type::SNMP,     161},
     };
 
+    // for each protocol
     for (auto& aux : tries) {
         using namespace commands::protocols;
 
         auto& protocol = out.append();
-        auto port = Protocols::getPort(aux.protocolStr, in);
-        protocol.protocol  = aux.protocolStr;
-        protocol.port      = (port != std::nullopt) ? *port : aux.defaultPort;
+        std::stringstream ss;
+        ss << aux.protocol;
+        protocol.protocol  = ss.str();
+        protocol.port      = aux.defaultPort;
         protocol.reachable = false; // default, port is not reachable
         protocol.available = Return::Available::No; // and protocol is not available
-        // TBD: To be reworked with scan auto interface
-        /*protocol.ignored  = false; // default, not filtered
-        auto option = Protocols::getOption(aux.protocolStr, in);
-        if (!option || !option->ignore) {
-            protocol.protocol  = aux.protocolStr;
-            protocol.port      = (option && (option->port != 0)) ? option->port : aux.defaultPort;
-            protocol.ignored   = option ? option->ignore : false;
-            protocol.reachable = false; // default, not reachable*/
+        //protocol.ignored   = true;  // default, filtered
+        auto find = Protocols::findProtocol(aux.protocol, in);
+        if (find /*&& !find->ignore*/) {
+            // TBD: To be reworked with scan auto interface (possibility to add more then one port)
+            // test protocol for each port
+            // Note: for a same protocol, stop for first port which responding
+            //for (int iPort = 0; iPort < find->ports.size() && !protocol.reachable; iPort ++) {
 
-        // try to reach server
-        switch (aux.protocol) {
-            case Type::Powercom: {
-                if (auto res = tryPowercom(in.address.value(), static_cast<uint16_t>(protocol.port))) {
-                    logInfo("Found Powercom device on port {}", protocol.port);
-                    protocol.reachable = true; // port is reachable
+                if (find->port != 0) protocol.port = find->port;
+                //if (find->ports[iPort] != 0) protocol.port = find->ports[iPort];
+                //protocol.ignored = false;
+
+                // try to reach server
+                switch (aux.protocol) {
+                    case ConfigDiscovery::Protocol::Type::POWERCOM: {
+                        if (auto res = tryPowercom(in.address.value(), static_cast<uint16_t>(protocol.port))) {
+                            logInfo("Found Powercom device on port {}", protocol.port);
+                            protocol.reachable = true; // port is reachable
+                        }
+                        else {
+                            logInfo("Skipped GenApi/{}, reason: {}", protocol.port.value(), res.error());
+                        }
+                        break;
+                    }
+                    case ConfigDiscovery::Protocol::Type::XML_PDC: {
+                        if (auto res = tryXmlPdc(in.address.value(), static_cast<uint16_t>(protocol.port))) {
+                            logInfo("Found XML device on port {}", protocol.port);
+                            protocol.reachable = true; // port is reachable
+                        }
+                        else {
+                            logInfo("Skipped xml_pdc/{}, reason: {}", protocol.port.value(), res.error());
+                        }
+                        break;
+                    }
+                    case ConfigDiscovery::Protocol::Type::SNMP: {
+                        if (auto res = trySnmp(in.address.value(), static_cast<uint16_t>(protocol.port))) {
+                            logInfo("Found SNMP device on port {}", protocol.port);
+                            protocol.reachable = true; // port is reachable
+                        }
+                        else {
+                            logInfo("Skipped SNMP/{}, reason: {}", protocol.port.value(), res.error());
+                        }
+                        break;
+                    }
+                    default:
+                        logError("protocol not handled (type: {})", aux.protocol);
                     protocol.available = Return::Available::Yes; // and protocol is available
                 }
-                else {
-                    logInfo("Skipped GenApi/{}, reason: {}", aux.port, res.error());
-                }
-                break;
             }
-            case Type::Xml: {
-                if (auto res = tryXmlPdc(in.address.value(), static_cast<uint16_t>(protocol.port))) {
-                    logInfo("Found XML device on port {}", protocol.port);
-                    protocol.reachable = true; // port is reachable
-                    protocol.available = Return::Available::Yes; // and protocol is available
-                }
-                else {
-                    logInfo("Skipped xml_pdc/{}, reason: {}", aux.port, res.error());
-                }
-                break;
-            }
-            case Type::Snmp: {
-                if (auto res = trySnmp(in.address.value(), static_cast<uint16_t>(protocol.port))) {
-                    logInfo("Found SNMP device on port {}", protocol.port);
-                    protocol.reachable = true; // port is reachable
-                    protocol.available = Return::Available::Maybe; // but we don't know if protocol is available
-                }
-                else {
-                    logInfo("Skipped SNMP/{}, reason: {}", aux.port, res.error());
-                }
-                break;
-            }
-            default:
-                logError("protocol not handled (type: {})", aux.protocol);
-        }
+        //}
     }
     return out;
 }
