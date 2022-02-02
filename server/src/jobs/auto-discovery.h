@@ -30,14 +30,8 @@ public:
     static const uint32_t SCAN_CHECK_PERIOD_MS = 1000;
     static const uint32_t SCAN_MIN_NUM_THREAD  = 5;
 
-    enum class State {
-        Unknown,
-        CancelledByUser,
-        Terminated,
-        InProgress
-    };
     struct StatusDiscovery {
-        State    state;
+        commands::scan::status::Status state;
         uint32_t progress;
         uint32_t discovered;
         uint32_t ups;
@@ -48,9 +42,9 @@ public:
 
     enum class AssetStatus
     {
-        Unknown = 0,
-        Active,
-        Nonactive
+        UNKNOWN = 0,
+        ACTIVE,
+        INACTIVE
     };
 
     AutoDiscovery();
@@ -80,7 +74,7 @@ public:
     // Device centric view
     bool isDeviceCentricView() const
     {
-        return (m_params.parent == "0") ? false : true;
+        return (m_params.aux.parent == "0") ? false : true;
     };
 
     // Read configuration

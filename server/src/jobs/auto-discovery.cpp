@@ -126,40 +126,33 @@ Expected<void> AutoDiscovery::readConfig(const disco::commands::scan::start::In&
     // Init default links
     asset::create::PowerLink powerLink;
     // For each link
-    for (const auto& link : in.linkSrc) {
+    for (const auto& link : in.links) {
         // When link to no source, the file will have "0"
-        if (!(link == "0")) {
-            powerLink.source    = link;
-            powerLink.link_type = 1; // TBD
+        if (!(link.src == "0")) {
+            powerLink.source    = link.src;
+            powerLink.link_type = link.type; // TBD
             m_defaultValuesLinks.append(powerLink);
             logTrace("defaultValuesLinks add={}", link);
         }
     }
     logTrace("defaultValuesLinks size={}", m_defaultValuesLinks.size());
 
-    // Init default parent
-    std::string defaultParent = in.parent;
-    if (defaultParent.empty()) {
-        in.parent == "0";
-    }
-    logTrace("defaultParent={}", defaultParent);
-
     m_listIpAddress.clear();
     // Ip list scan
-    if (in.type == commands::scan::start::In::Type::Ip) {
-        if (in.ips.size() == 0) {
+    if (in.discovery.type == ConfigDiscovery::Discovery::Type::IP) {
+        if (in.discovery.ips.size() == 0) {
             fty::unexpected("Ips list empty");
         }
-        for (const auto& ip: in.ips) {
+        for (const auto& ip : in.discovery.ips) {
             m_listIpAddress.push_back(ip);
         }
     }
     // Multi scan
-    else if (in.type == commands::scan::start::In::Type::Multi) {
-        if (in.scans.size() == 0) {
+    else if (in.discovery.type == ConfigDiscovery::Discovery::Type::MULTI) {
+        if (in.discovery.scans.size() == 0) {
             fty::unexpected("Scans list empty");
         }
-        for (const auto& range: in.scans) {
+        for (const auto& range : in.discovery.scans) {
             if (auto listIp = address::AddressParser::getRangeIp(range); listIp) {
                 m_listIpAddress.insert(m_listIpAddress.end(), listIp->begin(), listIp->end());
             }
@@ -169,18 +162,18 @@ Expected<void> AutoDiscovery::readConfig(const disco::commands::scan::start::In&
         }
     }
     // Full scan
-    else if (in.type == commands::scan::start::In::Type::Full) {
+    else if (in.discovery.type == ConfigDiscovery::Discovery::Type::FULL) {
 
-        if (in.ips.size() == 0 && in.scans.size() == 0) {
+        if (in.discovery.ips.size() == 0 && in.discovery.scans.size() == 0) {
             fty::unexpected("Ips and scans list empty");
         }
-        if (in.ips.size() > 0) {
-            for (const auto& ip: in.ips) {
+        if (in.discovery.ips.size() > 0) {
+            for (const auto& ip : in.discovery.ips) {
                 m_listIpAddress.push_back(ip);
             }
         }
-        if (in.scans.size() > 0) {
-            for (const auto& range: in.scans) {
+        if (in.discovery.scans.size() > 0) {
+            for (const auto& range: in.discovery.scans) {
                 if (auto listIp = address::AddressParser::getRangeIp(range); listIp) {
                     m_listIpAddress.insert(m_listIpAddress.end(), listIp->begin(), listIp->end());
                 }
@@ -191,7 +184,7 @@ Expected<void> AutoDiscovery::readConfig(const disco::commands::scan::start::In&
         }
     }
     // Local scan
-    else if (in.type == commands::scan::start::In::Type::Local) {
+    else if (in.discovery.type == ConfigDiscovery::Discovery::Type::LOCAL) {
         if (auto listIp = address::AddressParser::getLocalRangeIp(); listIp) {
             m_listIpAddress.insert(m_listIpAddress.end(), listIp->begin(), listIp->end());
         }
@@ -200,14 +193,16 @@ Expected<void> AutoDiscovery::readConfig(const disco::commands::scan::start::In&
         }
     }
     else {
-        fty::unexpected("Bad scan type {}", in.type);
+        fty::unexpected("Bad scan type {}", in.discovery.type);
     }
     return {};
 }
 
 void AutoDiscovery::statusDiscoveryInit() {
+    using fty::disco::commands::scan::status::Status;
+
     std::lock_guard<std::mutex> lock(m_mutex);
-    m_statusDiscovery.state      = State::Unknown;
+    m_statusDiscovery.state      = Status::UNKNOWN;
     m_statusDiscovery.ups        = 0;
     m_statusDiscovery.epdu       = 0;
     m_statusDiscovery.sts        = 0;
@@ -217,8 +212,10 @@ void AutoDiscovery::statusDiscoveryInit() {
 }
 
 void AutoDiscovery::statusDiscoveryReset() {
+    using fty::disco::commands::scan::status::Status;
+
     std::lock_guard<std::mutex> lock(m_mutex);
-    m_statusDiscovery.state      = State::InProgress;
+    m_statusDiscovery.state      = Status::IN_PROGRESS;
     m_statusDiscovery.ups        = 0;
     m_statusDiscovery.epdu       = 0;
     m_statusDiscovery.sts        = 0;
@@ -252,8 +249,8 @@ void AutoDiscovery::updateStatusDiscoveryProgress() {
     std::lock_guard<std::mutex> lock(m_mutex);
     m_listIpAddressCount --;
     if (m_listIpAddressNb != 0) {
-        m_statusDiscovery.progress = static_cast<uint32_t>(std::round(
-            100 * (m_listIpAddressNb - m_listIpAddressCount) / m_listIpAddressNb));
+        m_statusDiscovery.progress = static_cast<uint32_t>(
+            std::round(100 * (m_listIpAddressNb - m_listIpAddressCount) / m_listIpAddressNb));
         if (m_statusDiscovery.progress > 100) {
             m_statusDiscovery.progress = 100;
         }
@@ -286,9 +283,8 @@ void AutoDiscovery::scan(AutoDiscovery* autoDiscovery, const std::string& ipAddr
         commands::protocols::In inProt;
         inProt.address = ipAddress;
         // Optional parameter
-        if (autoDiscovery->m_params.protocols.hasValue()) {
-            inProt.protocols = autoDiscovery->m_params.protocols;
-        }
+        inProt.protocols = autoDiscovery->m_params.discovery.protocols;
+
         Protocols protocols;
         auto listProtocols = protocols.getProtocols(inProt);
         if (!listProtocols) {
@@ -307,130 +303,109 @@ void AutoDiscovery::scan(AutoDiscovery* autoDiscovery, const std::string& ipAddr
         // For each protocols read, get assets list available
         // Note: stop when found first assets with the protocol in progress
         for (const auto& elt : *listProtocols) {
-            std::string strPort;
-            auto strProtocol = elt.protocol;
+            // if protocol reachable
+            if (elt.reachable) {
 
-            // Test if protocol tested is requested
-            auto& listProtocolRequested = autoDiscovery->m_params.protocols;
-            if (!listProtocolRequested.empty()) {
-                if (auto it = std::find_if(listProtocolRequested.begin(), listProtocolRequested.end(),
-                        [&strProtocol, &strPort](std::string protocolRequested) {
-                            auto split = Protocols::splitPortFromProtocol(protocolRequested);
-                            if (split.first == strProtocol) {
-                                if (!split.second.empty()) {
-                                    strPort = split.second;
-                                }
-                                return true;
-                            }
-                            return false;
-                        }); it == listProtocolRequested.end()) {
-                    logInfo("Skip protocol {} for {}", strProtocol, ipAddress);
-                    continue;
-                }
-            }
+                // Get list of credentials
+                auto& documents = autoDiscovery->m_params.discovery.documents;
 
-            // Get list of credentials
-            auto& documents = autoDiscovery->m_params.documents;
+                // For each credential, try to discover assets according the protocol in progress
+                // Note: stop when found first assets with the credential in progress
+                for (const auto doc : documents) {
+                    logInfo("Try with protocol/port/credential ({}/{}/{}) for {}", elt.protocol, elt.port, doc, ipAddress);
+                    commands::assets::In inAsset;
+                    inAsset.address = ipAddress;
+                    inAsset.protocol = elt.protocol;
+                    inAsset.port = elt.port;
+                    inAsset.settings.credentialId = doc;
+                    // Optional parameter (for test) TBD
+                    /*if (autoDiscovery->m_params.mib.hasValue()) {
+                        logDebug("Set mib {}", autoDiscovery->m_params.mib);
+                        inAsset.settings.mib = autoDiscovery->m_params.mib;
+                    }*/
+                    commands::assets::Out outAsset;
+                    if (auto getAssetsRes = assets.getAssets(inAsset, outAsset)) {
+                        logInfo("Found asset with protocol/port/credential ({}/{}/{}) for {}", elt.protocol, elt.port, doc, ipAddress);
 
-            // For each credential, try to discover assets according the protocol in progress
-            // Note: stop when found first assets with the credential in progress
-            for (const auto doc : documents) {
-                logInfo("Try with protocol/credential ({}/{}) for {}", strProtocol, doc, ipAddress);
-                commands::assets::In inAsset;
-                inAsset.address = ipAddress;
-                inAsset.protocol = strProtocol;
-                if (!strPort.empty()) {
-                    inAsset.port = static_cast<uint32_t>(std::stoul(strPort.c_str()));
-                }
-                inAsset.settings.credentialId = doc;
-                // Optional parameter (for test) TBD
-                /*if (autoDiscovery->m_params.mib.hasValue()) {
-                    logDebug("Set mib {}", autoDiscovery->m_params.mib);
-                    inAsset.settings.mib = autoDiscovery->m_params.mib;
-                }*/
-                commands::assets::Out outAsset;
-                if (auto getAssetsRes = assets.getAssets(inAsset, outAsset)) {
-                    logInfo("Found asset with protocol/credential ({}/{}) for {}", strProtocol, doc, ipAddress);
+                        auto getStatus = [autoDiscovery]() -> uint {
+                            return autoDiscovery->isDeviceCentricView() ? static_cast<uint>(AssetStatus::ACTIVE)
+                                                                        : static_cast<uint>(AssetStatus::INACTIVE);
+                        };
 
-                    auto getStatus = [autoDiscovery]() -> uint {
-                        return autoDiscovery->isDeviceCentricView() ? static_cast<uint>(AssetStatus::Active)
-                                                                    : static_cast<uint>(AssetStatus::Nonactive);
-                    };
+                        // Create asset list
+                        std::string assetNameCreated;
 
-                    // Create asset list
-                    std::string assetNameCreated;
-
-                    // For each asset to create
-                    for (auto& asset : outAsset) {
-                        asset::create::Request req;
-                        req.type     = asset.asset.type;
-                        req.sub_type = asset.asset.subtype;
-                        auto& ext    = asset.asset.ext;
-                        req.status   = getStatus();
-                        req.priority = 3;
-                        req.linked   = autoDiscovery->m_defaultValuesLinks;
-                        req.parent   = (autoDiscovery->m_params.parent == "0") ? pack::String(std::string(""))
-                                                                               : autoDiscovery->m_params.parent;
-                        // Initialise ext attributes
-                        if (auto res = updateExt(ext, req.ext); !res) {
-                            logError("Could not update ext during creation of asset ({}): {}", ipAddress, res.error());
-                        }
-                        // Update host name
-                        if (auto res = updateHostName(ipAddress, req.ext); !res) {
-                            logError("Could not update host name during creation of asset ({}): {}", ipAddress, res.error());
-                        }
-                        // Create asset
-                        if (auto res = asset::create::run(autoDiscovery->m_bus, Config::instance().actorName.value(), req); !res) {
-                            logError("Could not create asset ({}): {}", ipAddress, res.error());
-                            continue;
-                        } else {
-                            assetNameCreated = res->name;
-                            logInfo("Create asset for {}: name={}", ipAddress, assetNameCreated);
-                        }
-                        autoDiscovery->updateStatusDiscoveryCounters(asset.asset.subtype);
-
-                        // Now create sensors attached to the asset
-                        for (auto& sensor : asset.sensors) {
-                            asset::create::Request reqSensor;
-                            reqSensor.type     = sensor.type;
-                            reqSensor.sub_type = sensor.subtype;
-                            reqSensor.status   = getStatus();
-                            reqSensor.priority = 3;
-                            reqSensor.linked   = {}; // defaultValuesLinks; // TBD ???
-                            reqSensor.parent   = assetNameCreated;
-
-                            // Add logical asset in ext
-                            auto& extLogicalAsset = sensor.ext.append();
-                            extLogicalAsset.append("logical_asset", (autoDiscovery->m_params.parent == "0")
-                                                                    ? pack::String(std::string(""))
-                                                                    : autoDiscovery->m_params.parent);
-                            extLogicalAsset.append("read_only", "false");
-                            // Add parent name in ext
-                            auto& extParentName = sensor.ext.append();
-                            extParentName.append("parent_name.1", assetNameCreated);
-                            extParentName.append("read_only", "false");
-
+                        // For each asset to create
+                        for (auto& asset : outAsset) {
+                            asset::create::Request req;
+                            req.type     = asset.asset.type;
+                            req.sub_type = asset.asset.subtype;
+                            auto& ext    = asset.asset.ext;
+                            req.status   = getStatus();
+                            req.priority = 3;
+                            req.linked   = autoDiscovery->m_defaultValuesLinks;
+                            req.parent   = (autoDiscovery->m_params.aux.parent == "0") ?
+                                pack::String(std::string("")) : autoDiscovery->m_params.aux.parent;
                             // Initialise ext attributes
-                            if (auto res = updateExt(sensor.ext, reqSensor.ext); !res) {
-                                logError("Could not update ext during creation of sensor ({}): {}", ipAddress, res.error());
+                            if (auto res = updateExt(ext, req.ext); !res) {
+                                logError("Could not update ext during creation of asset ({}): {}", ipAddress, res.error());
                             }
-                            if (auto resSensor = asset::create::run(autoDiscovery->m_bus, Config::instance().actorName.value(), reqSensor); !resSensor) {
-                                logError("Could not create sensor ({}): {}", ipAddress, resSensor.error());
+                            // Update host name
+                            if (auto res = updateHostName(ipAddress, req.ext); !res) {
+                                logError("Could not update host name during creation of asset ({}): {}", ipAddress, res.error());
+                            }
+                            // Create asset
+                            if (auto res = asset::create::run(autoDiscovery->m_bus, Config::instance().actorName.value(), req); !res) {
+                                logError("Could not create asset ({}): {}", ipAddress, res.error());
                                 continue;
+                            } else {
+                                assetNameCreated = res->name;
+                                logInfo("Create asset for {}: name={}", ipAddress, assetNameCreated);
                             }
-                            autoDiscovery->updateStatusDiscoveryCounters(sensor.subtype);
+                            autoDiscovery->updateStatusDiscoveryCounters(asset.asset.subtype);
+
+                            // Now create sensors attached to the asset
+                            for (auto& sensor : asset.sensors) {
+                                asset::create::Request reqSensor;
+                                reqSensor.type     = sensor.type;
+                                reqSensor.sub_type = sensor.subtype;
+                                reqSensor.status   = getStatus();
+                                reqSensor.priority = 3;
+                                reqSensor.linked   = {}; // defaultValuesLinks; // TBD ???
+                                reqSensor.parent   = assetNameCreated;
+
+                                // Add logical asset in ext
+                                auto& extLogicalAsset = sensor.ext.append();
+                                extLogicalAsset.append("logical_asset", (autoDiscovery->m_params.aux.parent == "0") ?
+                                    pack::String(std::string("")) : autoDiscovery->m_params.aux.parent);
+                                extLogicalAsset.append("read_only", "false");
+                                // Add parent name in ext
+                                auto& extParentName = sensor.ext.append();
+                                extParentName.append("parent_name.1", assetNameCreated);
+                                extParentName.append("read_only", "false");
+
+                                // Initialise ext attributes
+                                if (auto res = updateExt(sensor.ext, reqSensor.ext); !res) {
+                                    logError("Could not update ext during creation of sensor ({}): {}", ipAddress, res.error());
+                                }
+                                if (auto resSensor = asset::create::run(autoDiscovery->m_bus, Config::instance().actorName.value(), reqSensor); !resSensor) {
+                                    logError("Could not create sensor ({}): {}", ipAddress, resSensor.error());
+                                    continue;
+                                }
+                                autoDiscovery->updateStatusDiscoveryCounters(sensor.subtype);
+                            }
                         }
+                        // Found assets with protocol and credential, we can leave
+                        found = true;
+                        break;
+                    } else {
+                        logError(getAssetsRes.error().c_str());
                     }
-                    // Found assets with protocol and credential, we can leave
-                    found = true;
-                    break;
-                } else {
-                    logError(getAssetsRes.error().c_str());
                 }
-            }
-            // If found, leave protocol boucle
-            if (found) {
-                break;
+                // If found, leave main protocol loop
+                if (found) {
+                    break;
+                }
             }
         }
     }
@@ -444,6 +419,8 @@ void AutoDiscovery::scan(AutoDiscovery* autoDiscovery, const std::string& ipAddr
 
 bool AutoDiscovery::scanCheck(AutoDiscovery* autoDiscovery) {
     if (!autoDiscovery) return true;
+
+    using fty::disco::commands::scan::status::Status;
 
 #undef WORK_AROUND_SCAN_BLOCKING
 
@@ -459,7 +436,7 @@ bool AutoDiscovery::scanCheck(AutoDiscovery* autoDiscovery) {
     logTrace("AutoDiscovery scanCheck: pending tasks={}, active tasks={})", countPendingTasks, countActiveTasks);
     if (countActiveTasks == 0) {
         std::lock_guard<std::mutex> lock(autoDiscovery->m_mutex);
-        autoDiscovery->m_statusDiscovery.state = State::Terminated;
+        autoDiscovery->m_statusDiscovery.state = Status::TERMINATED;
 #if WORK_AROUND_SCAN_BLOCKING
         if (isBlockingDetected) {
             isBlockingDetected = false;
@@ -481,7 +458,7 @@ bool AutoDiscovery::scanCheck(AutoDiscovery* autoDiscovery) {
             if (std::chrono::duration_cast<std::chrono::seconds>(end - start).count() > TIMEOUT_BLOCKING_SCAN_SEC) {
                 autoDiscovery->stopPoolScan();
                 std::lock_guard<std::mutex> lock(autoDiscovery->m_mutex);
-                autoDiscovery->m_statusDiscovery.state = State::Terminated;
+                autoDiscovery->m_statusDiscovery.state = Status::TERMINATED;
                 logWarn("Blocking scan detected (Timeout of {} sec). Stop scan with {} remaining tasks",
                     TIMEOUT_BLOCKING_SCAN_SEC, countActiveTasks);
                 return true;
@@ -516,8 +493,10 @@ void AutoDiscovery::startThreadScanCheck(AutoDiscovery* autoDiscovery, const uns
 
 Expected<void> AutoDiscovery::start(const disco::commands::scan::start::In& in)
 {
+    using fty::disco::commands::scan::status::Status;
+
     std::unique_lock<std::mutex> lock(m_mutex);
-    if (m_statusDiscovery.state != State::InProgress) {
+    if (m_statusDiscovery.state != Status::IN_PROGRESS) {
         lock.unlock();
 
         logTrace("Set scan in progress");
@@ -553,9 +532,11 @@ Expected<void> AutoDiscovery::start(const disco::commands::scan::start::In& in)
 }
 
 Expected<void> AutoDiscovery::stop() {
+    using fty::disco::commands::scan::status::Status;
+
     std::unique_lock<std::mutex> lock(m_mutex);
-    if (m_statusDiscovery.state == State::InProgress) {
-        m_statusDiscovery.state = State::CancelledByUser;
+    if (m_statusDiscovery.state == Status::IN_PROGRESS) {
+        m_statusDiscovery.state = Status::CANCELLED_BY_USER;
         lock.unlock();
         stopPoolScan();
     }

@@ -13,58 +13,24 @@ static constexpr const char* Channel = "discovery";
 namespace commands::protocols {
     static constexpr const char* Subject = "protocols";
 
-    // TBD: To be reworked with scan auto interface
-    /*class Option: public pack::Node
-    {
-    public:
-        pack::String protocol = FIELD("protocol");
-        pack::UInt32 port     = FIELD("port", 0);
-        pack::Bool   ignore   = FIELD("ignore");
-    public:
-        using pack::Node::Node;
-        META(Option, protocol, port, ignore);
-    };*/
-
     class In : public pack::Node
     {
     public:
-        class Protocol : public pack::Node
-        {
-        public:
-            enum class Type
-            {
-                Unknown,
-                Powercom,
-                XML_pdc,
-                SNMP
-            };
-
-            pack::Enum<Type> protocol = FIELD("protocol");
-            pack::Int32List  ports    = FIELD("ports");
-
-        public:
-            using pack::Node::Node;
-            META(Protocol, protocol, ports);
-        };
-
         pack::String               address   = FIELD("address");
-        pack::ObjectList<Protocol> protocols = FIELD("protocols"); // optional
+        ConfigDiscovery::Protocols protocols = FIELD("protocols"); // optional
 
     public:
         using pack::Node::Node;
         META(In, address, protocols);
     };
 
-    std::ostream& operator<<(std::ostream& ss, In::Protocol::Type value);
-    std::istream& operator>>(std::istream& ss, In::Protocol::Type& value);
-
     class Return : public pack::Node
     {
     public:
-        pack::String protocol = FIELD("protocol");
-        pack::UInt32 port     = FIELD("port");
-        // pack::Bool   ignored   = FIELD("ignored");
-        pack::Bool reachable = FIELD("reachable");
+        pack::String protocol  = FIELD("protocol");
+        pack::UInt32 port      = FIELD("port");
+        //pack::Bool ignored   = FIELD("ignored");
+        pack::Bool   reachable = FIELD("reachable");
 
     public:
         using pack::Node::Node;
@@ -186,17 +152,20 @@ namespace commands::scan {
     namespace status {
         static constexpr const char* Subject = "scan-status";
 
+        enum class Status
+        {
+            UNKNOWN,
+            CANCELLED_BY_USER,
+            TERMINATED,
+            IN_PROGRESS
+        };
+
+        std::ostream& operator<<(std::ostream& ss, Status value);
+        std::istream& operator>>(std::istream& ss, Status& value);
+
         class Out : public pack::Node
         {
         public:
-            enum class Status
-            {
-                Unknown,
-                CancelledByUser,
-                Terminated,
-                InProgress
-            };
-
             pack::Enum<Status> status         = FIELD("status");
             pack::String       progress       = FIELD("progress");
             pack::UInt32       discovered     = FIELD("discovered");
@@ -211,18 +180,15 @@ namespace commands::scan {
             using pack::Node::Node;
             META(Out, status, progress, discovered, ups, epdu, sts, sensors, numOfAddress, addressScanned);
         };
-        std::ostream& operator<<(std::ostream& ss, Out::Status value);
-        std::istream& operator>>(std::istream& ss, Out::Status& value);
-
     } // namespace status
 
     struct Response : public pack::Node
     {
         enum class Status
         {
-            Success,
-            Failure,
-            Unknown
+            SUCCESS,
+            FAILURE,
+            UNKNOWN
         };
 
         pack::Enum<Status> status = FIELD("status");

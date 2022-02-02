@@ -41,14 +41,9 @@ public:
     /// Runs discover job.
     void run(const commands::protocols::In& in, commands::protocols::Out& out);
 
-    // Split protocol and port number if present (optional)
-    static const std::pair<std::string, std::string> splitPortFromProtocol(const std::string &str);
-
-    // Get optional port
-    static std::optional<uint16_t> getPort(const std::string& protocolIn, const commands::protocols::In& in);
-
     // Test input option (protocol filter and port)
-    //static std::optional<const commands::protocols::Option> getOption(const std::string& protocolIn, const commands::protocols::In& in);
+    static std::optional<const fty::disco::ConfigDiscovery::Protocol>
+    findProtocol(const ConfigDiscovery::Protocol::Type& protocolIn, const commands::protocols::In& in);
 
 private:
     /// Try out if endpoint support xml pdc protocol

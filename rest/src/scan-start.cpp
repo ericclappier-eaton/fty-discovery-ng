@@ -38,7 +38,7 @@ unsigned Scan::run()
     if (!info) {
         throw rest::errors::Internal(info.error());
     }
-    if (data.status != commands::scan::stop::Out::Status::Success) {
+    if (data.status != commands::scan::stop::Out::Status::SUCCESS) {
         throw rest::errors::Internal(data.data.value());
     }
 
