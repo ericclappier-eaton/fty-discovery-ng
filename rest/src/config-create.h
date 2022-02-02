@@ -27,7 +27,7 @@ namespace fty::disco {
 class ConfigCreate : public rest::Runner
 {
 public:
-    INIT_REST("discovery/config");
+    INIT_REST("discovery/config/create");
 
     unsigned run() override;
 
