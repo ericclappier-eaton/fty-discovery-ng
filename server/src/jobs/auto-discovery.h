@@ -44,7 +44,7 @@ public:
     {
         UNKNOWN = 0,
         ACTIVE,
-        INACTIVE
+        NONACTIVE
     };
 
     AutoDiscovery();
@@ -74,7 +74,7 @@ public:
     // Device centric view
     bool isDeviceCentricView() const
     {
-        return (m_params.aux.parent == "0") ? false : true;
+        return (m_params.aux.parent == "0") ? true : false;
     };
 
     // Read configuration
