@@ -101,7 +101,7 @@ public:
         m_sess.peername = const_cast<char*>(m_addr.c_str());
         m_sess.retries  = 1;
 
-        setTimeout(500); // default (msec)
+        setTimeout(1000); // default (msec)
     }
 
     virtual ~Impl()
