@@ -15,6 +15,7 @@
 */
 
 #include "auto-discovery.h"
+#include "discovery-config-manager.h"
 #include "assets.h"
 #include "protocols.h"
 #include "src/config.h"
@@ -124,6 +125,7 @@ Expected<void> AutoDiscovery::updateHostName(const std::string& address, asset::
 Expected<void> AutoDiscovery::readConfig(const disco::commands::scan::start::In& in)
 {
     // Init default links
+    m_defaultValuesLinks.clear();
     asset::create::PowerLink powerLink;
     // For each link
     for (const auto& link : in.links) {
@@ -327,9 +329,10 @@ void AutoDiscovery::scan(AutoDiscovery* autoDiscovery, const std::string& ipAddr
                     if (auto getAssetsRes = assets.getAssets(inAsset, outAsset)) {
                         logInfo("Found asset with protocol/port/credential ({}/{}/{}) for {}", elt.protocol, elt.port, doc, ipAddress);
 
-                        auto getStatus = [autoDiscovery]() -> uint {
-                            return autoDiscovery->isDeviceCentricView() ? static_cast<uint>(AssetStatus::ACTIVE)
-                                                                        : static_cast<uint>(AssetStatus::INACTIVE);
+                        auto getAssetStatus = [autoDiscovery]() -> uint {
+                            logTrace("autoDiscovery->isDeviceCentricView()={}", autoDiscovery->isDeviceCentricView());
+                            return autoDiscovery->isDeviceCentricView() ?
+                                static_cast<uint>(AssetStatus::ACTIVE) : static_cast<uint>(AssetStatus::NONACTIVE);
                         };
 
                         // Create asset list
@@ -341,8 +344,8 @@ void AutoDiscovery::scan(AutoDiscovery* autoDiscovery, const std::string& ipAddr
                             req.type     = asset.asset.type;
                             req.sub_type = asset.asset.subtype;
                             auto& ext    = asset.asset.ext;
-                            req.status   = getStatus();
-                            req.priority = 3;
+                            req.status   = getAssetStatus();
+                            req.priority = autoDiscovery->m_params.aux.priority;
                             req.linked   = autoDiscovery->m_defaultValuesLinks;
                             req.parent   = (autoDiscovery->m_params.aux.parent == "0") ?
                                 pack::String(std::string("")) : autoDiscovery->m_params.aux.parent;
@@ -369,8 +372,8 @@ void AutoDiscovery::scan(AutoDiscovery* autoDiscovery, const std::string& ipAddr
                                 asset::create::Request reqSensor;
                                 reqSensor.type     = sensor.type;
                                 reqSensor.sub_type = sensor.subtype;
-                                reqSensor.status   = getStatus();
-                                reqSensor.priority = 3;
+                                reqSensor.status   = getAssetStatus();
+                                reqSensor.priority = autoDiscovery->m_params.aux.priority;
                                 reqSensor.linked   = {}; // defaultValuesLinks; // TBD ???
                                 reqSensor.parent   = assetNameCreated;
 
@@ -501,11 +504,19 @@ Expected<void> AutoDiscovery::start(const disco::commands::scan::start::In& in)
 
         logTrace("Set scan in progress");
         m_params = in;
+        // TBD: TO ADD
+        /*if (auto conf = ConfigDiscoveryManager::instance().load(); !conf) {
+           return fty::unexpected("Unable to read configuration: {}", conf.error());
+        } else {
+            m_params = *conf;
+        }*/
 
         statusDiscoveryReset();
         resetPoolScan();
 
         // Read and test input parameters
+        // TBD: TO ADD
+        //if (auto res = readConfig(); !res) {
         if (auto res = readConfig(in); !res) {
             return fty::unexpected("Bad input parameter: {}", res.error());
         }
