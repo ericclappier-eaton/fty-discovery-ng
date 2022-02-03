@@ -7,6 +7,8 @@ class ScanStop : public AutoTask<ScanStop, void, commands::scan::stop::Out>
 {
 public:
     using AutoTask::AutoTask;
+
+    // Runs discover job.
     void run(commands::scan::stop::Out&);
 };
 

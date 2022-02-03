@@ -1,5 +1,6 @@
 #include "test-common.h"
 #include "commands.h"
+#include "discovery-config-manager.h"
 #include "../server/src/jobs/create-asset.h"
 #include "../server/src/jobs/auto-discovery.h"
 #include <fty/process.h>
@@ -138,23 +139,6 @@ TEST_CASE("Auto disco / status discovery update", "[auto]")
     CHECK(status.progress   == 100);
 }
 
-TEST_CASE("Auto disco / Empty request", "[auto]")
-{
-    auto msg = Test::createMessage(fty::disco::commands::scan::start::Subject);
-    auto ret = Test::send(msg);
-    CHECK_FALSE(ret);
-    CHECK("Wrong input data: payload is empty" == ret.error());
-}
-
-TEST_CASE("Auto disco / Wrong request", "[auto]")
-{
-    auto msg = Test::createMessage(fty::disco::commands::scan::start::Subject);
-    msg.userData.setString("Some shit");
-    auto ret = Test::send(msg);
-    CHECK_FALSE(ret);
-    CHECK("Wrong input data: format of payload is incorrect" == ret.error());
-}
-
 using namespace fty::disco::commands::scan;
 
 // get discovery status
@@ -189,21 +173,22 @@ TEST_CASE("Auto disco / Test normal scan auto", "[auto]")
     CHECK(out.sensors    == 0);
 
     // Prepare discovery
-    fty::disco::Message msg = Test::createMessage(start::Subject);
-    start::In in;
-    in.discovery.type = ConfigDiscovery::Discovery::Type::Ip;
+    ConfigDiscovery config;
+    config.discovery.type = ConfigDiscovery::Discovery::Type::Ip;
     for (int i = 0; i < 100; i++) {
-        in.discovery.ips.append("127.0.0.1");
+        config.discovery.ips.append("127.0.0.1");
     }
     ConfigDiscovery::Protocol nutSnmp;
     nutSnmp.protocol = ConfigDiscovery::Protocol::Type::Snmp;
     //nutSnmp.ports.append(1161);
     nutSnmp.port = 1161;
-    in.discovery.protocols.append(nutSnmp);
-    in.discovery.documents.append("no_id");
+    config.discovery.protocols.append(nutSnmp);
+    config.discovery.documents.append("no_id");
+    // Set auto discovery config
+    ConfigDiscoveryManager::instance().set(config);
 
     // Execute discovery
-    msg.userData.setString(*pack::json::serialize(in));
+    fty::disco::Message msg = Test::createMessage(start::Subject);
     fty::Expected<fty::disco::Message> ret = Test::send(msg);
     if (!ret) {
         FAIL(ret.error());
@@ -267,21 +252,23 @@ TEST_CASE("Auto disco / Test stop scan auto", "[auto]")
         std::this_thread::sleep_for(std::chrono::seconds(1));
 
         // Prepare discovery
-        fty::disco::Message msg = Test::createMessage(start::Subject);
-        start::In in;
-        in.discovery.type = ConfigDiscovery::Discovery::Type::Ip;
+
+        ConfigDiscovery config;
+        config.discovery.type = ConfigDiscovery::Discovery::Type::Ip;
         for (int i = 0; i < 100; i++) {
-            in.discovery.ips.append("127.0.0.1");
+            config.discovery.ips.append("127.0.0.1");
         }
         ConfigDiscovery::Protocol nutSnmp;
         nutSnmp.protocol = ConfigDiscovery::Protocol::Type::Snmp;
         //nutSnmp.ports.append(1161);
         nutSnmp.port = 1161;
-        in.discovery.protocols.append(nutSnmp);
-        in.discovery.documents.append("no_id");
+        config.discovery.protocols.append(nutSnmp);
+        config.discovery.documents.append("no_id");
+        // Set auto discovery config
+        ConfigDiscoveryManager::instance().set(config);
 
         // Execute discovery
-        msg.userData.setString(*pack::json::serialize(in));
+        fty::disco::Message msg = Test::createMessage(start::Subject);
         fty::Expected<fty::disco::Message> ret = Test::send(msg);
         if (!ret) {
             FAIL(ret.error());
@@ -474,24 +461,25 @@ TEST_CASE("Auto disco / Test real scan auto with simulation", "[auto]")
         }
 
         // Prepare discovery
-        fty::disco::Message msg = Test::createMessage(start::Subject);
-        start::In in;
-        in.discovery.type = ConfigDiscovery::Discovery::Type::Ip;
+        ConfigDiscovery config;
+        config.discovery.type = ConfigDiscovery::Discovery::Type::Ip;
         // TBD Use 169.254.50.X private address for multi scan
         // ip address add dev eth0 scope link $addr/16
         // ip address del $addr/16 dev eth0
-        in.discovery.ips.append("127.0.0.1");
+        config.discovery.ips.append("127.0.0.1");
         ConfigDiscovery::Protocol nutSnmp;
         nutSnmp.protocol = ConfigDiscovery::Protocol::Type::Snmp;
         //nutSnmp.ports.append(1161);
         nutSnmp.port = 1161;
-        in.discovery.protocols.append(nutSnmp);
+        config.discovery.protocols.append(nutSnmp);
         for (const auto id : idList) {
-            in.discovery.documents.append(id);
+            config.discovery.documents.append(id);
         }
+        // Set auto discovery config
+        ConfigDiscoveryManager::instance().set(config);
 
         // Execute discovery
-        msg.userData.setString(*pack::json::serialize(in));
+        fty::disco::Message msg = Test::createMessage(start::Subject);
         fty::Expected<fty::disco::Message> ret = Test::send(msg);
         if (!ret) {
             FAIL(ret.error());
@@ -526,10 +514,10 @@ TEST_CASE("Auto disco / Test real scan auto with simulation", "[auto]")
             if (out.status == Status::Terminated) {
                 break;
             }
-            std::this_thread::sleep_for(std::chrono::seconds(1));
-            // Timeout of 60 sec
+            std::this_thread::sleep_for(std::chrono::seconds(2));
+            // Timeout of 100 sec
             auto end = std::chrono::steady_clock::now();
-            if (std::chrono::duration_cast<std::chrono::seconds>(end - start).count() > 80) {
+            if (std::chrono::duration_cast<std::chrono::seconds>(end - start).count() > 100) {
                 FAIL("Timeout when wait terminated status");
             }
         }

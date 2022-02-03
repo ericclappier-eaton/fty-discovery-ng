@@ -50,10 +50,11 @@ public:
     AutoDiscovery();
     ~AutoDiscovery() = default;
 
+    // Init discover
     Expected<void> init();
 
     // Runs discover
-    Expected<void> start(const disco::commands::scan::start::In& InStart);
+    Expected<void> start();
 
     // Stop current discover
     Expected<void> stop();
@@ -78,7 +79,7 @@ public:
     };
 
     // Read configuration
-    Expected<void> readConfig(const disco::commands::scan::start::In& in);
+    Expected<void> readConfig();
 
     // Status management
     void statusDiscoveryInit();
@@ -99,7 +100,7 @@ public:
 
 private:
     // Input parameters
-    disco::commands::scan::start::In m_params;
+    ConfigDiscovery                  m_params;
 
     // Default power links
     asset::create::PowerLinks        m_defaultValuesLinks;
