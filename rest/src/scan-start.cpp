@@ -13,22 +13,12 @@ unsigned Scan::run()
         throw rest::Error(ret.error());
     }
 
-    // TBD: TO BE REMOVED
-    commands::scan::start::In in;
-    if (auto ret = pack::json::deserialize(m_request.body(), in); !ret) {
-        throw rest::errors::Internal(ret.error());
-    }
-
     fty::disco::MessageBus bus;
     if (auto res = bus.init(AgentName); !res) {
         throw rest::errors::Internal(res.error());
     }
 
     fty::disco::Message msg = message(fty::disco::commands::scan::start::Subject);
-
-    // TBD: TO BE REMOVED
-    msg.setData(*pack::json::serialize(in));
-
     auto ret = bus.send(Channel, msg);
     if (!ret) {
         throw rest::errors::Internal(ret.error());
