@@ -122,13 +122,13 @@ Expected<void> AutoDiscovery::updateHostName(const std::string& address, asset::
     return {};
 }
 
-Expected<void> AutoDiscovery::readConfig(const disco::commands::scan::start::In& in)
+Expected<void> AutoDiscovery::readConfig()
 {
     // Init default links
     m_defaultValuesLinks.clear();
     asset::create::PowerLink powerLink;
     // For each link
-    for (const auto& link : in.links) {
+    for (const auto& link : m_params.links) {
         // When link to no source, the file will have "0"
         if (!(link.src == "0")) {
             powerLink.source    = link.src;
@@ -141,20 +141,20 @@ Expected<void> AutoDiscovery::readConfig(const disco::commands::scan::start::In&
 
     m_listIpAddress.clear();
     // Ip list scan
-    if (in.discovery.type == ConfigDiscovery::Discovery::Type::Ip) {
-        if (in.discovery.ips.size() == 0) {
+    if (m_params.discovery.type == ConfigDiscovery::Discovery::Type::Ip) {
+        if (m_params.discovery.ips.size() == 0) {
             fty::unexpected("Ips list empty");
         }
-        for (const auto& ip : in.discovery.ips) {
+        for (const auto& ip : m_params.discovery.ips) {
             m_listIpAddress.push_back(ip);
         }
     }
     // Multi scan
-    else if (in.discovery.type == ConfigDiscovery::Discovery::Type::Multi) {
-        if (in.discovery.scans.size() == 0) {
+    else if (m_params.discovery.type == ConfigDiscovery::Discovery::Type::Multi) {
+        if (m_params.discovery.scans.size() == 0) {
             fty::unexpected("Scans list empty");
         }
-        for (const auto& range : in.discovery.scans) {
+        for (const auto& range : m_params.discovery.scans) {
             if (auto listIp = address::AddressParser::getRangeIp(range); listIp) {
                 m_listIpAddress.insert(m_listIpAddress.end(), listIp->begin(), listIp->end());
             }
@@ -164,18 +164,18 @@ Expected<void> AutoDiscovery::readConfig(const disco::commands::scan::start::In&
         }
     }
     // Full scan
-    else if (in.discovery.type == ConfigDiscovery::Discovery::Type::Full) {
+    else if (m_params.discovery.type == ConfigDiscovery::Discovery::Type::Full) {
 
-        if (in.discovery.ips.size() == 0 && in.discovery.scans.size() == 0) {
+        if (m_params.discovery.ips.size() == 0 && m_params.discovery.scans.size() == 0) {
             fty::unexpected("Ips and scans list empty");
         }
-        if (in.discovery.ips.size() > 0) {
-            for (const auto& ip : in.discovery.ips) {
+        if (m_params.discovery.ips.size() > 0) {
+            for (const auto& ip : m_params.discovery.ips) {
                 m_listIpAddress.push_back(ip);
             }
         }
-        if (in.discovery.scans.size() > 0) {
-            for (const auto& range: in.discovery.scans) {
+        if (m_params.discovery.scans.size() > 0) {
+            for (const auto& range: m_params.discovery.scans) {
                 if (auto listIp = address::AddressParser::getRangeIp(range); listIp) {
                     m_listIpAddress.insert(m_listIpAddress.end(), listIp->begin(), listIp->end());
                 }
@@ -186,7 +186,7 @@ Expected<void> AutoDiscovery::readConfig(const disco::commands::scan::start::In&
         }
     }
     // Local scan
-    else if (in.discovery.type == ConfigDiscovery::Discovery::Type::Local) {
+    else if (m_params.discovery.type == ConfigDiscovery::Discovery::Type::Local) {
         if (auto listIp = address::AddressParser::getLocalRangeIp(); listIp) {
             m_listIpAddress.insert(m_listIpAddress.end(), listIp->begin(), listIp->end());
         }
@@ -195,7 +195,7 @@ Expected<void> AutoDiscovery::readConfig(const disco::commands::scan::start::In&
         }
     }
     else {
-        fty::unexpected("Bad scan type {}", in.discovery.type);
+        fty::unexpected("Bad scan type {}", m_params.discovery.type);
     }
     return {};
 }
@@ -494,7 +494,7 @@ void AutoDiscovery::startThreadScanCheck(AutoDiscovery* autoDiscovery, const uns
     }).detach();
 }
 
-Expected<void> AutoDiscovery::start(const disco::commands::scan::start::In& in)
+Expected<void> AutoDiscovery::start()
 {
     using fty::disco::commands::scan::status::Status;
 
@@ -503,21 +503,17 @@ Expected<void> AutoDiscovery::start(const disco::commands::scan::start::In& in)
         lock.unlock();
 
         logTrace("Set scan in progress");
-        m_params = in;
-        // TBD: TO ADD
-        /*if (auto conf = ConfigDiscoveryManager::instance().load(); !conf) {
+        if (auto conf = ConfigDiscoveryManager::instance().config(); !conf) {
            return fty::unexpected("Unable to read configuration: {}", conf.error());
         } else {
             m_params = *conf;
-        }*/
+        }
 
         statusDiscoveryReset();
         resetPoolScan();
 
         // Read and test input parameters
-        // TBD: TO ADD
-        //if (auto res = readConfig(); !res) {
-        if (auto res = readConfig(in); !res) {
+        if (auto res = readConfig(); !res) {
             return fty::unexpected("Bad input parameter: {}", res.error());
         }
 
