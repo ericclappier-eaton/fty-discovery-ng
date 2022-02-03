@@ -34,7 +34,7 @@ public:
 private:
     // clang-format off
     Permissions m_permissions = {
-        { rest::User::Profile::Admin, rest::Access::Create }
+        { rest::User::Profile::Admin, rest::Access::Update }
     };
     // clang-format on
 };

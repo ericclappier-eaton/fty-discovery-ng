@@ -1,8 +1,3 @@
-server:
-  timeout: 0
-  background: 0
-  workdir: ""
-  verbose: 0
 discovery:
   type: localscan
   scans:
@@ -26,11 +21,5 @@ defaultValuesAux:
   status: ""
 defaultValuesLink:
   []
-parameters:
-  mappingFile: ""
-  maxDumpPoolNumber: 0
-  maxScanPoolNumber: 0
-  nutScannerTimeOut: 0
-  dumpDataLoopTime: 0
 defaultValuesExt:
   []
