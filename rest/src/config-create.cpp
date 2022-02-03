@@ -22,11 +22,6 @@ unsigned ConfigCreate::run()
     if (auto ret = ConfigDiscoveryManager::instance().save(); !ret) {
         throw rest::errors::Internal(ret.error());
     }
-
-    if (auto ret = ConfigDiscoveryManager::instance().save(); !ret) {
-        throw rest::errors::Internal(ret.error());
-    }
-
     return HTTP_OK;
 }
 
