@@ -7,13 +7,13 @@ namespace commands::scan::status {
     {
         ss << [&]() {
             switch (value) {
-                case Status::CANCELLED_BY_USER:
+                case Status::CancelledByUser:
                     return "1";
-                case Status::TERMINATED:
+                case Status::Terminated:
                     return "2";
-                case Status::IN_PROGRESS:
+                case Status::InProgess:
                     return "3";
-                case Status::UNKNOWN:
+                case Status::Unknown:
                     return "0";
             }
             return "0";
@@ -26,13 +26,13 @@ namespace commands::scan::status {
         std::string strval;
         ss >> strval;
         if (strval == "1") {
-            value = Status::CANCELLED_BY_USER;
+            value = Status::CancelledByUser;
         } else if (strval == "2") {
-            value = Status::TERMINATED;
+            value = Status::Terminated;
         } else if (strval == "3") {
-            value = Status::IN_PROGRESS;
+            value = Status::InProgess;
         } else {
-            value = Status::UNKNOWN;
+            value = Status::Unknown;
         }
         return ss;
     }
@@ -45,11 +45,11 @@ namespace commands::scan {
 
         ss << [&]() {
             switch (value) {
-                case Status::SUCCESS:
+                case Status::Success:
                     return "success";
-                case Status::FAILURE:
+                case Status::Failure:
                     return "failure";
-                case Status::UNKNOWN:
+                case Status::Unknown:
                     return "unknown";
             }
             return "unknown";
@@ -63,11 +63,11 @@ namespace commands::scan {
         std::string strval;
         ss >> strval;
         if (strval == "success") {
-            value = Status::SUCCESS ;
+            value = Status::Success ;
         } else if (strval == "failure") {
-            value = Status::FAILURE;
+            value = Status::Failure;
         } else {
-            value = Status::UNKNOWN;
+            value = Status::Unknown;
         }
         return ss;
     }

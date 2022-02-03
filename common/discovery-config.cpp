@@ -20,13 +20,13 @@ std::ostream& operator<<(std::ostream& ss, ConfigDiscovery::Protocol::Type value
 
     ss << [&]() {
         switch (value) {
-            case Type::POWERCOM:
+            case Type::Powercom:
                 return "nut_powercom";
-            case Type::XML_PDC:
+            case Type::XmlPdc:
                 return "nut_xml_pdc";
-            case Type::SNMP:
+            case Type::Snmp:
                 return "nut_snmp";
-            case Type::UNKNOWN:
+            case Type::Unknown:
                 return "unknown";
         }
         return "unknown";
@@ -39,13 +39,13 @@ std::istream& operator>>(std::istream& ss, ConfigDiscovery::Protocol::Type& valu
     std::string strval;
     ss >> strval;
     if (strval == "nut_powercom") {
-        value = Type::POWERCOM;
+        value = Type::Powercom;
     } else if (strval == "nut_xml_pdc") {
-        value = Type::XML_PDC;
+        value = Type::XmlPdc;
     } else if (strval == "nut_snmp") {
-        value = Type::SNMP;
+        value = Type::Snmp;
     } else {
-        value = Type::UNKNOWN;
+        value = Type::Unknown;
     }
     return ss;
 }
@@ -56,15 +56,15 @@ std::ostream& operator<<(std::ostream& ss, ConfigDiscovery::Discovery::Type valu
 
     ss << [&]() {
         switch (value) {
-            case Type::LOCAL:
+            case Type::Local:
                 return "localscan";
-            case Type::IP:
+            case Type::Ip:
                 return "ipscan";
-            case Type::MULTI:
+            case Type::Multi:
                 return "multiscan";
-            case Type::FULL:
+            case Type::Full:
                 return "fullscan";
-            case Type::UNKNOWN:
+            case Type::Unknown:
                 return "unknown";
         }
         return "unknown";
@@ -79,15 +79,15 @@ std::istream& operator>>(std::istream& ss, ConfigDiscovery::Discovery::Type& val
     std::string strval;
     ss >> strval;
     if (strval == "localscan") {
-        value = Type::LOCAL;
+        value = Type::Local;
     } else if (strval == "ipscan") {
-        value = Type::IP;
+        value = Type::Ip;
     } else if (strval == "multiscan") {
-        value = Type::MULTI;
+        value = Type::Multi;
     } else if (strval == "fullscan") {
-        value = Type::FULL;
+        value = Type::Full;
     } else {
-        value = Type::UNKNOWN;
+        value = Type::Unknown;
     }
     return ss;
 }
