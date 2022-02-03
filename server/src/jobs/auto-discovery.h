@@ -42,9 +42,9 @@ public:
 
     enum class AssetStatus
     {
-        UNKNOWN = 0,
-        ACTIVE,
-        NONACTIVE
+        Unknown = 0,
+        Active,
+        Nonactive
     };
 
     AutoDiscovery();

@@ -154,10 +154,10 @@ namespace commands::scan {
 
         enum class Status
         {
-            UNKNOWN,
-            CANCELLED_BY_USER,
-            TERMINATED,
-            IN_PROGRESS
+            Unknown,
+            CancelledByUser,
+            Terminated,
+            InProgess
         };
 
         std::ostream& operator<<(std::ostream& ss, Status value);
@@ -186,9 +186,9 @@ namespace commands::scan {
     {
         enum class Status
         {
-            SUCCESS,
-            FAILURE,
-            UNKNOWN
+            Success = 0,
+            Failure,
+            Unknown
         };
 
         pack::Enum<Status> status = FIELD("status");

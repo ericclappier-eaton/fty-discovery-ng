@@ -141,7 +141,7 @@ Expected<void> AutoDiscovery::readConfig(const disco::commands::scan::start::In&
 
     m_listIpAddress.clear();
     // Ip list scan
-    if (in.discovery.type == ConfigDiscovery::Discovery::Type::IP) {
+    if (in.discovery.type == ConfigDiscovery::Discovery::Type::Ip) {
         if (in.discovery.ips.size() == 0) {
             fty::unexpected("Ips list empty");
         }
@@ -150,7 +150,7 @@ Expected<void> AutoDiscovery::readConfig(const disco::commands::scan::start::In&
         }
     }
     // Multi scan
-    else if (in.discovery.type == ConfigDiscovery::Discovery::Type::MULTI) {
+    else if (in.discovery.type == ConfigDiscovery::Discovery::Type::Multi) {
         if (in.discovery.scans.size() == 0) {
             fty::unexpected("Scans list empty");
         }
@@ -164,7 +164,7 @@ Expected<void> AutoDiscovery::readConfig(const disco::commands::scan::start::In&
         }
     }
     // Full scan
-    else if (in.discovery.type == ConfigDiscovery::Discovery::Type::FULL) {
+    else if (in.discovery.type == ConfigDiscovery::Discovery::Type::Full) {
 
         if (in.discovery.ips.size() == 0 && in.discovery.scans.size() == 0) {
             fty::unexpected("Ips and scans list empty");
@@ -186,7 +186,7 @@ Expected<void> AutoDiscovery::readConfig(const disco::commands::scan::start::In&
         }
     }
     // Local scan
-    else if (in.discovery.type == ConfigDiscovery::Discovery::Type::LOCAL) {
+    else if (in.discovery.type == ConfigDiscovery::Discovery::Type::Local) {
         if (auto listIp = address::AddressParser::getLocalRangeIp(); listIp) {
             m_listIpAddress.insert(m_listIpAddress.end(), listIp->begin(), listIp->end());
         }
@@ -204,7 +204,7 @@ void AutoDiscovery::statusDiscoveryInit() {
     using fty::disco::commands::scan::status::Status;
 
     std::lock_guard<std::mutex> lock(m_mutex);
-    m_statusDiscovery.state      = Status::UNKNOWN;
+    m_statusDiscovery.state      = Status::Unknown;
     m_statusDiscovery.ups        = 0;
     m_statusDiscovery.epdu       = 0;
     m_statusDiscovery.sts        = 0;
@@ -217,7 +217,7 @@ void AutoDiscovery::statusDiscoveryReset() {
     using fty::disco::commands::scan::status::Status;
 
     std::lock_guard<std::mutex> lock(m_mutex);
-    m_statusDiscovery.state      = Status::IN_PROGRESS;
+    m_statusDiscovery.state      = Status::InProgess;
     m_statusDiscovery.ups        = 0;
     m_statusDiscovery.epdu       = 0;
     m_statusDiscovery.sts        = 0;
@@ -332,7 +332,7 @@ void AutoDiscovery::scan(AutoDiscovery* autoDiscovery, const std::string& ipAddr
                         auto getAssetStatus = [autoDiscovery]() -> uint {
                             logTrace("autoDiscovery->isDeviceCentricView()={}", autoDiscovery->isDeviceCentricView());
                             return autoDiscovery->isDeviceCentricView() ?
-                                static_cast<uint>(AssetStatus::ACTIVE) : static_cast<uint>(AssetStatus::NONACTIVE);
+                                static_cast<uint>(AssetStatus::Active) : static_cast<uint>(AssetStatus::Nonactive);
                         };
 
                         // Create asset list
@@ -439,7 +439,7 @@ bool AutoDiscovery::scanCheck(AutoDiscovery* autoDiscovery) {
     logTrace("AutoDiscovery scanCheck: pending tasks={}, active tasks={})", countPendingTasks, countActiveTasks);
     if (countActiveTasks == 0) {
         std::lock_guard<std::mutex> lock(autoDiscovery->m_mutex);
-        autoDiscovery->m_statusDiscovery.state = Status::TERMINATED;
+        autoDiscovery->m_statusDiscovery.state = Status::Terminated;
 #if WORK_AROUND_SCAN_BLOCKING
         if (isBlockingDetected) {
             isBlockingDetected = false;
@@ -461,7 +461,7 @@ bool AutoDiscovery::scanCheck(AutoDiscovery* autoDiscovery) {
             if (std::chrono::duration_cast<std::chrono::seconds>(end - start).count() > TIMEOUT_BLOCKING_SCAN_SEC) {
                 autoDiscovery->stopPoolScan();
                 std::lock_guard<std::mutex> lock(autoDiscovery->m_mutex);
-                autoDiscovery->m_statusDiscovery.state = Status::TERMINATED;
+                autoDiscovery->m_statusDiscovery.state = Status::Terminated;
                 logWarn("Blocking scan detected (Timeout of {} sec). Stop scan with {} remaining tasks",
                     TIMEOUT_BLOCKING_SCAN_SEC, countActiveTasks);
                 return true;
@@ -499,7 +499,7 @@ Expected<void> AutoDiscovery::start(const disco::commands::scan::start::In& in)
     using fty::disco::commands::scan::status::Status;
 
     std::unique_lock<std::mutex> lock(m_mutex);
-    if (m_statusDiscovery.state != Status::IN_PROGRESS) {
+    if (m_statusDiscovery.state != Status::InProgess) {
         lock.unlock();
 
         logTrace("Set scan in progress");
@@ -546,8 +546,8 @@ Expected<void> AutoDiscovery::stop() {
     using fty::disco::commands::scan::status::Status;
 
     std::unique_lock<std::mutex> lock(m_mutex);
-    if (m_statusDiscovery.state == Status::IN_PROGRESS) {
-        m_statusDiscovery.state = Status::CANCELLED_BY_USER;
+    if (m_statusDiscovery.state == Status::InProgess) {
+        m_statusDiscovery.state = Status::CancelledByUser;
         lock.unlock();
         stopPoolScan();
     }

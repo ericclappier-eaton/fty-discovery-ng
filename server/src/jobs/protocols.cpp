@@ -60,9 +60,9 @@ Expected<commands::protocols::Out> Protocols::getProtocols(const commands::proto
         ConfigDiscovery::Protocol::Type protocol;
         uint16_t                        defaultPort;
     } tries[] = {
-        {ConfigDiscovery::Protocol::Type::POWERCOM, 443},
-        {ConfigDiscovery::Protocol::Type::XML_PDC,   80},
-        {ConfigDiscovery::Protocol::Type::SNMP,     161},
+        {ConfigDiscovery::Protocol::Type::Powercom, 443},
+        {ConfigDiscovery::Protocol::Type::XmlPdc,   80},
+        {ConfigDiscovery::Protocol::Type::Snmp,     161},
     };
 
     // for each protocol
@@ -87,7 +87,7 @@ Expected<commands::protocols::Out> Protocols::getProtocols(const commands::proto
 
                 // try to reach server
                 switch (aux.protocol) {
-                    case ConfigDiscovery::Protocol::Type::POWERCOM: {
+                    case ConfigDiscovery::Protocol::Type::Powercom: {
                         if (auto res = tryPowercom(in.address.value(), static_cast<uint16_t>(protocol.port))) {
                             logInfo("Found Powercom device on port {}", protocol.port);
                             protocol.reachable = true; // port is reachable
@@ -97,7 +97,7 @@ Expected<commands::protocols::Out> Protocols::getProtocols(const commands::proto
                         }
                         break;
                     }
-                    case ConfigDiscovery::Protocol::Type::XML_PDC: {
+                    case ConfigDiscovery::Protocol::Type::XmlPdc: {
                         if (auto res = tryXmlPdc(in.address.value(), static_cast<uint16_t>(protocol.port))) {
                             logInfo("Found XML device on port {}", protocol.port);
                             protocol.reachable = true; // port is reachable
@@ -107,7 +107,7 @@ Expected<commands::protocols::Out> Protocols::getProtocols(const commands::proto
                         }
                         break;
                     }
-                    case ConfigDiscovery::Protocol::Type::SNMP: {
+                    case ConfigDiscovery::Protocol::Type::Snmp: {
                         if (auto res = trySnmp(in.address.value(), static_cast<uint16_t>(protocol.port))) {
                             logInfo("Found SNMP device on port {}", protocol.port);
                             protocol.reachable = true; // port is reachable

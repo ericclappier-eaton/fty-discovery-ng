@@ -93,17 +93,17 @@ TEST_CASE("Protocols / Fake request", "[protocols]")
             commands::protocols::In in;
             in.address = "127.0.0.1";
             ConfigDiscovery::Protocol nutPowercom;
-            nutPowercom.protocol = ConfigDiscovery::Protocol::Type::POWERCOM;
+            nutPowercom.protocol = ConfigDiscovery::Protocol::Type::Powercom;
             //nutPowercom.ports.append(4443);
             nutPowercom.port = 4443;
             in.protocols.append(nutPowercom);
             ConfigDiscovery::Protocol nutXmlPdc;
-            nutXmlPdc.protocol = ConfigDiscovery::Protocol::Type::XML_PDC;
+            nutXmlPdc.protocol = ConfigDiscovery::Protocol::Type::XmlPdc;
             //nutXmlPdc.ports.append(8080);
             nutXmlPdc.port = 8080;
             in.protocols.append(nutXmlPdc);
             ConfigDiscovery::Protocol nutSnmp;
-            nutSnmp.protocol = ConfigDiscovery::Protocol::Type::SNMP;
+            nutSnmp.protocol = ConfigDiscovery::Protocol::Type::Snmp;
             //nutSnmp.ports.append(1161);
             nutSnmp.port = 1161;
             in.protocols.append(nutSnmp);  // Only this one will match
@@ -159,26 +159,26 @@ TEST_CASE("Protocols / findProtocol", "[protocols]")
 {
     fty::disco::commands::protocols::In in;
     {
-        auto res = fty::disco::job::Protocols::findProtocol(ConfigDiscovery::Protocol::Type::UNKNOWN, in);
+        auto res = fty::disco::job::Protocols::findProtocol(ConfigDiscovery::Protocol::Type::Unknown, in);
         CHECK(res == std::nullopt);
     }
     ConfigDiscovery::Protocol nutSnmp;
-    nutSnmp.protocol = ConfigDiscovery::Protocol::Type::SNMP;
+    nutSnmp.protocol = ConfigDiscovery::Protocol::Type::Snmp;
     nutSnmp.port = 163;
     //nutSnmp.ports.append(163);
     in.protocols.append(nutSnmp);
     {
-        auto res = fty::disco::job::Protocols::findProtocol(ConfigDiscovery::Protocol::Type::UNKNOWN, in);
+        auto res = fty::disco::job::Protocols::findProtocol(ConfigDiscovery::Protocol::Type::Unknown, in);
         CHECK(res == std::nullopt);
     }
     {
-        auto res = fty::disco::job::Protocols::findProtocol(ConfigDiscovery::Protocol::Type::SNMP, in);
-        CHECK(res->protocol == ConfigDiscovery::Protocol::Type::SNMP);
+        auto res = fty::disco::job::Protocols::findProtocol(ConfigDiscovery::Protocol::Type::Snmp, in);
+        CHECK(res->protocol == ConfigDiscovery::Protocol::Type::Snmp);
         //CHECK(res->ports[0] == 163);
         CHECK(res->port == 163);
     }
     {
-        auto res = fty::disco::job::Protocols::findProtocol(ConfigDiscovery::Protocol::Type::UNKNOWN, in);
+        auto res = fty::disco::job::Protocols::findProtocol(ConfigDiscovery::Protocol::Type::Unknown, in);
         CHECK(res == std::nullopt);
     }
 }

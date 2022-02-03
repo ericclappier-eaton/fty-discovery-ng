@@ -13,10 +13,10 @@ struct ConfigDiscovery : public pack::Node
     public:
         enum class Type
         {
-            UNKNOWN,
-            POWERCOM,
-            XML_PDC,
-            SNMP
+            Unknown,
+            Powercom,
+            XmlPdc,
+            Snmp
         };
 
         pack::Enum<Type> protocol = FIELD("protocol");
@@ -34,11 +34,11 @@ struct ConfigDiscovery : public pack::Node
     {
         enum class Type
         {
-            UNKNOWN,
-            LOCAL,
-            IP,
-            MULTI,
-            FULL
+            Unknown,
+            Local,
+            Ip,
+            Multi,
+            Full
         };
 
         pack::Enum<Type> type      = FIELD("type");
