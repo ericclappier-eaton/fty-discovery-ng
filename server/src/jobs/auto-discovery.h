@@ -52,12 +52,6 @@ public:
     Expected<void> stop();
 
 //private:
-    // Construct and update output ext attributes according input ext attributes
-    static Expected<void> updateExt(const commands::assets::Ext& ext_in, asset::create::Ext& ext_out);
-
-    // Update host name
-    static Expected<void> updateHostName(const std::string& address, asset::create::Ext& ext);
-
     // Device centric view
     bool isDeviceCentricView() const
     {
@@ -74,16 +68,22 @@ public:
     void updateStatusDiscoveryCounters(const std::string& deviceSubType);
     void updateStatusDiscoveryProgress();
 
-    // Manage pool scan
-    void resetPoolScan();
-    void stopPoolScan();
-
     // Scan node(s)
     static void scan(AutoDiscovery* autoDiscovery, const std::string& ipAddress);
 
     // Scan check
     static bool scanCheck(AutoDiscovery* autoDiscovery);
     static void startThreadScanCheck(AutoDiscovery* autoDiscovery, const unsigned int interval);
+
+    // Manage pool scan
+    void resetPoolScan();
+    void stopPoolScan();
+
+    // Construct and update output ext attributes according input ext attributes
+    static Expected<void> updateExt(const commands::assets::Ext& ext_in, asset::create::Ext& ext_out);
+
+    // Update host name
+    static Expected<void> updateHostName(const std::string& address, asset::create::Ext& ext);
 
 private:
     // Input parameters

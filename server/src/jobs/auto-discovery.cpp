@@ -54,69 +54,57 @@ Expected<void> AutoDiscovery::init()
     return {};
 }
 
-Expected<void> AutoDiscovery::updateExt(const commands::assets::Ext& extIn, asset::create::Ext& extOut)
+Expected<void> AutoDiscovery::start()
 {
-    // Construct and update output ext attributes according input ext attributes
-    // [{ "key": "val", "read_only": "true" }, ...] -> {
-    //                                                   "key:" {
-    //                                                     "value": "val",
-    //                                                     "readOnly: true,
-    //                                                     "update": true
-    //                                                   },
-    //                                                   ...
-    //                                                 }
-    for (const auto& it : extIn) {
-        asset::create::MapExtObj newMapExtObj;
-        std::string              keyVal;
-        // for each attribute
-        for (const auto& [key, value] : it) {
-            if (key == "read_only") {
-                newMapExtObj.readOnly = (value == "true") ? true : false;
-            } else {
-                // It is the name of the key and its associated value
-                keyVal             = key;
-                newMapExtObj.value = value;
-            }
+    std::unique_lock<std::mutex> lock(m_mutex);
+    if (m_statusDiscovery.status != StatusDiscovery::Status::InProgess) {
+        lock.unlock();
+
+        logTrace("Set scan in progress");
+        if (auto conf = ConfigDiscoveryManager::instance().config(); !conf) {
+           return fty::unexpected("Unable to read configuration: {}", conf.error());
+        } else {
+            m_params = *conf;
         }
-        if (!keyVal.empty()) {
-            extOut.append(keyVal, newMapExtObj);
+
+        // Read and test input parameters
+        if (auto res = readConfig(); !res) {
+            return fty::unexpected("Bad input parameter: {}", res.error());
         }
+
+        // Init discovery
+        statusDiscoveryReset(static_cast<uint32_t>(m_listIpAddress.size()));
+        resetPoolScan();
+
+        // For each ip, execute scan discovery
+        for (auto it = m_listIpAddress.begin(); it != m_listIpAddress.end(); it++) {
+            // Execute discovery task
+            m_poolScan->pushWorker(scan, this, *it);
+            logTrace("Add scan with ip {}", *it);
+            m_listIpAddress.erase(it --);
+        }
+        // Execute task in charge of test end of discovery
+        AutoDiscovery::startThreadScanCheck(this, SCAN_CHECK_PERIOD_MS);
     }
+    else {
+        lock.unlock();
+        return fty::unexpected("Scan in progress");
+    }
+    logTrace("End start scan");
     return {};
 }
 
-Expected<void> AutoDiscovery::updateHostName(const std::string& address, asset::create::Ext& ext)
+Expected<void> AutoDiscovery::stop()
 {
-    if (!address.empty()) {
-        // Set host name
-        struct sockaddr_in saIn;
-        struct sockaddr*   sa  = reinterpret_cast<sockaddr*>(&saIn);
-        socklen_t          len = sizeof(sockaddr_in);
-        char               dnsName[NI_MAXHOST];
-        saIn.sin_family = AF_INET;
-        memset(dnsName, 0, NI_MAXHOST);
-        if (inet_aton(address.c_str(), &saIn.sin_addr) == 1) {
-            if (!getnameinfo(sa, len, dnsName, sizeof(dnsName), NULL, 0, NI_NAMEREQD)) {
-                auto& itExtDns    = ext.append("dns.1");
-                itExtDns.value    = dnsName;
-                itExtDns.readOnly = false;
-                logDebug("Retrieved DNS information: FQDN = '{}'", dnsName);
-                char* p = strchr(dnsName, '.');
-                if (p) {
-                    *p = 0;
-                }
-                auto& itExtHostname    = ext.append("hostname");
-                itExtHostname.value    = dnsName;
-                itExtHostname.readOnly = false;
-                logDebug("Hostname = '{}'", dnsName);
-            } else {
-                return fty::unexpected("No host information retrieved from DNS for {}", address);
-            }
-        } else {
-            return fty::unexpected("Error during read DNS for {}", address);
-        }
-    } else {
-        return fty::unexpected("Ip address empty");
+    std::unique_lock<std::mutex> lock(m_mutex);
+    if (m_statusDiscovery.status == StatusDiscovery::Status::InProgess) {
+        m_statusDiscovery.status = StatusDiscovery::Status::CancelledByUser;
+        lock.unlock();
+        stopPoolScan();
+    }
+    else {
+        lock.unlock();
+        return fty::unexpected("No scan in progress");
     }
     return {};
 }
@@ -253,16 +241,6 @@ void AutoDiscovery::updateStatusDiscoveryProgress()
     if (m_statusDiscovery.addressScanned < m_statusDiscovery.numOfAddress) {
         m_statusDiscovery.addressScanned = m_statusDiscovery.addressScanned + 1;
     }
-}
-
-void AutoDiscovery::resetPoolScan()
-{
-    m_poolScan.reset(new fty::ThreadPool(Config::instance().pollScanMax.value()));
-}
-
-void AutoDiscovery::stopPoolScan()
-{
-    m_poolScan->stop(fty::ThreadPool::Stop::Immedialy);
 }
 
 void AutoDiscovery::scan(AutoDiscovery* autoDiscovery, const std::string& ipAddress)
@@ -489,57 +467,79 @@ void AutoDiscovery::startThreadScanCheck(AutoDiscovery* autoDiscovery, const uns
     }).detach();
 }
 
-Expected<void> AutoDiscovery::start()
+void AutoDiscovery::resetPoolScan()
 {
-    std::unique_lock<std::mutex> lock(m_mutex);
-    if (m_statusDiscovery.status != StatusDiscovery::Status::InProgess) {
-        lock.unlock();
+    m_poolScan.reset(new fty::ThreadPool(Config::instance().pollScanMax.value()));
+}
 
-        logTrace("Set scan in progress");
-        if (auto conf = ConfigDiscoveryManager::instance().config(); !conf) {
-           return fty::unexpected("Unable to read configuration: {}", conf.error());
-        } else {
-            m_params = *conf;
+void AutoDiscovery::stopPoolScan()
+{
+    m_poolScan->stop(fty::ThreadPool::Stop::Immedialy);
+}
+
+Expected<void> AutoDiscovery::updateExt(const commands::assets::Ext& extIn, asset::create::Ext& extOut)
+{
+    // Construct and update output ext attributes according input ext attributes
+    // [{ "key": "val", "read_only": "true" }, ...] -> {
+    //                                                   "key:" {
+    //                                                     "value": "val",
+    //                                                     "readOnly: true,
+    //                                                     "update": true
+    //                                                   },
+    //                                                   ...
+    //                                                 }
+    for (const auto& it : extIn) {
+        asset::create::MapExtObj newMapExtObj;
+        std::string              keyVal;
+        // for each attribute
+        for (const auto& [key, value] : it) {
+            if (key == "read_only") {
+                newMapExtObj.readOnly = (value == "true") ? true : false;
+            } else {
+                // It is the name of the key and its associated value
+                keyVal             = key;
+                newMapExtObj.value = value;
+            }
         }
-
-        // Read and test input parameters
-        if (auto res = readConfig(); !res) {
-            return fty::unexpected("Bad input parameter: {}", res.error());
+        if (!keyVal.empty()) {
+            extOut.append(keyVal, newMapExtObj);
         }
-
-        // Init discovery
-        statusDiscoveryReset(static_cast<uint32_t>(m_listIpAddress.size()));
-        resetPoolScan();
-
-        // For each ip, execute scan discovery
-        for (auto it = m_listIpAddress.begin(); it != m_listIpAddress.end(); it++) {
-            // Execute discovery task
-            m_poolScan->pushWorker(scan, this, *it);
-            logTrace("Add scan with ip {}", *it);
-            m_listIpAddress.erase(it --);
-        }
-        // Execute task in charge of test end of discovery
-        AutoDiscovery::startThreadScanCheck(this, SCAN_CHECK_PERIOD_MS);
     }
-    else {
-        lock.unlock();
-        return fty::unexpected("Scan in progress");
-    }
-    logTrace("End start scan");
     return {};
 }
 
-Expected<void> AutoDiscovery::stop()
+Expected<void> AutoDiscovery::updateHostName(const std::string& address, asset::create::Ext& ext)
 {
-    std::unique_lock<std::mutex> lock(m_mutex);
-    if (m_statusDiscovery.status == StatusDiscovery::Status::InProgess) {
-        m_statusDiscovery.status = StatusDiscovery::Status::CancelledByUser;
-        lock.unlock();
-        stopPoolScan();
-    }
-    else {
-        lock.unlock();
-        return fty::unexpected("No scan in progress");
+    if (!address.empty()) {
+        // Set host name
+        struct sockaddr_in saIn;
+        struct sockaddr*   sa  = reinterpret_cast<sockaddr*>(&saIn);
+        socklen_t          len = sizeof(sockaddr_in);
+        char               dnsName[NI_MAXHOST];
+        saIn.sin_family = AF_INET;
+        memset(dnsName, 0, NI_MAXHOST);
+        if (inet_aton(address.c_str(), &saIn.sin_addr) == 1) {
+            if (!getnameinfo(sa, len, dnsName, sizeof(dnsName), NULL, 0, NI_NAMEREQD)) {
+                auto& itExtDns    = ext.append("dns.1");
+                itExtDns.value    = dnsName;
+                itExtDns.readOnly = false;
+                logDebug("Retrieved DNS information: FQDN = '{}'", dnsName);
+                char* p = strchr(dnsName, '.');
+                if (p) {
+                    *p = 0;
+                }
+                auto& itExtHostname    = ext.append("hostname");
+                itExtHostname.value    = dnsName;
+                itExtHostname.readOnly = false;
+                logDebug("Hostname = '{}'", dnsName);
+            } else {
+                return fty::unexpected("No host information retrieved from DNS for {}", address);
+            }
+        } else {
+            return fty::unexpected("Error during read DNS for {}", address);
+        }
+    } else {
+        return fty::unexpected("Ip address empty");
     }
     return {};
 }
