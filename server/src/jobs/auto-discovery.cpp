@@ -54,7 +54,6 @@ Expected<void> AutoDiscovery::init()
     return {};
 }
 
-
 Expected<void> AutoDiscovery::updateExt(const commands::assets::Ext& extIn, asset::create::Ext& extOut)
 {
     // Construct and update output ext attributes according input ext attributes
@@ -200,73 +199,69 @@ Expected<void> AutoDiscovery::readConfig()
     return {};
 }
 
-void AutoDiscovery::statusDiscoveryInit() {
-    using fty::disco::commands::scan::status::Status;
-
+void AutoDiscovery::statusDiscoveryInit()
+{
     std::lock_guard<std::mutex> lock(m_mutex);
-    m_statusDiscovery.state      = Status::Unknown;
-    m_statusDiscovery.ups        = 0;
-    m_statusDiscovery.epdu       = 0;
-    m_statusDiscovery.sts        = 0;
-    m_statusDiscovery.sensors    = 0;
-    m_statusDiscovery.discovered = 0;
-    m_statusDiscovery.progress   = 0;
+    m_statusDiscovery.status         = StatusDiscovery::Status::Unknown;
+    m_statusDiscovery.numOfAddress   = 0;
+    m_statusDiscovery.addressScanned = 0;
+    m_statusDiscovery.discovered     = 0;
+    m_statusDiscovery.ups            = 0;
+    m_statusDiscovery.epdu           = 0;
+    m_statusDiscovery.sts            = 0;
+    m_statusDiscovery.sensors        = 0;
 }
 
-void AutoDiscovery::statusDiscoveryReset() {
-    using fty::disco::commands::scan::status::Status;
-
+void AutoDiscovery::statusDiscoveryReset(uint32_t numOfAddress)
+{
     std::lock_guard<std::mutex> lock(m_mutex);
-    m_statusDiscovery.state      = Status::InProgess;
-    m_statusDiscovery.ups        = 0;
-    m_statusDiscovery.epdu       = 0;
-    m_statusDiscovery.sts        = 0;
-    m_statusDiscovery.sensors    = 0;
-    m_statusDiscovery.discovered = 0;
-    m_statusDiscovery.progress   = 0;
+    m_statusDiscovery.status         = StatusDiscovery::Status::InProgess;
+    m_statusDiscovery.numOfAddress   = numOfAddress;
+    m_statusDiscovery.addressScanned = 0;
+    m_statusDiscovery.discovered     = 0;
+    m_statusDiscovery.ups            = 0;
+    m_statusDiscovery.epdu           = 0;
+    m_statusDiscovery.sts            = 0;
+    m_statusDiscovery.sensors        = 0;
 }
 
-void AutoDiscovery::updateStatusDiscoveryCounters(std::string deviceSubType) {
+void AutoDiscovery::updateStatusDiscoveryCounters(const std::string& deviceSubType)
+{
     std::lock_guard<std::mutex> lock(m_mutex);
     if (deviceSubType == "ups") {
-        m_statusDiscovery.ups ++;
+        m_statusDiscovery.ups = m_statusDiscovery.ups + 1;
     }
     else if (deviceSubType == "epdu") {
-        m_statusDiscovery.epdu ++;
+        m_statusDiscovery.epdu = m_statusDiscovery.epdu + 1;
     }
     else if (deviceSubType == "sts") {
-        m_statusDiscovery.sts ++;
+        m_statusDiscovery.sts = m_statusDiscovery.sts + 1;
     }
     else if (deviceSubType == "sensor") {
-        m_statusDiscovery.sensors ++;
+        m_statusDiscovery.sensors = m_statusDiscovery.sensors + 1;
     }
     else {
         logError("Bad sub type discovered: {}", deviceSubType);
         return;
     }
-    m_statusDiscovery.discovered ++;
+    m_statusDiscovery.discovered = m_statusDiscovery.discovered + 1;
 }
 
-void AutoDiscovery::updateStatusDiscoveryProgress() {
+void AutoDiscovery::updateStatusDiscoveryProgress()
+{
     std::lock_guard<std::mutex> lock(m_mutex);
-    m_listIpAddressCount --;
-    if (m_listIpAddressNb != 0) {
-        m_statusDiscovery.progress = static_cast<uint32_t>(
-            std::round(100 * (m_listIpAddressNb - m_listIpAddressCount) / m_listIpAddressNb));
-        if (m_statusDiscovery.progress > 100) {
-            m_statusDiscovery.progress = 100;
-        }
-    }
-    else {
-        m_statusDiscovery.progress = 100;
+    if (m_statusDiscovery.addressScanned < m_statusDiscovery.numOfAddress) {
+        m_statusDiscovery.addressScanned = m_statusDiscovery.addressScanned + 1;
     }
 }
 
-void AutoDiscovery::resetPoolScan() {
+void AutoDiscovery::resetPoolScan()
+{
     m_poolScan.reset(new fty::ThreadPool(Config::instance().pollScanMax.value()));
 }
 
-void AutoDiscovery::stopPoolScan() {
+void AutoDiscovery::stopPoolScan()
+{
     m_poolScan->stop(fty::ThreadPool::Stop::Immedialy);
 }
 
@@ -420,10 +415,9 @@ void AutoDiscovery::scan(AutoDiscovery* autoDiscovery, const std::string& ipAddr
 
 }
 
-bool AutoDiscovery::scanCheck(AutoDiscovery* autoDiscovery) {
+bool AutoDiscovery::scanCheck(AutoDiscovery* autoDiscovery)
+{
     if (!autoDiscovery) return true;
-
-    using fty::disco::commands::scan::status::Status;
 
 #undef WORK_AROUND_SCAN_BLOCKING
 
@@ -439,7 +433,7 @@ bool AutoDiscovery::scanCheck(AutoDiscovery* autoDiscovery) {
     logTrace("AutoDiscovery scanCheck: pending tasks={}, active tasks={})", countPendingTasks, countActiveTasks);
     if (countActiveTasks == 0) {
         std::lock_guard<std::mutex> lock(autoDiscovery->m_mutex);
-        autoDiscovery->m_statusDiscovery.state = Status::Terminated;
+        autoDiscovery->m_statusDiscovery.status = StatusDiscovery::Status::Terminated;
 #if WORK_AROUND_SCAN_BLOCKING
         if (isBlockingDetected) {
             isBlockingDetected = false;
@@ -477,7 +471,8 @@ bool AutoDiscovery::scanCheck(AutoDiscovery* autoDiscovery) {
     return false;
 }
 
-void AutoDiscovery::startThreadScanCheck(AutoDiscovery* autoDiscovery, const unsigned int interval) {
+void AutoDiscovery::startThreadScanCheck(AutoDiscovery* autoDiscovery, const unsigned int interval)
+{
     if (!autoDiscovery) return;
 
     logTrace("Start of scan check thread");
@@ -496,10 +491,8 @@ void AutoDiscovery::startThreadScanCheck(AutoDiscovery* autoDiscovery, const uns
 
 Expected<void> AutoDiscovery::start()
 {
-    using fty::disco::commands::scan::status::Status;
-
     std::unique_lock<std::mutex> lock(m_mutex);
-    if (m_statusDiscovery.state != Status::InProgess) {
+    if (m_statusDiscovery.status != StatusDiscovery::Status::InProgess) {
         lock.unlock();
 
         logTrace("Set scan in progress");
@@ -509,17 +502,15 @@ Expected<void> AutoDiscovery::start()
             m_params = *conf;
         }
 
-        statusDiscoveryReset();
-        resetPoolScan();
-
         // Read and test input parameters
         if (auto res = readConfig(); !res) {
             return fty::unexpected("Bad input parameter: {}", res.error());
         }
 
-        // Init scan counters
-        m_listIpAddressNb = m_listIpAddressCount = m_listIpAddress.size();
-        logTrace("Scan {} address(es)", m_listIpAddressCount);
+        // Init discovery
+        statusDiscoveryReset(static_cast<uint32_t>(m_listIpAddress.size()));
+        resetPoolScan();
+
         // For each ip, execute scan discovery
         for (auto it = m_listIpAddress.begin(); it != m_listIpAddress.end(); it++) {
             // Execute discovery task
@@ -538,12 +529,11 @@ Expected<void> AutoDiscovery::start()
     return {};
 }
 
-Expected<void> AutoDiscovery::stop() {
-    using fty::disco::commands::scan::status::Status;
-
+Expected<void> AutoDiscovery::stop()
+{
     std::unique_lock<std::mutex> lock(m_mutex);
-    if (m_statusDiscovery.state == Status::InProgess) {
-        m_statusDiscovery.state = Status::CancelledByUser;
+    if (m_statusDiscovery.status == StatusDiscovery::Status::InProgess) {
+        m_statusDiscovery.status = StatusDiscovery::Status::CancelledByUser;
         lock.unlock();
         stopPoolScan();
     }
