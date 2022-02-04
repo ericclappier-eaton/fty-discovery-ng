@@ -3,17 +3,17 @@
 namespace fty::disco {
 
 namespace commands::scan::status {
-    std::ostream& operator<<(std::ostream& ss, Status value)
+    std::ostream& operator<<(std::ostream& ss, Out::Status value)
     {
         ss << [&]() {
             switch (value) {
-                case Status::CancelledByUser:
+                case Out::Status::CancelledByUser:
                     return "1";
-                case Status::Terminated:
+                case Out::Status::Terminated:
                     return "2";
-                case Status::InProgess:
+                case Out::Status::InProgess:
                     return "3";
-                case Status::Unknown:
+                case Out::Status::Unknown:
                     return "0";
             }
             return "0";
@@ -21,18 +21,18 @@ namespace commands::scan::status {
         return ss;
     }
 
-    std::istream& operator>>(std::istream& ss, Status& value)
+    std::istream& operator>>(std::istream& ss, Out::Status& value)
     {
         std::string strval;
         ss >> strval;
         if (strval == "1") {
-            value = Status::CancelledByUser;
+            value = Out::Status::CancelledByUser;
         } else if (strval == "2") {
-            value = Status::Terminated;
+            value = Out::Status::Terminated;
         } else if (strval == "3") {
-            value = Status::InProgess;
+            value = Out::Status::InProgess;
         } else {
-            value = Status::Unknown;
+            value = Out::Status::Unknown;
         }
         return ss;
     }

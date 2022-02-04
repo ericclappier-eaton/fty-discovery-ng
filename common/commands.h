@@ -152,38 +152,38 @@ namespace commands::scan {
     namespace status {
         static constexpr const char* Subject = "scan-status";
 
-        enum class Status
-        {
-            Unknown,
-            CancelledByUser,
-            Terminated,
-            InProgess
-        };
-
-        std::ostream& operator<<(std::ostream& ss, Status value);
-        std::istream& operator>>(std::istream& ss, Status& value);
-
         class Out : public pack::Node
         {
         public:
+            enum class Status
+            {
+                Unknown,
+                CancelledByUser,
+                Terminated,
+                InProgess
+            };
+
             pack::Enum<Status> status         = FIELD("status");
-            pack::String       progress       = FIELD("progress");
+            pack::UInt32       numOfAddress   = FIELD("number-of-address");
+            pack::UInt32       addressScanned = FIELD("address-scanned");
             pack::UInt32       discovered     = FIELD("discovered");
             pack::UInt32       ups            = FIELD("ups-discovered");
             pack::UInt32       epdu           = FIELD("epdu-discovered");
             pack::UInt32       sts            = FIELD("sts-discovered");
             pack::UInt32       sensors        = FIELD("sensors-discovered");
-            pack::UInt32       numOfAddress   = FIELD("number-of-address");
-            pack::UInt32       addressScanned = FIELD("address-scanned");
 
         public:
             using pack::Node::Node;
-            META(Out, status, progress, discovered, ups, epdu, sts, sensors, numOfAddress, addressScanned);
+            META(Out, status, numOfAddress, addressScanned, discovered, ups, epdu, sts, sensors);
         };
+
+        std::ostream& operator<<(std::ostream& ss, Out::Status value);
+        std::istream& operator>>(std::istream& ss, Out::Status& value);
     } // namespace status
 
-    struct Response : public pack::Node
+    class Response : public pack::Node
     {
+    public:
         enum class Status
         {
             Success = 0,
