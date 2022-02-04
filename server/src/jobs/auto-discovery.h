@@ -23,22 +23,14 @@
 
 namespace fty::disco::job {
 
+using StatusDiscovery = commands::scan::status::Out;
+
 /// Automatic discover Assets from enpoint
 class AutoDiscovery
 {
 public:
     static const uint32_t SCAN_CHECK_PERIOD_MS = 1000;
     static const uint32_t SCAN_MIN_NUM_THREAD  = 5;
-
-    struct StatusDiscovery {
-        commands::scan::status::Status state;
-        uint32_t progress;
-        uint32_t discovered;
-        uint32_t ups;
-        uint32_t epdu;
-        uint32_t sts;
-        uint32_t sensors;
-    };
 
     enum class AssetStatus
     {
@@ -59,12 +51,6 @@ public:
     // Stop current discover
     Expected<void> stop();
 
-    // Get current discover status
-    const StatusDiscovery& getStatus() { return m_statusDiscovery; };
-
-    inline void initListIpAddressNb(uint64_t listIpAddressNb) { m_listIpAddressNb = listIpAddressNb; };
-    inline void initListIpAddressCount(uint64_t listIpAddressCount) { m_listIpAddressCount = listIpAddressCount; };
-
 //private:
     // Construct and update output ext attributes according input ext attributes
     static Expected<void> updateExt(const commands::assets::Ext& ext_in, asset::create::Ext& ext_out);
@@ -82,9 +68,10 @@ public:
     Expected<void> readConfig();
 
     // Status management
+    const StatusDiscovery& getStatus() { return m_statusDiscovery; };
     void statusDiscoveryInit();
-    void statusDiscoveryReset();
-    void updateStatusDiscoveryCounters(std::string deviceSubType);
+    void statusDiscoveryReset(uint32_t numOfAddress);
+    void updateStatusDiscoveryCounters(const std::string& deviceSubType);
     void updateStatusDiscoveryProgress();
 
     // Manage pool scan
@@ -107,12 +94,6 @@ private:
 
     // Ip address list
     std::vector<std::string>         m_listIpAddress;
-
-    // Ip address initial number
-    uint64_t                         m_listIpAddressNb;
-
-    // Ip address count
-    uint64_t                         m_listIpAddressCount;
 
     // Automatic discovery status
     StatusDiscovery                  m_statusDiscovery;
