@@ -369,7 +369,6 @@ void Assets::parse(const std::string& cnt, commands::assets::Out& out)
                 }
             }
             enrichAsset(asset);
-    else {
 
             // Get serial number of device
             std::string deviceSerial;
@@ -384,7 +383,7 @@ void Assets::parse(const std::string& cnt, commands::assets::Out& out)
             // Add sensor assets
             addSensors(deviceInfo, indexSensor, asset.sensors, tmpMap);
         }
-    } 
+    }
     else {
         auto& asset         = out.append();
         asset.subAddress    = "";
@@ -470,7 +469,7 @@ void Assets::enrichAsset(commands::assets::Return& asset)
         if (realpower_nominal) {
             max_power = *realpower_nominal;
         } else {
-            //try to get realpower.default.nominal 
+            //try to get realpower.default.nominal
             auto realpower_default_nominal = getAssetVal(asset.asset, "realpower.default.nominal");
             if (realpower_default_nominal) {
                 max_power = *realpower_default_nominal;

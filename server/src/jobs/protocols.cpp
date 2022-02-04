@@ -274,7 +274,7 @@ Expected<void> Protocols::trySnmp(const std::string& address, uint16_t port) con
     // reliable check (possible timeout) assuming SNMP v1/public
     // minimalistic SNMP v1 public introspection
     {
-        auto session = fty::impl::Snmp::instance().session(address, port);
+        auto session = fty::disco::impl::Snmp::instance().session(address, port);
         if (!session) {
             logTrace("Create session failed");
             return unexpected("Create session failed");
