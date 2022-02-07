@@ -408,10 +408,12 @@ bool AutoDiscovery::scanCheck(AutoDiscovery* autoDiscovery)
     auto countPendingTasks = autoDiscovery->m_poolScan->getCountPendingTasks();
     auto countActiveTasks = autoDiscovery->m_poolScan->getCountActiveTasks();
 
-    logTrace("AutoDiscovery scanCheck: pending tasks={}, active tasks={})", countPendingTasks, countActiveTasks);
-    if (countActiveTasks == 0) {
+    logTrace("AutoDiscovery scanCheck: status ={}, pending tasks={}, active tasks={})",
+        autoDiscovery->m_statusDiscovery.status, countPendingTasks, countActiveTasks);
+    if (countPendingTasks == 0 && countActiveTasks == 0) {
         std::lock_guard<std::mutex> lock(autoDiscovery->m_mutex);
         autoDiscovery->m_statusDiscovery.status = StatusDiscovery::Status::Terminated;
+        logTrace("End of discovery detected");
 #if WORK_AROUND_SCAN_BLOCKING
         if (isBlockingDetected) {
             isBlockingDetected = false;
