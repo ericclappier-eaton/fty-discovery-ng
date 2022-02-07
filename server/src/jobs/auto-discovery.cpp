@@ -496,7 +496,7 @@ Expected<void> AutoDiscovery::updateExt(const commands::assets::Ext& extIn, asse
         // for each attribute
         for (const auto& [key, value] : it) {
             if (key == "read_only") {
-                newMapExtObj.readOnly = (value == "true") ? true : false;
+                newMapExtObj.readOnly = (value == "true");
             } else {
                 // It is the name of the key and its associated value
                 keyVal             = key;
@@ -519,11 +519,11 @@ Expected<void> AutoDiscovery::updateHostName(const std::string& address, asset::
         socklen_t          len = sizeof(sockaddr_in);
         char               dnsName[NI_MAXHOST];
         saIn.sin_family = AF_INET;
-        memset(dnsName, 0, NI_MAXHOST);
+        memset(dnsName, 0, sizeof(dnsName));
         if (inet_aton(address.c_str(), &saIn.sin_addr) == 1) {
             if (!getnameinfo(sa, len, dnsName, sizeof(dnsName), NULL, 0, NI_NAMEREQD)) {
                 auto& itExtDns    = ext.append("dns.1");
-                itExtDns.value    = dnsName;
+                itExtDns.value    = std::string(dnsName);
                 itExtDns.readOnly = false;
                 logDebug("Retrieved DNS information: FQDN = '{}'", dnsName);
                 char* p = strchr(dnsName, '.');
@@ -531,7 +531,7 @@ Expected<void> AutoDiscovery::updateHostName(const std::string& address, asset::
                     *p = 0;
                 }
                 auto& itExtHostname    = ext.append("hostname");
-                itExtHostname.value    = dnsName;
+                itExtHostname.value    = std::string(dnsName);
                 itExtHostname.readOnly = false;
                 logDebug("Hostname = '{}'", dnsName);
             } else {
