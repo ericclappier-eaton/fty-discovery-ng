@@ -212,7 +212,7 @@ TEST_CASE("Auto disco / Test normal scan auto", "[auto]")
         }
         std::this_thread::sleep_for(std::chrono::seconds(1));
         auto end = std::chrono::steady_clock::now();
-        if (std::chrono::duration_cast<std::chrono::seconds>(end - start).count() > 10) {
+        if (std::chrono::duration_cast<std::chrono::seconds>(end - start).count() > 20) {
             FAIL("Timeout when wait terminated status");
         }
     }
@@ -299,7 +299,7 @@ TEST_CASE("Auto disco / Test stop scan auto", "[auto]")
             }
             std::this_thread::sleep_for(std::chrono::seconds(1));
             auto end = std::chrono::steady_clock::now();
-            if (std::chrono::duration_cast<std::chrono::seconds>(end - start).count() > 10) {
+            if (std::chrono::duration_cast<std::chrono::seconds>(end - start).count() > 20) {
                 FAIL("Timeout when wait terminated status");
             }
         }
@@ -508,16 +508,17 @@ TEST_CASE("Auto disco / Test real scan auto with simulation", "[auto]")
         }
 
         // Wait end of discovery
+        // TBD: Need to rework this test to reduce timeout
         start = std::chrono::steady_clock::now();
         while(1) {
             out = getStatus();
             if (out.status == status::Out::Status::Terminated) {
                 break;
             }
-            std::this_thread::sleep_for(std::chrono::seconds(2));
-            // Timeout of 100 sec
+            std::this_thread::sleep_for(std::chrono::seconds(5));
+            // Timeout of 300 sec
             auto end = std::chrono::steady_clock::now();
-            if (std::chrono::duration_cast<std::chrono::seconds>(end - start).count() > 100) {
+            if (std::chrono::duration_cast<std::chrono::seconds>(end - start).count() > 300) {
                 FAIL("Timeout when wait terminated status");
             }
         }

@@ -23,7 +23,7 @@ fty::Expected<Response> run(fty::disco::MessageBus& bus, const std::string& from
     if (auto json = pack::json::serialize(req, pack::Option::WithDefaults); !json) {
         return fty::unexpected(json.error());
     } else {
-        logInfo("Create asset:  json={}: ", *json);
+        logTrace("Create asset:  json={}: ", *json);
         msg.userData.setString(*json);
     }
 
@@ -36,7 +36,7 @@ fty::Expected<Response> run(fty::disco::MessageBus& bus, const std::string& from
         if (data.size() < 1) {
             return fty::unexpected("Response has no data");
         } else {
-            logInfo("Create asset:  data.asString()={}: ", data.asString());
+            logTrace("Create asset:  data.asString()={}: ", data.asString());
             try {
             if (auto ret = pack::json::deserialize(data.asString(), resp); !ret) {
                 logInfo("Create asset: NOK");
