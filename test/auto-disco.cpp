@@ -121,6 +121,7 @@ TEST_CASE("Auto disco / status discovery update", "[auto]")
     discoAuto.updateStatusDiscoveryCounters("ups");
     discoAuto.updateStatusDiscoveryProgress();
     status = discoAuto.getStatus();
+    // Note: addressScanned cannot be superior to total address
     CHECK(status.addressScanned == 4);
     CHECK(status.discovered     == 5);
     CHECK(status.ups            == 2);
@@ -130,6 +131,7 @@ TEST_CASE("Auto disco / status discovery update", "[auto]")
     discoAuto.updateStatusDiscoveryCounters("bad_type");
     discoAuto.updateStatusDiscoveryProgress();
     status = discoAuto.getStatus();
+   // Note: Cannot add bad type of device
     CHECK(status.addressScanned == 4);
     CHECK(status.discovered     == 5);
     CHECK(status.ups            == 2);
