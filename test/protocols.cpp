@@ -35,8 +35,77 @@ TEST_CASE("Protocols / Unavailable host", "[protocols]")
     CHECK("Host is not available: pointtosky.roz.lab.etn.com" == ret.error());
 }
 
+TEST_CASE("Protocols / available attribute", "[protocols]")
+{
+    using namespace commands::protocols;
+
+    std::stringstream ss;
+    auto clearBuffer = [&ss]() {
+        ss.clear();
+        ss.str("");
+    };
+
+    Return::Available available;
+
+    // serialisation
+    {
+        ss << available;
+        CHECK("unknown" == ss.str());
+
+        available = Return::Available::No;
+        clearBuffer();
+        ss << available;
+        CHECK("no" == ss.str());
+
+        available = Return::Available::Yes;
+        clearBuffer();
+        ss << available;
+        CHECK("yes" == ss.str());
+
+        available = Return::Available::Maybe;
+        clearBuffer();
+        ss << available;
+        CHECK("maybe" == ss.str());
+    }
+
+    // de-serialisation
+    {
+        clearBuffer();
+        ss.str("");
+        ss >> available;
+        CHECK(available == Return::Available::Unknown);
+
+        clearBuffer();
+        ss.str("not-defined");
+        ss >> available;
+        CHECK(available == Return::Available::Unknown);
+
+        clearBuffer();
+        ss.str("unknown");
+        ss >> available;
+        CHECK(available == Return::Available::Unknown);
+
+        clearBuffer();
+        ss.str("no");
+        ss >> available;
+        CHECK(available == Return::Available::No);
+
+        clearBuffer();
+        ss.str("maybe");
+        ss >> available;
+        CHECK(available == Return::Available::Maybe);
+
+        clearBuffer();
+        ss.str("yes");
+        ss >> available;
+        CHECK(available == Return::Available::Yes);
+    }
+}
+
 TEST_CASE("Protocols / Not asset", "[protocols]")
 {
+    using namespace commands::protocols;
+
     fty::disco::Message msg = Test::createMessage(commands::protocols::Subject);
 
     commands::protocols::In in;
@@ -50,14 +119,17 @@ TEST_CASE("Protocols / Not asset", "[protocols]")
     CHECK("nut_powercom" == (*res)[0].protocol);
     CHECK(443 == (*res)[0].port);
     CHECK(false == (*res)[0].reachable);
+    CHECK(Return::Available::No == (*res)[0].available);
 
     CHECK("nut_xml_pdc" == (*res)[1].protocol);
     CHECK(80 == (*res)[1].port);
     CHECK(false == (*res)[1].reachable);
+    CHECK(Return::Available::No == (*res)[1].available);
 
     CHECK("nut_snmp" == (*res)[2].protocol);
     CHECK(161 == (*res)[2].port);
     CHECK(false == (*res)[2].reachable);
+    CHECK(Return::Available::No == (*res)[2].available);
 }
 
 TEST_CASE("Protocols / Invalid ip", "[protocols]")
@@ -74,6 +146,8 @@ TEST_CASE("Protocols / Invalid ip", "[protocols]")
 
 TEST_CASE("Protocols / Fake request", "[protocols]")
 {
+    using namespace commands::protocols;
+
     // clang-format off
     fty::Process proc("snmpsimd", {
         "--data-dir=root",
@@ -121,14 +195,17 @@ TEST_CASE("Protocols / Fake request", "[protocols]")
             CHECK("nut_powercom" == (*res)[0].protocol);
             CHECK(4443  == (*res)[0].port);
             CHECK(false == (*res)[0].reachable);
+            CHECK(Return::Available::No == (*res)[0].available);
 
             CHECK("nut_xml_pdc" == (*res)[1].protocol);
             CHECK(8080  == (*res)[1].port);
             CHECK(false == (*res)[1].reachable);
+            CHECK(Return::Available::No == (*res)[1].available);
 
             CHECK("nut_snmp" == (*res)[2].protocol);
             CHECK(1161 == (*res)[2].port);
             CHECK(true == (*res)[2].reachable);
+            CHECK(Return::Available::Maybe == (*res)[2].available);
         }
 
         proc.interrupt();

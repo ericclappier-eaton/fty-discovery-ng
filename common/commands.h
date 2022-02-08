@@ -27,15 +27,27 @@ namespace commands::protocols {
     class Return : public pack::Node
     {
     public:
-        pack::String protocol  = FIELD("protocol");
-        pack::UInt32 port      = FIELD("port");
-        //pack::Bool ignored   = FIELD("ignored");
-        pack::Bool   reachable = FIELD("reachable");
+        enum class Available
+        {
+            Unknown, // unknown if protocol is available/not available
+            No,      // protocol is not available
+            Maybe,   // don't know if protocol is available/not available
+            Yes      // protocol is available
+        };
+
+        pack::String          protocol  = FIELD("protocol");
+        pack::UInt32          port      = FIELD("port");
+        //pack::Bool          ignored   = FIELD("ignored");
+        pack::Enum<Available> available = FIELD("available");
+        pack::Bool            reachable = FIELD("reachable");
 
     public:
         using pack::Node::Node;
-        META(Return, protocol, port, reachable);
+        META(Return, protocol, port, available, reachable);
     };
+
+    std::ostream& operator<<(std::ostream& ss, Return::Available value);
+    std::istream& operator>>(std::istream& ss, Return::Available& value);
 
     using Out = pack::ObjectList<Return>;
 } // namespace commands::protocols
