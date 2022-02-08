@@ -2,6 +2,44 @@
 
 namespace fty::disco {
 
+namespace commands::protocols {
+    std::ostream& operator<<(std::ostream& ss, Return::Available value)
+    {
+        ss << [&]() {
+            switch (value) {
+                case Return::Available::Unknown:
+                    return "unknown";
+                case Return::Available::No:
+                    return "no";
+                case Return::Available::Maybe:
+                    return "maybe";
+                case Return::Available::Yes:
+                    return "yes";
+            }
+            return "unknown";
+        }();
+        return ss;
+    }
+
+    std::istream& operator>>(std::istream& ss, Return::Available& value)
+    {
+        std::string strval;
+        ss >> strval;
+        if (strval == "unknown") {
+            value = Return::Available::Unknown;
+        } else if (strval == "no") {
+            value = Return::Available::No;
+        } else if (strval == "maybe") {
+            value = Return::Available::Maybe;
+        } else if (strval == "yes") {
+            value = Return::Available::Yes;
+        } else {
+            value = Return::Available::Unknown;
+        }
+        return ss;
+    }
+} // namespace commands::protocols
+
 namespace commands::scan::status {
     std::ostream& operator<<(std::ostream& ss, Out::Status value)
     {

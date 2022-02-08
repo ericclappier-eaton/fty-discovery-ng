@@ -49,6 +49,8 @@ Protocols::findProtocol(const ConfigDiscovery::Protocol::Type& protocolIn, const
 // =====================================================================================================================
 Expected<commands::protocols::Out> Protocols::getProtocols(const commands::protocols::In& in) const
 {
+    using namespace commands::protocols;
+
     if (!available(in.address)) {
         return unexpected("Host is not available: {}", in.address.value());
     }
@@ -76,6 +78,7 @@ Expected<commands::protocols::Out> Protocols::getProtocols(const commands::proto
         protocol.port      = aux.defaultPort;
         protocol.reachable = false; // default, port is not reachable
         protocol.available = Return::Available::No; // and protocol is not available
+        protocol.available = Return::Available::No; // default, not available
         //protocol.ignored   = true;  // default, filtered
         auto find = Protocols::findProtocol(aux.protocol, in);
         if (find /*&& !find->ignore*/) {
@@ -94,6 +97,7 @@ Expected<commands::protocols::Out> Protocols::getProtocols(const commands::proto
                         if (auto res = tryPowercom(in.address.value(), static_cast<uint16_t>(protocol.port))) {
                             logInfo("Found Powercom device on port {}", protocol.port);
                             protocol.reachable = true; // port is reachable
+                            protocol.available = Return::Available::Yes; // port is available
                         }
                         else {
                             logInfo("Skipped GenApi/{}, reason: {}", protocol.port.value(), res.error());
@@ -104,6 +108,7 @@ Expected<commands::protocols::Out> Protocols::getProtocols(const commands::proto
                         if (auto res = tryXmlPdc(in.address.value(), static_cast<uint16_t>(protocol.port))) {
                             logInfo("Found XML device on port {}", protocol.port);
                             protocol.reachable = true; // port is reachable
+                            protocol.available = Return::Available::Yes; // port is available
                         }
                         else {
                             logInfo("Skipped xml_pdc/{}, reason: {}", protocol.port.value(), res.error());
@@ -114,6 +119,7 @@ Expected<commands::protocols::Out> Protocols::getProtocols(const commands::proto
                         if (auto res = trySnmp(in.address.value(), static_cast<uint16_t>(protocol.port))) {
                             logInfo("Found SNMP device on port {}", protocol.port);
                             protocol.reachable = true; // port is reachable
+                            protocol.available = Return::Available::Maybe; // port is maybe available
                         }
                         else {
                             logInfo("Skipped SNMP/{}, reason: {}", protocol.port.value(), res.error());
@@ -274,7 +280,6 @@ Expected<void> Protocols::trySnmp(const std::string& address, uint16_t port) con
         }
         // here, we are not sure that the device@port is responsive
     }
-
     return {}; // ok
 }
 
