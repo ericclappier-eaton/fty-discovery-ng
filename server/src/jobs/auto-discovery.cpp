@@ -461,9 +461,8 @@ void AutoDiscovery::startThreadScanCheck(AutoDiscovery* autoDiscovery, const uns
         bool isEnd = false;
         while (!isEnd)
         {
-            auto time = std::chrono::steady_clock::now() + std::chrono::milliseconds(interval);
             isEnd = AutoDiscovery::scanCheck(autoDiscovery);
-            std::this_thread::sleep_until(time);
+            std::this_thread::sleep_for(std::chrono::milliseconds(interval));
         }
         logTrace("End of scan thread");
     }).detach();
