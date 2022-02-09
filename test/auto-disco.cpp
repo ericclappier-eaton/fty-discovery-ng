@@ -177,9 +177,10 @@ TEST_CASE("Auto disco / Test normal scan auto", "[auto]")
     CHECK(out.sensors        == 0);
 
     // Prepare discovery
+    const int nbAddressToTest = 500;
     ConfigDiscovery config;
     config.discovery.type = ConfigDiscovery::Discovery::Type::Ip;
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < nbAddressToTest; i++) {
         config.discovery.ips.append("127.0.0.1");
     }
     ConfigDiscovery::Protocol nutSnmp;
@@ -197,7 +198,7 @@ TEST_CASE("Auto disco / Test normal scan auto", "[auto]")
     if (!ret) {
         FAIL(ret.error());
     }
-
+    logDebug("Check status in progress");
     // Check status (in progress)
     out = getStatus();
     CHECK(out.status     == status::Out::Status::InProgess);
@@ -209,12 +210,15 @@ TEST_CASE("Auto disco / Test normal scan auto", "[auto]")
 
     auto start = std::chrono::steady_clock::now();
     while(1) {
-        out = getStatus();
-        if (out.status == status::Out::Status::Terminated) {
-            break;
-        }
         std::this_thread::sleep_for(std::chrono::seconds(1));
         auto end = std::chrono::steady_clock::now();
+        logDebug("Check status terminated");
+        out = getStatus();
+        if (out.status == status::Out::Status::Terminated) {
+            logDebug("Check status terminated detected after: {} sec",
+                std::chrono::duration_cast<std::chrono::seconds>(end - start).count());
+            break;
+        }
         if (std::chrono::duration_cast<std::chrono::seconds>(end - start).count() > 20) {
             FAIL("Timeout when wait terminated status");
         }
@@ -223,7 +227,7 @@ TEST_CASE("Auto disco / Test normal scan auto", "[auto]")
     // Check status (terminated)
     out = getStatus();
     CHECK(out.status == status::Out::Status::Terminated);
-    CHECK(out.addressScanned == 100);
+    CHECK(out.addressScanned == nbAddressToTest);
 }
 
 TEST_CASE("Auto disco / Test stop scan auto", "[auto]")
@@ -255,10 +259,10 @@ TEST_CASE("Auto disco / Test stop scan auto", "[auto]")
         std::this_thread::sleep_for(std::chrono::seconds(1));
 
         // Prepare discovery
-
+        const int nbAddressToTest = 500;
         ConfigDiscovery config;
         config.discovery.type = ConfigDiscovery::Discovery::Type::Ip;
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < nbAddressToTest; i++) {
             config.discovery.ips.append("127.0.0.1");
         }
         ConfigDiscovery::Protocol nutSnmp;
@@ -278,6 +282,7 @@ TEST_CASE("Auto disco / Test stop scan auto", "[auto]")
         }
 
         // Check status (in progress)
+        logDebug("Check status in progress");
         out = getStatus();
         CHECK(out.status == status::Out::Status::InProgess);
         //CHECK(out.addressScanned == 0);
@@ -296,12 +301,15 @@ TEST_CASE("Auto disco / Test stop scan auto", "[auto]")
 
         auto start = std::chrono::steady_clock::now();
         while(1) {
-            out = getStatus();
-            if (out.status == status::Out::Status::Terminated || out.status == status::Out::Status::CancelledByUser) {
-                break;
-            }
             std::this_thread::sleep_for(std::chrono::seconds(1));
             auto end = std::chrono::steady_clock::now();
+            logDebug("Check status terminated");
+            out = getStatus();
+            if (out.status == status::Out::Status::Terminated || out.status == status::Out::Status::CancelledByUser) {
+                logDebug("Check status terminated detected after: {} sec",
+                    std::chrono::duration_cast<std::chrono::seconds>(end - start).count());
+                break;
+            }
             if (std::chrono::duration_cast<std::chrono::seconds>(end - start).count() > 20) {
                 FAIL("Timeout when wait terminated status");
             }
@@ -310,7 +318,7 @@ TEST_CASE("Auto disco / Test stop scan auto", "[auto]")
         // Check status (terminated)
         out = getStatus();
         CHECK(out.status == status::Out::Status::CancelledByUser);
-        //CHECK(!(out.addressScanned == 100));  // normally not finished
+        //CHECK(!(out.addressScanned == nbAddressToTest));  // normally not finished
 
         // Stop snmp process
         proc.interrupt();
@@ -492,8 +500,12 @@ TEST_CASE("Auto disco / Test real scan auto with simulation", "[auto]")
         // Wait start of discovery
         auto start = std::chrono::steady_clock::now();
         while(1) {
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+            auto end = std::chrono::steady_clock::now();
             out = getStatus();
             if (out.status == status::Out::Status::InProgess) {
+                logDebug("Check status in progress detected after: {} sec",
+                    std::chrono::duration_cast<std::chrono::seconds>(end - start).count());
                 CHECK(out.addressScanned == 0);
                 CHECK(out.discovered     == 0);
                 CHECK(out.ups            == 0);
@@ -502,25 +514,27 @@ TEST_CASE("Auto disco / Test real scan auto with simulation", "[auto]")
                 CHECK(out.sensors        == 0);
                 break;
             }
-            std::this_thread::sleep_for(std::chrono::seconds(1));
             // Timeout of 100 sec
-            auto end = std::chrono::steady_clock::now();
             if (std::chrono::duration_cast<std::chrono::seconds>(end - start).count() > 100) {
                 FAIL("Timeout when wait progress status");
             }
+
         }
 
         // Wait end of discovery
         // TBD: Need to rework this test to reduce timeout
         start = std::chrono::steady_clock::now();
         while(1) {
+            std::this_thread::sleep_for(std::chrono::seconds(5));
+            auto end = std::chrono::steady_clock::now();
+            logDebug("Check status terminated");
             out = getStatus();
             if (out.status == status::Out::Status::Terminated) {
+                logDebug("Check status terminated detected after: {} sec",
+                    std::chrono::duration_cast<std::chrono::seconds>(end - start).count());
                 break;
             }
-            std::this_thread::sleep_for(std::chrono::seconds(5));
             // Timeout of 300 sec
-            auto end = std::chrono::steady_clock::now();
             if (std::chrono::duration_cast<std::chrono::seconds>(end - start).count() > 300) {
                 FAIL("Timeout when wait terminated status");
             }
