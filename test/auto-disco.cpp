@@ -177,7 +177,7 @@ TEST_CASE("Auto disco / Test normal scan auto", "[auto]")
     CHECK(out.sensors        == 0);
 
     // Prepare discovery
-    const int nbAddressToTest = 500;
+    const int nbAddressToTest = 2000;
     ConfigDiscovery config;
     config.discovery.type = ConfigDiscovery::Discovery::Type::Ip;
     for (int i = 0; i < nbAddressToTest; i++) {
