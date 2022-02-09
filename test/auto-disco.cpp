@@ -259,7 +259,7 @@ TEST_CASE("Auto disco / Test stop scan auto", "[auto]")
         std::this_thread::sleep_for(std::chrono::seconds(1));
 
         // Prepare discovery
-        const int nbAddressToTest = 500;
+        const int nbAddressToTest = 1000;
         ConfigDiscovery config;
         config.discovery.type = ConfigDiscovery::Discovery::Type::Ip;
         for (int i = 0; i < nbAddressToTest; i++) {
@@ -301,18 +301,18 @@ TEST_CASE("Auto disco / Test stop scan auto", "[auto]")
 
         auto start = std::chrono::steady_clock::now();
         while(1) {
-            std::this_thread::sleep_for(std::chrono::seconds(1));
             auto end = std::chrono::steady_clock::now();
-            logDebug("Check status terminated");
+            logDebug("Check status terminated or cancelled");
             out = getStatus();
             if (out.status == status::Out::Status::Terminated || out.status == status::Out::Status::CancelledByUser) {
-                logDebug("Check status terminated detected after: {} sec",
+                logDebug("Check status terminated or cancelled detected after: {} sec",
                     std::chrono::duration_cast<std::chrono::seconds>(end - start).count());
                 break;
             }
             if (std::chrono::duration_cast<std::chrono::seconds>(end - start).count() > 20) {
-                FAIL("Timeout when wait terminated status");
+                FAIL("Timeout when wait terminated or cancelled status");
             }
+            std::this_thread::sleep_for(std::chrono::seconds(1));
         }
 
         // Check status (terminated)
@@ -500,7 +500,6 @@ TEST_CASE("Auto disco / Test real scan auto with simulation", "[auto]")
         // Wait start of discovery
         auto start = std::chrono::steady_clock::now();
         while(1) {
-            std::this_thread::sleep_for(std::chrono::seconds(1));
             auto end = std::chrono::steady_clock::now();
             out = getStatus();
             if (out.status == status::Out::Status::InProgess) {
@@ -518,14 +517,13 @@ TEST_CASE("Auto disco / Test real scan auto with simulation", "[auto]")
             if (std::chrono::duration_cast<std::chrono::seconds>(end - start).count() > 100) {
                 FAIL("Timeout when wait progress status");
             }
-
+            std::this_thread::sleep_for(std::chrono::seconds(1));
         }
 
         // Wait end of discovery
         // TBD: Need to rework this test to reduce timeout
         start = std::chrono::steady_clock::now();
         while(1) {
-            std::this_thread::sleep_for(std::chrono::seconds(5));
             auto end = std::chrono::steady_clock::now();
             logDebug("Check status terminated");
             out = getStatus();
@@ -538,6 +536,7 @@ TEST_CASE("Auto disco / Test real scan auto with simulation", "[auto]")
             if (std::chrono::duration_cast<std::chrono::seconds>(end - start).count() > 300) {
                 FAIL("Timeout when wait terminated status");
             }
+            std::this_thread::sleep_for(std::chrono::seconds(5));
         }
         // Wait a little for creation of asset
         std::this_thread::sleep_for(std::chrono::seconds(15));
