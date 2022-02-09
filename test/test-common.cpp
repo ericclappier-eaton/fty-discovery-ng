@@ -37,7 +37,7 @@ fty::Expected<void> Test::init()
     static const char* endpoint_disco = "inproc://fty-discovery-ng-test";
     Test::instance().m_broker = zactor_new(mlm_server, const_cast<char*>("Malamute"));
     zstr_sendx(Test::instance().m_broker, "BIND", endpoint_disco, NULL);
-    zstr_send(Test::instance().m_broker, "VERBOSE");
+    //zstr_send(Test::instance().m_broker, "VERBOSE");
 
     if (auto res = Test::instance().m_dis.init(); !res) {
         return fty::unexpected(res.error());
