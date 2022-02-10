@@ -78,6 +78,8 @@ void Discovery::shutdown()
 {
     stop();
     m_pool.stop();
+    m_autoDiscovery.shutdown();
+    m_bus.shutdown();
 }
 
 int Discovery::run()

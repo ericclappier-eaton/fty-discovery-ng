@@ -40,7 +40,8 @@ public:
     };
 
     AutoDiscovery();
-    ~AutoDiscovery() = default;
+    ~AutoDiscovery();
+    void shutdown();
 
     // Init discover
     Expected<void> init();
