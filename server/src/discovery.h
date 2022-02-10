@@ -37,7 +37,7 @@ public:
     /// Loads config
     bool loadConfig();
 
-    job::AutoDiscovery& getAutoDiscovery() { return m_autoDiscovery; };
+    inline job::AutoDiscovery& getAutoDiscovery() { return m_autoDiscovery; };
 
     /// Runs message dispatcher
     int run();

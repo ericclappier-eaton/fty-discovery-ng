@@ -31,6 +31,18 @@ AutoDiscovery::AutoDiscovery()
 {
 }
 
+AutoDiscovery::~AutoDiscovery()
+{
+    shutdown();
+}
+
+void AutoDiscovery::shutdown()
+{
+    stop();
+    m_poolScan->stop();
+    m_bus.shutdown();
+}
+
 Expected<void> AutoDiscovery::init()
 {
     // Init thread number
@@ -56,40 +68,40 @@ Expected<void> AutoDiscovery::init()
 
 Expected<void> AutoDiscovery::start()
 {
-    std::unique_lock<std::mutex> lock(m_mutex);
-    if (m_statusDiscovery.status != StatusDiscovery::Status::InProgess) {
-        lock.unlock();
-
-        logTrace("Set scan in progress");
-        if (auto conf = ConfigDiscoveryManager::instance().config(); !conf) {
-           return fty::unexpected("Unable to read configuration: {}", conf.error());
-        } else {
-            m_params = *conf;
+    //critical section to check the status
+    {
+        std::unique_lock<std::mutex> lock(m_mutex);
+        if (m_statusDiscovery.status == StatusDiscovery::Status::InProgess) {
+            return fty::unexpected("Scan in progress");
         }
-
-        // Read and test input parameters
-        if (auto res = readConfig(); !res) {
-            return fty::unexpected("Bad input parameter: {}", res.error());
-        }
-
-        // Init discovery
-        statusDiscoveryReset(static_cast<uint32_t>(m_listIpAddress.size()));
-        resetPoolScan();
-
-        // For each ip, execute scan discovery
-        for (auto it = m_listIpAddress.begin(); it != m_listIpAddress.end(); it++) {
-            // Execute discovery task
-            m_poolScan->pushWorker(scan, this, *it);
-            logTrace("Add scan with ip {}", *it);
-            m_listIpAddress.erase(it --);
-        }
-        // Execute task in charge of test end of discovery
-        AutoDiscovery::startThreadScanCheck(this, SCAN_CHECK_PERIOD_MS);
     }
-    else {
-        lock.unlock();
-        return fty::unexpected("Scan in progress");
+
+    logTrace("Set scan in progress");
+    if (auto conf = ConfigDiscoveryManager::instance().config(); !conf) {
+        return fty::unexpected("Unable to read configuration: {}", conf.error());
+    } else {
+        m_params = *conf;
     }
+
+    // Read and test input parameters
+    if (auto res = readConfig(); !res) {
+        return fty::unexpected("Bad input parameter: {}", res.error());
+    }
+
+    // Init discovery
+    statusDiscoveryReset(static_cast<uint32_t>(m_listIpAddress.size()));
+    resetPoolScan();
+
+    // For each ip, execute scan discovery
+    for (auto it = m_listIpAddress.begin(); it != m_listIpAddress.end(); it++) {
+        // Execute discovery task
+        m_poolScan->pushWorker(scan, this, *it);
+        logTrace("Add scan with ip {}", *it);
+        m_listIpAddress.erase(it --);
+    }
+    // Execute task in charge of test end of discovery
+    AutoDiscovery::startThreadScanCheck(this, SCAN_CHECK_PERIOD_MS);
+
     logTrace("End start scan");
     return {};
 }

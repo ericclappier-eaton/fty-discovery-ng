@@ -119,3 +119,5 @@ etn_configure_file(
     TARGET      ${PROJECT_NAME}
     DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/${PROJECT_NAME}
 )
+
+add_subdirectory(test)

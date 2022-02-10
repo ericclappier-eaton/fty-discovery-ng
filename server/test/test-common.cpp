@@ -6,7 +6,6 @@ Test::Test() : m_dis("conf/discovery.conf")
 
 Test::~Test()
 {
-    zactor_destroy(&m_broker);
 }
 
 fty::disco::Message Test::createMessage(const char* subject)
@@ -65,6 +64,8 @@ void Test::shutdown()
 {
     Test::instance().m_dis.shutdown();
     Test::instance().m_th.join();
+    Test::instance().m_bus.shutdown();
+    zactor_destroy(&(Test::instance().m_broker));
 }
 
 Test& Test::instance()

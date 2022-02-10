@@ -44,6 +44,11 @@ Expected<void> MessageBus::init(const std::string& actorName, const std::string&
     }
 }
 
+void MessageBus::shutdown()
+{
+    m_bus = nullptr;
+}
+
 MessageBus::~MessageBus()
 {
 }

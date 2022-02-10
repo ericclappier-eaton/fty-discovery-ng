@@ -16,7 +16,7 @@ TEST_CASE("Config manager load")
         REQUIRE(!load);
     }
 
-    auto load = manager.load("config-discovery.conf");
+    auto load = manager.load("conf/config-discovery.conf");
     REQUIRE(load.value().aux.createUser == "somesome");
 }
 

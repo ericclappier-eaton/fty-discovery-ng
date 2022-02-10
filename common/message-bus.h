@@ -46,6 +46,7 @@ public:
     ~MessageBus();
 
     [[nodiscard]] Expected<void> init(const std::string& actorName, const std::string& endpoint = ENDPOINT);
+    void shutdown();
 
     [[nodiscard]] std::string getEndpoint() { return m_endpoint; };
 
