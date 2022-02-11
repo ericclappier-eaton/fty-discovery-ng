@@ -176,6 +176,22 @@ TEST_CASE("Auto disco / Test normal scan auto", "[auto]")
     CHECK(out.sts            == 0);
     CHECK(out.sensors        == 0);
 
+    // clang-format off
+    fty::Process proc("snmpsimd", {
+        "--data-dir=root",
+        "--agent-udpv4-endpoint=127.0.0.1:1161",
+        "--logging-method=file:.snmpsim.txt",
+        "--variation-modules-dir=root",
+    });
+    // clang-format on
+
+    if (auto pid = proc.run(); !pid) {
+        FAIL(pid.error());
+    }
+
+    // Wait a moment for snmpsim init
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+
     // Prepare discovery
     const int nbAddressToTest = 2000;
     ConfigDiscovery config;
@@ -228,6 +244,10 @@ TEST_CASE("Auto disco / Test normal scan auto", "[auto]")
     out = getStatus();
     CHECK(out.status == status::Out::Status::Terminated);
     CHECK(out.addressScanned == nbAddressToTest);
+
+    // Stop snmp process
+    proc.interrupt();
+    proc.wait();
 }
 
 TEST_CASE("Auto disco / Test stop scan auto", "[auto]")
@@ -253,79 +273,78 @@ TEST_CASE("Auto disco / Test stop scan auto", "[auto]")
     });
     // clang-format on
 
-    if (auto pid = proc.run()) {
-
-        // Wait a moment for snmpsim init
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-
-        // Prepare discovery
-        const int nbAddressToTest = 1000;
-        ConfigDiscovery config;
-        config.discovery.type = ConfigDiscovery::Discovery::Type::Ip;
-        for (int i = 0; i < nbAddressToTest; i++) {
-            config.discovery.ips.append("127.0.0.1");
-        }
-        ConfigDiscovery::Protocol nutSnmp;
-        nutSnmp.protocol = ConfigDiscovery::Protocol::Type::Snmp;
-        //nutSnmp.ports.append(1161);
-        nutSnmp.port = 1161;
-        config.discovery.protocols.append(nutSnmp);
-        config.discovery.documents.append("no_id");
-        // Set auto discovery config
-        ConfigDiscoveryManager::instance().set(config);
-
-        // Execute discovery
-        fty::disco::Message msg = Test::createMessage(start::Subject);
-        fty::Expected<fty::disco::Message> ret = Test::send(msg);
-        if (!ret) {
-            FAIL(ret.error());
-        }
-
-        // Check status (in progress)
-        logDebug("Check status in progress");
-        out = getStatus();
-        CHECK(out.status == status::Out::Status::InProgess);
-        //CHECK(out.addressScanned == 0);
-        CHECK(out.discovered == 0);
-        CHECK(out.ups        == 0);
-        CHECK(out.epdu       == 0);
-        CHECK(out.sts        == 0);
-        CHECK(out.sensors    == 0);
-
-        // Stop discovery
-        fty::disco::Message msg2 = Test::createMessage(stop::Subject);
-        fty::Expected<fty::disco::Message> ret2 = Test::send(msg2);
-        if (!ret2) {
-            FAIL(ret2.error());
-        }
-
-        auto start = std::chrono::steady_clock::now();
-        while(1) {
-            auto end = std::chrono::steady_clock::now();
-            logDebug("Check status terminated or cancelled");
-            out = getStatus();
-            if (out.status == status::Out::Status::Terminated || out.status == status::Out::Status::CancelledByUser) {
-                logDebug("Check status terminated or cancelled detected after: {} sec",
-                    std::chrono::duration_cast<std::chrono::seconds>(end - start).count());
-                break;
-            }
-            if (std::chrono::duration_cast<std::chrono::seconds>(end - start).count() > 20) {
-                FAIL("Timeout when wait terminated or cancelled status");
-            }
-            std::this_thread::sleep_for(std::chrono::seconds(1));
-        }
-
-        // Check status (terminated)
-        out = getStatus();
-        CHECK(out.status == status::Out::Status::CancelledByUser);
-        //CHECK(!(out.addressScanned == nbAddressToTest));  // normally not finished
-
-        // Stop snmp process
-        proc.interrupt();
-        proc.wait();
-    } else {
+    if (auto pid = proc.run(); !pid) {
         FAIL(pid.error());
     }
+
+    // Wait a moment for snmpsim init
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+
+    // Prepare discovery
+    const int nbAddressToTest = 1000;
+    ConfigDiscovery config;
+    config.discovery.type = ConfigDiscovery::Discovery::Type::Ip;
+    for (int i = 0; i < nbAddressToTest; i++) {
+        config.discovery.ips.append("127.0.0.1");
+    }
+    ConfigDiscovery::Protocol nutSnmp;
+    nutSnmp.protocol = ConfigDiscovery::Protocol::Type::Snmp;
+    //nutSnmp.ports.append(1161);
+    nutSnmp.port = 1161;
+    config.discovery.protocols.append(nutSnmp);
+    config.discovery.documents.append("no_id");
+    // Set auto discovery config
+    ConfigDiscoveryManager::instance().set(config);
+
+    // Execute discovery
+    fty::disco::Message msg = Test::createMessage(start::Subject);
+    fty::Expected<fty::disco::Message> ret = Test::send(msg);
+    if (!ret) {
+        FAIL(ret.error());
+    }
+
+    // Check status (in progress)
+    logDebug("Check status in progress");
+    out = getStatus();
+    CHECK(out.status == status::Out::Status::InProgess);
+    //CHECK(out.addressScanned == 0);
+    CHECK(out.discovered == 0);
+    CHECK(out.ups        == 0);
+    CHECK(out.epdu       == 0);
+    CHECK(out.sts        == 0);
+    CHECK(out.sensors    == 0);
+
+    // Stop discovery
+    fty::disco::Message msg2 = Test::createMessage(stop::Subject);
+    fty::Expected<fty::disco::Message> ret2 = Test::send(msg2);
+    if (!ret2) {
+        FAIL(ret2.error());
+    }
+
+    auto start = std::chrono::steady_clock::now();
+    while(1) {
+        auto end = std::chrono::steady_clock::now();
+        logDebug("Check status terminated or cancelled");
+        out = getStatus();
+        if (out.status == status::Out::Status::Terminated || out.status == status::Out::Status::CancelledByUser) {
+            logDebug("Check status terminated or cancelled detected after: {} sec",
+                std::chrono::duration_cast<std::chrono::seconds>(end - start).count());
+            break;
+        }
+        if (std::chrono::duration_cast<std::chrono::seconds>(end - start).count() > 20) {
+            FAIL("Timeout when wait terminated or cancelled status");
+        }
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+
+    // Check status (terminated)
+    out = getStatus();
+    CHECK(out.status == status::Out::Status::CancelledByUser);
+    //CHECK(!(out.addressScanned == nbAddressToTest));  // normally not finished
+
+    // Stop snmp process
+    proc.interrupt();
+    proc.wait();
 }
 
 class TestAuto {
@@ -354,7 +373,7 @@ void TestAuto::recAssets(const fty::disco::Message& msg)
     }
 }
 
-TEST_CASE("Auto disco / Test real scan auto with simulation", "[auto]")
+TEST_CASE("Auto disco / Test real scan auto with simulation", ".[.auto]")
 {
     // clang-format off
     fty::Process proc("snmpsimd",  {
