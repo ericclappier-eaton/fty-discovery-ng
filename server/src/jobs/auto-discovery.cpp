@@ -97,8 +97,9 @@ Expected<void> AutoDiscovery::start()
         // Execute discovery task
         m_poolScan->pushWorker(scan, this, *it);
         logTrace("Add scan with ip {}", *it);
-        m_listIpAddress.erase(it --);
     }
+    m_listIpAddress.clear();
+
     // Execute task in charge of test end of discovery
     AutoDiscovery::startThreadScanCheck(this, SCAN_CHECK_PERIOD_MS);
 
