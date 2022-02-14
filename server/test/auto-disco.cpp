@@ -137,6 +137,13 @@ TEST_CASE("Auto disco / status discovery update", "[auto]")
     CHECK(status.sensors        == 1);
 }
 
+TEST_CASE("Auto disco / Empty request", "[auto]")
+{
+    auto msg = Test::createMessage(fty::disco::commands::scan::start::Subject);
+    auto ret = Test::send(msg);
+    CHECK_FALSE(ret);
+}
+
 using namespace fty::disco::commands::scan;
 
 // get discovery status
@@ -190,22 +197,21 @@ TEST_CASE("Auto disco / Test normal scan auto", "[auto]")
 
     // Prepare discovery
     const int nbAddressToTest = 2000;
-    ConfigDiscovery config;
-    config.discovery.type = ConfigDiscovery::Discovery::Type::Ip;
+    start::In in;
+    in.discovery.type = ConfigDiscovery::Discovery::Type::Ip;
     for (int i = 0; i < nbAddressToTest; i++) {
-        config.discovery.ips.append("127.0.0.1");
+        in.discovery.ips.append("127.0.0.1");
     }
     ConfigDiscovery::Protocol nutSnmp;
     nutSnmp.protocol = ConfigDiscovery::Protocol::Type::Snmp;
     //nutSnmp.ports.append(1161);
     nutSnmp.port = 1161;
-    config.discovery.protocols.append(nutSnmp);
-    config.discovery.documents.append("no_id");
-    // Set auto discovery config
-    ConfigDiscoveryManager::instance().set(config);
+    in.discovery.protocols.append(nutSnmp);
+    in.discovery.documents.append("no_id");
 
     // Execute discovery
     fty::disco::Message msg = Test::createMessage(start::Subject);
+    msg.userData.setString(*pack::json::serialize(in));
     fty::Expected<fty::disco::Message> ret = Test::send(msg);
     if (!ret) {
         FAIL(ret.error());
@@ -278,22 +284,21 @@ TEST_CASE("Auto disco / Test stop scan auto", "[auto]")
 
     // Prepare discovery
     const int nbAddressToTest = 1000;
-    ConfigDiscovery config;
-    config.discovery.type = ConfigDiscovery::Discovery::Type::Ip;
+    start::In in;
+    in.discovery.type = ConfigDiscovery::Discovery::Type::Ip;
     for (int i = 0; i < nbAddressToTest; i++) {
-        config.discovery.ips.append("127.0.0.1");
+        in.discovery.ips.append("127.0.0.1");
     }
     ConfigDiscovery::Protocol nutSnmp;
     nutSnmp.protocol = ConfigDiscovery::Protocol::Type::Snmp;
     //nutSnmp.ports.append(1161);
     nutSnmp.port = 1161;
-    config.discovery.protocols.append(nutSnmp);
-    config.discovery.documents.append("no_id");
-    // Set auto discovery config
-    ConfigDiscoveryManager::instance().set(config);
+    in.discovery.protocols.append(nutSnmp);
+    in.discovery.documents.append("no_id");
 
     // Execute discovery
     fty::disco::Message msg = Test::createMessage(start::Subject);
+    msg.userData.setString(*pack::json::serialize(in));
     fty::Expected<fty::disco::Message> ret = Test::send(msg);
     if (!ret) {
         FAIL(ret.error());
@@ -460,24 +465,23 @@ TEST_CASE("Auto disco / Test real scan auto with simulation", "[auto]")
         }
 
         // Prepare discovery
-        ConfigDiscovery config;
-        config.discovery.type = ConfigDiscovery::Discovery::Type::Ip;
+        start::In in;
+        in.discovery.type = ConfigDiscovery::Discovery::Type::Ip;
         // TBD Use 169.254.50.X private address for multi scan
         // ip address add dev eth0 scope link $addr/16
         // ip address del $addr/16 dev eth0
-        config.discovery.ips.append("127.0.0.1");
+        in.discovery.ips.append("127.0.0.1");
         ConfigDiscovery::Protocol nutSnmp;
         nutSnmp.protocol = ConfigDiscovery::Protocol::Type::Snmp;
         //nutSnmp.ports.append(1161);
         nutSnmp.port = 1161;
-        config.discovery.protocols.append(nutSnmp);
+        in.discovery.protocols.append(nutSnmp);
         // note: document id is equal to the password to simplify the test
-        config.discovery.documents.append(password);
-        // Set auto discovery config
-        ConfigDiscoveryManager::instance().set(config);
+        in.discovery.documents.append(password);
 
         // Execute discovery
         fty::disco::Message msg = Test::createMessage(start::Subject);
+        msg.userData.setString(*pack::json::serialize(in));
         fty::Expected<fty::disco::Message> ret = Test::send(msg);
         if (!ret) {
             FAIL(ret.error());
