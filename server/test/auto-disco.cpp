@@ -3,14 +3,10 @@
 #include "discovery-config-manager.h"
 #include "../server/src/jobs/create-asset.h"
 #include "../server/src/jobs/auto-discovery.h"
+#include "../server/src/jobs/impl/credentials.h"
 #include <fty/process.h>
-#include <fty_common_socket_sync_client.h>
 #include <fty_security_wallet.h>
-#include <secw_producer_accessor.h>
-#include <secw_security_wallet_server.h>
 #include <fty_common_messagebus_message.h>
-#include <fty_common_socket.h>
-#include <fty_common_mlm.h>
 #include <vector>
 #include <utility>
 #include <chrono>
@@ -373,7 +369,7 @@ void TestAuto::recAssets(const fty::disco::Message& msg)
     }
 }
 
-TEST_CASE("Auto disco / Test real scan auto with simulation", ".[.auto]")
+TEST_CASE("Auto disco / Test real scan auto with simulation", "[auto]")
 {
     // clang-format off
     fty::Process proc("snmpsimd",  {
@@ -399,18 +395,6 @@ TEST_CASE("Auto disco / Test real scan auto with simulation", ".[.auto]")
     }
     TestAuto testAuto(bus);
     auto sub = bus.subsribe("FTY.Q.ASSET.QUERY", &TestAuto::recAssets, &testAuto);
-
-    // Create a stream publisher for security wallet notification
-    mlm::MlmStreamClient notificationStream(SECURITY_WALLET_AGENT, SECW_NOTIFICATIONS, 1000, endpoint_disco);
-
-    // Create the server for security wallet
-    secw::SecurityWalletServer serverSecw("conf/configuration.json", "conf/data.json", notificationStream);
-    fty::SocketBasicServer     agentSecw(serverSecw, "secw-test.socket");
-    std::thread                agentSecwThread(&fty::SocketBasicServer::run, &agentSecw);
-
-    // Create client for security wallet
-    fty::SocketSyncClient  secwSyncClient("secw-test.socket");
-    secw::ProducerAccessor producerAccessor(secwSyncClient);
 
     auto& discoAuto = Test::instance().getDisco().getAutoDiscovery();
     discoAuto.statusDiscoveryInit();
@@ -451,34 +435,19 @@ TEST_CASE("Auto disco / Test real scan auto with simulation", ".[.auto]")
         /*{ {"xups.238", "xups.159"}, initStatus(status::Out::Status::Terminated, 3, 2, 0, 0, 1
         )},*/
     }) {
-        std::cout << "TEST #" << i << std::endl;
+        std::cout << "TEST #" << i ++ << std::endl;
         //auto passwordList = testCases.first;
         auto password = testCases.first;
         auto statusExpected = testCases.second;
-        // create passwords in security wallet
-        std::vector<std::string> idList;
-        //for (const auto password : passwordList) {
-            bool isFound = true;
-            try {
-                auto doc = producerAccessor.getDocumentWithoutPrivateDataByName("default", password);
-                if (!doc) {
-                    isFound = false;
-                }
-                else {
-                    idList.push_back(doc->getId());
-                }
-            }
-            catch(secw::SecwNameDoesNotExistException& ex) {
-                isFound = false;
-            }
-            // create password if not exist
-            if (!isFound) {
-                secw::Snmpv1Ptr doc = std::make_shared<secw::Snmpv1>("community", password);
-                doc->setName(password);
-                doc->addUsage("discovery_monitoring");
-                idList.push_back(producerAccessor.insertNewDocument("default", std::dynamic_pointer_cast<secw::Document>(doc)));
-            }
-        //}
+
+        // set credential callback
+        fty::disco::impl::setCredentialsService([password](const std::string&) -> secw::DocumentPtr {
+            secw::Snmpv1Ptr doc = std::make_shared<secw::Snmpv1>("community", password);
+            doc->setName(password);
+            doc->addUsage("discovery_monitoring");
+            return doc;
+        });
+
         // Test status before scan
         auto out = getStatus();
         if (i == 0) {
@@ -502,9 +471,8 @@ TEST_CASE("Auto disco / Test real scan auto with simulation", ".[.auto]")
         //nutSnmp.ports.append(1161);
         nutSnmp.port = 1161;
         config.discovery.protocols.append(nutSnmp);
-        for (const auto id : idList) {
-            config.discovery.documents.append(id);
-        }
+        // note: document id is equal to the password to simplify the test
+        config.discovery.documents.append(password);
         // Set auto discovery config
         ConfigDiscoveryManager::instance().set(config);
 
@@ -569,15 +537,7 @@ TEST_CASE("Auto disco / Test real scan auto with simulation", ".[.auto]")
         CHECK(out.epdu           == statusExpected.epdu);
         CHECK(out.sts            == statusExpected.sts);
         CHECK(out.sensors        == statusExpected.sensors);
-
-        // delete passwords in security wallet
-        for (const auto id : idList) {
-            producerAccessor.deleteDocument("default", id);
-        }
-        i ++;
     }
-    agentSecw.requestStop();
-    agentSecwThread.join();
 
     proc.interrupt();
     proc.wait();

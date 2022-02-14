@@ -8,7 +8,7 @@
 namespace fty::disco::impl {
 
     static secw::DocumentPtr getCredentialsWithSecw(const std::string& id) {
-        fty::SocketSyncClient secwSyncClient(Config::instance().secwSocket.value());
+        fty::SocketSyncClient secwSyncClient("/run/fty-security-wallet/secw.socket");
         auto         client = secw::ConsumerAccessor(secwSyncClient);
 
         return client.getDocumentWithPrivateData("default", id);
@@ -23,7 +23,7 @@ namespace fty::disco::impl {
         } else {
             g_FctGetCredential = fct;
         }
-        
+
     }
 
     secw::DocumentPtr getCredential(const std::string& id) {
