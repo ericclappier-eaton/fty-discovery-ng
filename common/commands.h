@@ -223,6 +223,7 @@ namespace commands::scan {
     namespace start {
         static constexpr const char* Subject = "scan-start";
 
+        using In  = ConfigDiscovery;
         using Out = Response;
     } // namespace start
 } // namespace commands::scan

@@ -66,7 +66,7 @@ Expected<void> AutoDiscovery::init()
     return {};
 }
 
-Expected<void> AutoDiscovery::start()
+Expected<void> AutoDiscovery::start(const disco::commands::scan::start::In& in)
 {
     //critical section to check the status
     {
@@ -76,12 +76,8 @@ Expected<void> AutoDiscovery::start()
         }
     }
 
+    m_params = in;
     logTrace("Set scan in progress");
-    if (auto conf = ConfigDiscoveryManager::instance().config(); !conf) {
-        return fty::unexpected("Unable to read configuration: {}", conf.error());
-    } else {
-        m_params = *conf;
-    }
 
     // Read and test input parameters
     if (auto res = readConfig(); !res) {

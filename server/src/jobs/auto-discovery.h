@@ -47,7 +47,7 @@ public:
     Expected<void> init();
 
     // Runs discover
-    Expected<void> start();
+    Expected<void> start(const disco::commands::scan::start::In& in);
 
     // Stop current discover
     Expected<void> stop();
