@@ -52,9 +52,6 @@ public:
     /// Events to stop discovery message dispatcher
     Event<> stop;
 
-    /// Change the credential getter
-    void setCredentialsService(std::function<secw::DocumentPtr(const std::string&)> fct = nullptr);
-
 private:
     void discover(const disco::Message& msg);
     void addTask();
