@@ -13,12 +13,17 @@ unsigned Scan::run()
         throw rest::Error(ret.error());
     }
 
+    if (m_request.body().empty()) {
+        throw rest::errors::Internal("Bad request");
+    }
+
     fty::disco::MessageBus bus;
     if (auto res = bus.init(AgentName); !res) {
         throw rest::errors::Internal(res.error());
     }
 
     fty::disco::Message msg = message(fty::disco::commands::scan::start::Subject);
+    msg.setData(m_request.body());
     auto ret = bus.send(Channel, msg);
     if (!ret) {
         throw rest::errors::Internal(ret.error());
