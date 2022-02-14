@@ -23,6 +23,5 @@ etn_test_target(${PROJECT_NAME}-static
     USES
         ${PROJECT_NAME}-static
         Catch2::Catch2
-        fty_security_wallet_server
         mlm
 )
