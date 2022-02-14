@@ -1,12 +1,12 @@
 #include "process.h"
 #include "src/config.h"
 #include "src/jobs/impl/mibs.h"
+#include "src/jobs/impl/credentials.h"
 #include <filesystem>
 #include <fty/process.h>
-#include <fty_common_socket_sync_client.h>
 #include <fty_log.h>
-#include <fty_security_wallet.h>
 #include <unistd.h>
+#include <fty_security_wallet.h>
 
 namespace fty::disco::impl::nut {
 
@@ -148,8 +148,6 @@ Expected<void> Process::setCredentialId(const std::string& credential)
     }
 
     if (m_protocol == "nut_snmp") {
-        fty::SocketSyncClient secwSyncClient(Config::instance().secwSocket.value());
-        auto                  client = secw::ConsumerAccessor(secwSyncClient);
 
         auto levelStr = [](secw::Snmpv3SecurityLevel lvl) -> Expected<std::string> {
             switch (lvl) {
@@ -200,7 +198,7 @@ Expected<void> Process::setCredentialId(const std::string& credential)
         };
 
         try {
-            auto secCred = client.getDocumentWithPrivateData("default", credential);
+            auto secCred = getCredential(credential);
 
             if (auto credV3 = secw::Snmpv3::tryToCast(secCred)) {
                 log_debug("Init from wallet for SNMP v3");
@@ -246,11 +244,9 @@ Expected<void> Process::setCredentialId(const std::string& credential)
             return unexpected(err.what());
         }
     } else if (m_protocol == "nut_powercom") {
-        fty::SocketSyncClient secwSyncClient(Config::instance().secwSocket.value());
-        auto                  client = secw::ConsumerAccessor(secwSyncClient);
 
         try {
-            auto secCred = client.getDocumentWithPrivateData("default", credential);
+            auto secCred = getCredential(credential);
             if (auto cred = secw::UserAndPassword::tryToCast(secCred)) {
                 m_process->addArgument("-x");
                 m_process->addArgument(fmt::format("username={}", cred->getUsername()));

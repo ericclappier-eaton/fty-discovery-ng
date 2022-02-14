@@ -42,6 +42,8 @@ etn_target(static ${PROJECT_NAME}-static
         src/jobs/impl/nut/process.h
         src/jobs/impl/address.cpp
         src/jobs/impl/address.h
+        src/jobs/impl/credentials.cpp
+        src/jobs/impl/credentials.h
     INCLUDE_DIRS
         src
     USES
