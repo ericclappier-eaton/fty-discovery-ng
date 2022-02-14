@@ -25,6 +25,7 @@
 #include <fty/event.h>
 #include <fty/thread-pool.h>
 #include <string>
+#include <secw_document.h>
 
 namespace fty::disco {
 
@@ -50,6 +51,9 @@ public:
 
     /// Events to stop discovery message dispatcher
     Event<> stop;
+
+    /// Change the credential getter
+    void setCredentialsService(std::function<secw::DocumentPtr(const std::string&)> fct = nullptr);
 
 private:
     void discover(const disco::Message& msg);
