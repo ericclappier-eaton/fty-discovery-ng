@@ -35,7 +35,7 @@ struct Mapping : public pack::Node
     using pack::Node::Node;
     META(Mapping, physicsMapping, inventoryMapping, sensorInventoryMapping);
 
-    const std::string map(const std::string& key)
+    std::string map(const std::string& key) const
     {
         if (inventoryMapping.contains(key)) {
             return inventoryMapping[key];
