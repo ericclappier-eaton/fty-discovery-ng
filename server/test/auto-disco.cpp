@@ -25,7 +25,7 @@ TEST_CASE("Auto disco / updateExt", "[auto]")
     job::AutoDiscovery::updateExt(in, out);
     CHECK(out.size() == 1);
     job::asset::create::MapExtObj it_out;
-    REQUIRE_THROWS(it_out  = out["key2"]);
+    CHECK(!out.contains("key2"));
     REQUIRE_NOTHROW(it_out = out["key1"]);
     CHECK(it_out.value    == "value1");
     CHECK(it_out.readOnly == true);
@@ -204,8 +204,7 @@ TEST_CASE("Auto disco / Test normal scan auto", "[auto]")
     }
     ConfigDiscovery::Protocol nutSnmp;
     nutSnmp.protocol = ConfigDiscovery::Protocol::Type::Snmp;
-    //nutSnmp.ports.append(1161);
-    nutSnmp.port = 1161;
+    nutSnmp.ports.append(1161);
     in.discovery.protocols.append(nutSnmp);
     in.discovery.documents.append("no_id");
 
@@ -291,8 +290,7 @@ TEST_CASE("Auto disco / Test stop scan auto", "[auto]")
     }
     ConfigDiscovery::Protocol nutSnmp;
     nutSnmp.protocol = ConfigDiscovery::Protocol::Type::Snmp;
-    //nutSnmp.ports.append(1161);
-    nutSnmp.port = 1161;
+    nutSnmp.ports.append(1161);
     in.discovery.protocols.append(nutSnmp);
     in.discovery.documents.append("no_id");
 
@@ -473,8 +471,7 @@ TEST_CASE("Auto disco / Test real scan auto with simulation", "[auto]")
         in.discovery.ips.append("127.0.0.1");
         ConfigDiscovery::Protocol nutSnmp;
         nutSnmp.protocol = ConfigDiscovery::Protocol::Type::Snmp;
-        //nutSnmp.ports.append(1161);
-        nutSnmp.port = 1161;
+        nutSnmp.ports.append(1161);
         in.discovery.protocols.append(nutSnmp);
         // note: document id is equal to the password to simplify the test
         in.discovery.documents.append(password);

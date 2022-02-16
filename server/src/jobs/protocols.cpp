@@ -63,8 +63,8 @@ Expected<commands::protocols::Out> Protocols::getProtocols(const commands::proto
         uint16_t                        defaultPort;
     } tries[] = {
         {ConfigDiscovery::Protocol::Type::Powercom, 443},
-        {ConfigDiscovery::Protocol::Type::XmlPdc,   80},
-        {ConfigDiscovery::Protocol::Type::Snmp,     161},
+        {ConfigDiscovery::Protocol::Type::XmlPdc,    80},
+        {ConfigDiscovery::Protocol::Type::Snmp,     161}
     };
 
     // for each protocol
@@ -87,7 +87,9 @@ Expected<commands::protocols::Out> Protocols::getProtocols(const commands::proto
             // Note: for a same protocol, stop for first port which responding
             //for (int iPort = 0; iPort < find->ports.size() && !protocol.reachable; iPort ++) {
 
-                if (find->port != 0) protocol.port = find->port;
+                // TBD: Take first port available (workaround)
+                if (find->ports.size() > 0 && find->ports[0] != 0) protocol.port = find->ports[0];
+
                 //if (find->ports[iPort] != 0) protocol.port = find->ports[iPort];
                 //protocol.ignored = false;
 

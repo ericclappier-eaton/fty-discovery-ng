@@ -168,18 +168,15 @@ TEST_CASE("Protocols / Fake request", "[protocols]")
             in.address = "127.0.0.1";
             ConfigDiscovery::Protocol nutPowercom;
             nutPowercom.protocol = ConfigDiscovery::Protocol::Type::Powercom;
-            //nutPowercom.ports.append(4443);
-            nutPowercom.port = 4443;
+            nutPowercom.ports.append(4443);
             in.protocols.append(nutPowercom);
             ConfigDiscovery::Protocol nutXmlPdc;
             nutXmlPdc.protocol = ConfigDiscovery::Protocol::Type::XmlPdc;
-            //nutXmlPdc.ports.append(8080);
-            nutXmlPdc.port = 8080;
+            nutXmlPdc.ports.append(8080);
             in.protocols.append(nutXmlPdc);
             ConfigDiscovery::Protocol nutSnmp;
             nutSnmp.protocol = ConfigDiscovery::Protocol::Type::Snmp;
-            //nutSnmp.ports.append(1161);
-            nutSnmp.port = 1161;
+            nutSnmp.ports.append(1161);
             in.protocols.append(nutSnmp);  // Only this one will match
 
             fty::disco::Message msg = Test::createMessage(commands::protocols::Subject);
@@ -241,8 +238,7 @@ TEST_CASE("Protocols / findProtocol", "[protocols]")
     }
     ConfigDiscovery::Protocol nutSnmp;
     nutSnmp.protocol = ConfigDiscovery::Protocol::Type::Snmp;
-    nutSnmp.port = 163;
-    //nutSnmp.ports.append(163);
+    nutSnmp.ports.append(163);
     in.protocols.append(nutSnmp);
     {
         auto res = fty::disco::job::Protocols::findProtocol(ConfigDiscovery::Protocol::Type::Unknown, in);
@@ -251,8 +247,7 @@ TEST_CASE("Protocols / findProtocol", "[protocols]")
     {
         auto res = fty::disco::job::Protocols::findProtocol(ConfigDiscovery::Protocol::Type::Snmp, in);
         CHECK(res->protocol == ConfigDiscovery::Protocol::Type::Snmp);
-        //CHECK(res->ports[0] == 163);
-        CHECK(res->port == 163);
+        CHECK(res->ports[0] == 163);
     }
     {
         auto res = fty::disco::job::Protocols::findProtocol(ConfigDiscovery::Protocol::Type::Unknown, in);
