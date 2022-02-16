@@ -20,12 +20,11 @@ struct ConfigDiscovery : public pack::Node
         };
 
         pack::Enum<Type> protocol = FIELD("protocol");
-        pack::UInt32     port     = FIELD("port");
-        //pack::UInt32List ports  = FIELD("ports");
+        pack::UInt32List ports    = FIELD("ports");
 
     public:
         using pack::Node::Node;
-        META(Protocol, protocol, port);
+        META(Protocol, protocol, ports);
     };
 
     using Protocols = pack::ObjectList<Protocol>;
