@@ -25,12 +25,13 @@ namespace commands::protocols {
     class Return: public pack::Node
     {
     public:
-        pack::String protocol = FIELD("protocol");
-        pack::UInt32 port     = FIELD("port");
-        pack::Bool reachable  = FIELD("reachable");
+        pack::String protocol  = FIELD("protocol");
+        pack::UInt32 port      = FIELD("port");
+        pack::Bool reachable   = FIELD("reachable");
+        pack::String available = FIELD("available"); // enum ["yes", "no", "maybe"]
     public:
         using pack::Node::Node;
-        META(Return, protocol, port, reachable);
+        META(Return, protocol, port, reachable, available);
     };
 
     using Out = pack::ObjectList<Return>;

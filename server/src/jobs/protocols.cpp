@@ -95,7 +95,8 @@ void Protocols::run(const commands::protocols::In& in, commands::protocols::Out&
         auto& protocol = out.append();
         protocol.protocol = aux.protocolStr;
         protocol.port = aux.port;
-        protocol.reachable = false; // default, not reachable
+        protocol.reachable = false; // default, port is not reachable
+        protocol.available = "no"; // and protocol is not available
 
         // try to reach server
         switch (aux.protocol) {
@@ -103,6 +104,7 @@ void Protocols::run(const commands::protocols::In& in, commands::protocols::Out&
                 if (auto res = tryPowercom(in, aux.port)) {
                     logInfo("Found Powercom device on port {}", aux.port);
                     protocol.reachable = true; // port is reachable
+                    protocol.available = "yes"; // and protocol is available
                 }
                 else {
                     logInfo("Skipped GenApi/{}, reason: {}", aux.port, res.error());
@@ -113,6 +115,7 @@ void Protocols::run(const commands::protocols::In& in, commands::protocols::Out&
                 if (auto res = tryXmlPdc(in, aux.port)) {
                     logInfo("Found XML device on port {}", aux.port);
                     protocol.reachable = true; // port is reachable
+                    protocol.available = "yes"; // and protocol is available
                 }
                 else {
                     logInfo("Skipped xml_pdc/{}, reason: {}", aux.port, res.error());
@@ -123,6 +126,7 @@ void Protocols::run(const commands::protocols::In& in, commands::protocols::Out&
                 if (auto res = trySnmp(in, aux.port)) {
                     logInfo("Found SNMP device on port {}", aux.port);
                     protocol.reachable = true; // port is reachable
+                    protocol.available = "maybe"; // but we don't know if protocol is available
                 }
                 else {
                     logInfo("Skipped SNMP/{}, reason: {}", aux.port, res.error());
@@ -266,34 +270,6 @@ Expected<void> Protocols::trySnmp(const commands::protocols::In& in, uint16_t po
             }
         }
         // here, we are not sure that the device@port is responsive
-    }
-
-    // reliable check (possible timeout) assuming SNMP v1/public
-    // minimalistic SNMP v1 public introspection
-    {
-        auto session = fty::impl::Snmp::instance().session(in.address, port);
-        if (!session) {
-            logTrace("Create session failed");
-            return unexpected("Create session failed");
-        }
-        if (auto ret = session->setCommunity("public"); !ret) {
-            logTrace("session->setCommunitity failed ({})", ret.error());
-            return unexpected(ret.error());
-        }
-        if (auto ret = session->setTimeout(500); !ret) { // msec
-            logTrace("session->setTimeout failed ({})", ret.error());
-            return unexpected(ret.error());
-        }
-        if (auto ret = session->open(); !ret) {
-            logTrace("session->open() failed ({})", ret.error());
-            return unexpected(ret.error());
-        }
-        const std::string sysOid{".1.3.6.1.2.1.1.2.0"};
-        if (auto ret = session->read(sysOid); !ret) {
-            logTrace("session->read() failed ({})", ret.error());
-            return unexpected(ret.error());
-        }
-        // here, we are sure that the device@port is responsive
     }
 
     return {}; // ok
