@@ -1,5 +1,6 @@
 # fty-discovery-ng
-New Discovery which discovers power devices (ups, epdu, ats).
+New Discovery which discovers power devices (ups, epdu, ats) on automatic and manual mode.
+
 
 Discovery build contains logical 4 parts.
 
@@ -26,21 +27,27 @@ or for 21 century :)
 
 Dependencies used in current version:
 
-* tntnet
 * netsnmp
 * neon
+* tntdb
+* cidr
+* czmq
+* stdc++fs
+* crypto
+* uuid
+* yaml-cpp
 * cxxtools
 * fty-utils
 * fty-pack
 * fty-cmake-rest
+* fty_common
 * fty_common_logging
 * fty_common_messagebus
 * fty_common_logging
-* fty_common_rest
 * fty_security_wallet
 * fty_common_socket
+* fty-asset-libng
 * Catch2::Catch2 (in case if you want unit testing)
-
 
 ## How to build and use unit tests
 To enable unit tests build just reconfigure your cmake build
