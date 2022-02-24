@@ -92,11 +92,13 @@ void Protocols::run(const commands::protocols::In& in, commands::protocols::Out&
     };
 
     for (auto& aux : tries) {
+        using namespace commands::protocols;
+
         auto& protocol = out.append();
         protocol.protocol = aux.protocolStr;
         protocol.port = aux.port;
         protocol.reachable = false; // default, port is not reachable
-        protocol.available = "no"; // and protocol is not available
+        protocol.available = Return::Available::No; // and protocol is not available
 
         // try to reach server
         switch (aux.protocol) {
@@ -104,7 +106,7 @@ void Protocols::run(const commands::protocols::In& in, commands::protocols::Out&
                 if (auto res = tryPowercom(in, aux.port)) {
                     logInfo("Found Powercom device on port {}", aux.port);
                     protocol.reachable = true; // port is reachable
-                    protocol.available = "yes"; // and protocol is available
+                    protocol.available = Return::Available::Yes; // and protocol is available
                 }
                 else {
                     logInfo("Skipped GenApi/{}, reason: {}", aux.port, res.error());
@@ -115,7 +117,7 @@ void Protocols::run(const commands::protocols::In& in, commands::protocols::Out&
                 if (auto res = tryXmlPdc(in, aux.port)) {
                     logInfo("Found XML device on port {}", aux.port);
                     protocol.reachable = true; // port is reachable
-                    protocol.available = "yes"; // and protocol is available
+                    protocol.available = Return::Available::Yes; // and protocol is available
                 }
                 else {
                     logInfo("Skipped xml_pdc/{}, reason: {}", aux.port, res.error());
@@ -126,7 +128,7 @@ void Protocols::run(const commands::protocols::In& in, commands::protocols::Out&
                 if (auto res = trySnmp(in, aux.port)) {
                     logInfo("Found SNMP device on port {}", aux.port);
                     protocol.reachable = true; // port is reachable
-                    protocol.available = "maybe"; // but we don't know if protocol is available
+                    protocol.available = Return::Available::Maybe; // but we don't know if protocol is available
                 }
                 else {
                     logInfo("Skipped SNMP/{}, reason: {}", aux.port, res.error());

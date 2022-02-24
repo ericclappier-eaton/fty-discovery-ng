@@ -25,13 +25,58 @@ namespace commands::protocols {
     class Return: public pack::Node
     {
     public:
-        pack::String protocol  = FIELD("protocol");
-        pack::UInt32 port      = FIELD("port");
-        pack::Bool reachable   = FIELD("reachable");
-        pack::String available = FIELD("available"); // enum ["yes", "no", "maybe"]
+        enum class Available
+        {
+            Unknown, // unknown if protocol is available/not available
+            No,      // protocol is not available
+            Maybe,   // don't know if protocol is available/not available
+            Yes      // protocol is available
+        };
+
+        pack::String          protocol  = FIELD("protocol");
+        pack::UInt32          port      = FIELD("port");
+        pack::Enum<Available> available = FIELD("available");
+        pack::Bool            reachable = FIELD("reachable");
+
     public:
         using pack::Node::Node;
         META(Return, protocol, port, reachable, available);
+    };
+
+    inline std::ostream& operator<<(std::ostream& ss, Return::Available value)
+    {
+        ss << [&]() {
+            switch (value) {
+                case Return::Available::Unknown:
+                    return "unknown";
+                case Return::Available::No:
+                    return "no";
+                case Return::Available::Maybe:
+                    return "maybe";
+                case Return::Available::Yes:
+                    return "yes";
+            }
+            return "unknown";
+        }();
+        return ss;
+    };
+
+    inline std::istream& operator>>(std::istream& ss, Return::Available& value)
+    {
+        std::string strval;
+        ss >> strval;
+        if (strval == "unknown") {
+            value = Return::Available::Unknown;
+        } else if (strval == "no") {
+            value = Return::Available::No;
+        } else if (strval == "maybe") {
+            value = Return::Available::Maybe;
+        } else if (strval == "yes") {
+            value = Return::Available::Yes;
+        } else {
+            value = Return::Available::Unknown;
+        }
+        return ss;
     };
 
     using Out = pack::ObjectList<Return>;
