@@ -20,7 +20,7 @@ unsigned ConfigRead::run()
         out = *conf;
     }
 
-    m_reply << *pack::json::serialize(out, pack::Option::PrettyPrint);
+    m_reply << *pack::json::serialize(out, pack::Option::WithDefaults | pack::Option::PrettyPrint);
 
     return HTTP_OK;
 }
