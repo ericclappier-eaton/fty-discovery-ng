@@ -69,8 +69,6 @@ Expected<commands::protocols::Out> Protocols::getProtocols(const commands::proto
 
     // for each protocol
     for (auto& aux : tries) {
-        using namespace commands::protocols;
-
         auto& protocol = out.append();
         std::stringstream ss;
         ss << aux.protocol;
@@ -78,7 +76,6 @@ Expected<commands::protocols::Out> Protocols::getProtocols(const commands::proto
         protocol.port      = aux.defaultPort;
         protocol.reachable = false; // default, port is not reachable
         protocol.available = Return::Available::No; // and protocol is not available
-        protocol.available = Return::Available::No; // default, not available
         //protocol.ignored   = true;  // default, filtered
         auto find = Protocols::findProtocol(aux.protocol, in);
         if (find /*&& !find->ignore*/) {
@@ -130,7 +127,6 @@ Expected<commands::protocols::Out> Protocols::getProtocols(const commands::proto
                     }
                     default:
                         logError("protocol not handled (type: {})", aux.protocol);
-                    protocol.available = Return::Available::Yes; // and protocol is available
                 }
             }
         //}
