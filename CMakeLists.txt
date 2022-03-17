@@ -16,3 +16,7 @@ add_subdirectory(server)
 add_subdirectory(rest)
 
 ########################################################################################################################
+
+## .conf file -> lib/tmpfiles.d/
+configure_file("${PROJECT_SOURCE_DIR}/server/conf/${PROJECT_NAME}.conf.in" "${PROJECT_BINARY_DIR}/server/conf/${PROJECT_NAME}.conf" @ONLY)
+install(FILES "${PROJECT_BINARY_DIR}/server/conf/${PROJECT_NAME}.conf" DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/tmpfiles.d/")
