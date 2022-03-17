@@ -13,7 +13,10 @@ fty::Expected<void> ConfigDiscoveryManager::save(const std::string& path)
     if (!m_config.has_value()) {
         return fty::unexpected("discovery config was not loaded => nothing to save");
     }
-    m_config.value().save(path);
+    auto res = m_config.value().save(path);
+    if (!res) {
+        return fty::unexpected("discovery config save error={}", res.error());
+    }
 
     return {};
 }
