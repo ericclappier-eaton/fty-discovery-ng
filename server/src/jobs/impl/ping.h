@@ -23,9 +23,13 @@
 
 // =====================================================================================================================
 
+static std::mutex g_mutexAvailable;
+
 inline bool available(const std::string& address_)
 {
     static const std::string httpPrefix = "http://";
+
+    std::lock_guard<std::mutex> lock(g_mutexAvailable);
 
     std::string address{address_};
     if (address.find(httpPrefix) == 0) {
