@@ -12,7 +12,7 @@ Build-Depends:
     libsnmp-dev,
     libneon27-dev,
     libtntnet-dev,
-    libcidr0-dev,
+    libcidr-dev,
     libfty-cmake-rest-dev,
     libfty-security-wallet-dev,
     libfty-common-socket-dev,
