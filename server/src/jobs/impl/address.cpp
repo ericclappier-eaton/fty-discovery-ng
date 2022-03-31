@@ -7,7 +7,13 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <ifaddrs.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
 #include <libcidr.h>
+#ifdef __cplusplus
+}
+#endif
 
 namespace address {
 
