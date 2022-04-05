@@ -528,13 +528,12 @@ void Assets::enrichAsset(commands::assets::Return& asset)
     // endpoint.1 attributes (monitoring)
     addAssetVal(asset.asset, "endpoint.1.protocol", m_params.protocol, false);
     addAssetVal(asset.asset, "endpoint.1.port", std::to_string(m_params.port), false);
+    std::string keyCredentialId = std::string("endpoint.1.") + m_params.protocol.value() + std::string(".secw_credential_id");
+    addAssetVal(asset.asset, keyCredentialId, m_params.settings.credentialId, false);
     addAssetVal(asset.asset, "endpoint.1.sub_address", asset.subAddress, false);
     addAssetVal(asset.asset, "endpoint.1.status.operating", "IN_SERVICE", false);
     addAssetVal(asset.asset, "endpoint.1.status.error_msg", "", false);
     if (m_params.protocol == "nut_snmp") {
-        if (m_params.settings.credentialId.hasValue()) {
-            addAssetVal(asset.asset, "endpoint.1.nut_snmp.secw_credential_id", m_params.settings.credentialId, false);
-        }
         if (m_params.settings.community.hasValue()) {
             addAssetVal(asset.asset, "endpoint.1.nut_snmp.community", m_params.settings.community, false);
         }
