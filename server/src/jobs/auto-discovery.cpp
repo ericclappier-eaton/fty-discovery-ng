@@ -312,7 +312,7 @@ void AutoDiscovery::scan(AutoDiscovery* autoDiscovery, const std::string& ipAddr
                         logInfo("Found asset with protocol/port/credential ({}/{}/{}) for {}", elt.protocol, elt.port, doc, ipAddress);
 
                         auto getAssetStatus = [autoDiscovery]() -> uint {
-                            return autoDiscovery->m_params.aux.status == "active" ?
+                            return autoDiscovery->m_params.aux.status.value() == "active" ?
                                 static_cast<uint>(AssetStatus::Active) : static_cast<uint>(AssetStatus::Nonactive);
                         };
 
