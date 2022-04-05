@@ -53,12 +53,6 @@ public:
     Expected<void> stop();
 
 //private:
-    // Device centric view
-    bool isDeviceCentricView() const
-    {
-        return (m_params.aux.parent == "0") ? true : false;
-    };
-
     // Read configuration
     Expected<void> readConfig();
 

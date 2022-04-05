@@ -51,18 +51,6 @@ TEST_CASE("Auto disco / updateHostName", "[auto]")
     CHECK(ext["hostname"].readOnly == false);
 }
 
-TEST_CASE("Auto disco / isDeviceCentricView", "[auto]")
-{
-    auto& discoAuto = Test::instance().getDisco().getAutoDiscovery();
-    REQUIRE_NOTHROW(discoAuto.isDeviceCentricView());
-}
-
-TEST_CASE("Auto disco / readConfig", "[auto]")
-{
-    auto& discoAuto = Test::instance().getDisco().getAutoDiscovery();
-    REQUIRE_NOTHROW(discoAuto.isDeviceCentricView());
-}
-
 TEST_CASE("Auto disco / status discovery update", "[auto]")
 {
     auto& discoAuto = Test::instance().getDisco().getAutoDiscovery();

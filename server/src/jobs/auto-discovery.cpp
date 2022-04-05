@@ -312,8 +312,7 @@ void AutoDiscovery::scan(AutoDiscovery* autoDiscovery, const std::string& ipAddr
                         logInfo("Found asset with protocol/port/credential ({}/{}/{}) for {}", elt.protocol, elt.port, doc, ipAddress);
 
                         auto getAssetStatus = [autoDiscovery]() -> uint {
-                            logTrace("autoDiscovery->isDeviceCentricView()={}", autoDiscovery->isDeviceCentricView());
-                            return autoDiscovery->isDeviceCentricView() ?
+                            return autoDiscovery->m_params.aux.status == "active" ?
                                 static_cast<uint>(AssetStatus::Active) : static_cast<uint>(AssetStatus::Nonactive);
                         };
 
@@ -329,8 +328,7 @@ void AutoDiscovery::scan(AutoDiscovery* autoDiscovery, const std::string& ipAddr
                             req.status   = getAssetStatus();
                             req.priority = autoDiscovery->m_params.aux.priority;
                             req.linked   = autoDiscovery->m_defaultValuesLinks;
-                            req.parent   = (autoDiscovery->m_params.aux.parent == "0") ?
-                                pack::String(std::string("")) : autoDiscovery->m_params.aux.parent;
+                            req.parent   = std::string(autoDiscovery->m_params.aux.parent);
                             // Initialise ext attributes
                             if (auto res = updateExt(ext, req.ext); !res) {
                                 logError("Could not update ext during creation of asset ({}): {}", ipAddress, res.error());
