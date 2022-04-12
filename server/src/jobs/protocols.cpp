@@ -31,16 +31,25 @@ namespace fty::disco::job {
 
 // =====================================================================================================================
 std::optional<const ConfigDiscovery::Protocol>
-Protocols::findProtocol(const ConfigDiscovery::Protocol::Type& protocolIn, const commands::protocols::In& in) {
+Protocols::findProtocol(const config_protocol_t config_protocol, const commands::protocols::In& in) {
+    // check if input protocols list is NOT empty
     if (in.protocols.size() != 0) {
         for (const auto& protocol : in.protocols) {
 
             // test if option found in options
-            if (protocol.protocol == protocolIn) {
+            if (protocol.protocol == config_protocol.protocol) {
                 // return option found in options
                 return protocol;
             }
         }
+    }
+    else if (config_protocol.protocol != ConfigDiscovery::Protocol::Type::Unknown) {
+        // input protocols list is empty, return default configuration
+        // NOTE: protocol to search must be known
+        ConfigDiscovery::Protocol res;
+        res.protocol = config_protocol.protocol;
+        res.ports.append(config_protocol.defaultPort);
+        return res;
     }
     // no option avaliable, any protocol filtered
     return std::nullopt;
@@ -58,10 +67,7 @@ Expected<commands::protocols::Out> Protocols::getProtocols(const commands::proto
     commands::protocols::Out out;
     // supported protocols, tokenized with default port
     // in *order* of preferences
-    struct {
-        ConfigDiscovery::Protocol::Type protocol;
-        uint16_t                        defaultPort;
-    } tries[] = {
+    config_protocol_t tries[] = {
         {ConfigDiscovery::Protocol::Type::Powercom, 443},
         {ConfigDiscovery::Protocol::Type::XmlPdc,    80},
         {ConfigDiscovery::Protocol::Type::Snmp,     161}
@@ -77,7 +83,10 @@ Expected<commands::protocols::Out> Protocols::getProtocols(const commands::proto
         protocol.reachable = false; // default, port is not reachable
         protocol.available = Return::Available::No; // and protocol is not available
         //protocol.ignored   = true;  // default, filtered
-        auto find = Protocols::findProtocol(aux.protocol, in);
+
+        // check if current protocol to search is in the input protocols list
+        // NOTE: if input protocols list is empty, return current default configuration (all protocols will be scan with default port)
+        auto find = Protocols::findProtocol(aux, in);
         if (find /*&& !find->ignore*/) {
             // TBD: To be reworked with scan auto interface (possibility to add more then one port)
             // test protocol for each port
@@ -85,7 +94,9 @@ Expected<commands::protocols::Out> Protocols::getProtocols(const commands::proto
             //for (int iPort = 0; iPort < find->ports.size() && !protocol.reachable; iPort ++) {
 
                 // TBD: Take first port available (workaround)
-                if (find->ports.size() > 0 && find->ports[0] != 0) protocol.port = find->ports[0];
+                if (find->ports.size() > 0 && find->ports[0] != 0) {
+                    protocol.port = find->ports[0];
+                }
 
                 //if (find->ports[iPort] != 0) protocol.port = find->ports[iPort];
                 //protocol.ignored = false;
