@@ -232,44 +232,40 @@ TEST_CASE("Protocols / resolve", "[protocols]")
 TEST_CASE("Protocols / findProtocol", "[protocols]")
 {
     fty::disco::commands::protocols::In in;
+    fty::disco::job::config_protocol_t config_protocol { ConfigDiscovery::Protocol::Type::Unknown, 0 };
+
+    // return not found when input is empty and protocol to find is unknown
     {
-        auto res = fty::disco::job::Protocols::findProtocol(ConfigDiscovery::Protocol::Type::Unknown, in);
+        auto res = fty::disco::job::Protocols::findProtocol(config_protocol, in);
         CHECK(res == std::nullopt);
     }
-    ConfigDiscovery::Protocol nutSnmp;
-    nutSnmp.protocol = ConfigDiscovery::Protocol::Type::Snmp;
-    nutSnmp.ports.append(163);
-    in.protocols.append(nutSnmp);
+    // return default protocol when input is empty and protocol to find is NOT unknown
     {
-        auto res = fty::disco::job::Protocols::findProtocol(ConfigDiscovery::Protocol::Type::Unknown, in);
+        config_protocol.protocol = ConfigDiscovery::Protocol::Type::Snmp;
+        config_protocol.defaultPort = 161;
+        auto res = fty::disco::job::Protocols::findProtocol(config_protocol, in);
+        CHECK(res->protocol == ConfigDiscovery::Protocol::Type::Snmp);
+        CHECK(res->ports[0] == 161);
+    }
+    // return not found when input is NOT empty and protocol to find is unknown
+    {
+        config_protocol.protocol = ConfigDiscovery::Protocol::Type::Unknown;
+        config_protocol.defaultPort = 0;
+        ConfigDiscovery::Protocol nutSnmp;
+        nutSnmp.protocol = ConfigDiscovery::Protocol::Type::Snmp;
+        nutSnmp.ports.append(163);
+        in.protocols.append(nutSnmp);
+        auto res = fty::disco::job::Protocols::findProtocol(config_protocol, in);
         CHECK(res == std::nullopt);
     }
+    // return input protocol config when protocol to find match the input protocol
     {
-        auto res = fty::disco::job::Protocols::findProtocol(ConfigDiscovery::Protocol::Type::Snmp, in);
+        config_protocol.protocol = ConfigDiscovery::Protocol::Type::Snmp;
+        config_protocol.defaultPort = 161;
+        auto res = fty::disco::job::Protocols::findProtocol(config_protocol, in);
         CHECK(res->protocol == ConfigDiscovery::Protocol::Type::Snmp);
         CHECK(res->ports[0] == 163);
     }
-    {
-        auto res = fty::disco::job::Protocols::findProtocol(ConfigDiscovery::Protocol::Type::Unknown, in);
-        CHECK(res == std::nullopt);
-    }
 }
-
-/*TEST_CASE("Protocols / powercom")
-{
-    fty::Message msg = Test::createMessage(fty::commands::protocols::Subject);
-
-    fty::commands::protocols::In in;
-    in.address = "10.130.33.34";
-    msg.userData.setString(*pack::json::serialize(in));
-
-    fty::Expected<fty::Message> ret = Test::send(msg);
-
-    CHECK(ret);
-    auto res = ret->userData.decode<fty::commands::protocols::Out>();
-    CHECK(res);
-    CHECK(2 == res->size());
-    CHECK("nut_powercom" == (*res)[0]);
-}*/
 
 } // namespace fty::disco

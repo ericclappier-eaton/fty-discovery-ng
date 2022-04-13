@@ -328,6 +328,14 @@ void AutoDiscovery::scan(AutoDiscovery* autoDiscovery, const std::string& ipAddr
                             req.status   = getAssetStatus();
                             req.priority = autoDiscovery->m_params.aux.priority;
                             req.linked   = autoDiscovery->m_defaultValuesLinks;
+                            // Workaround: complete the missing link for sts on device centric view
+                            if ((asset.asset.subtype == "sts") && (autoDiscovery->m_defaultValuesLinks.size() == 1)) {
+                                // TODO: Considerer that we are on device centric view when the status is activated
+                                if (autoDiscovery->m_params.aux.status.value() == "active") {
+                                    // Duplicate the default link for each input
+                                    req.linked.append(autoDiscovery->m_defaultValuesLinks[0]);
+                                }
+                            }
                             req.parent   = std::string(autoDiscovery->m_params.aux.parent);
                             // Initialise ext attributes
                             if (auto res = updateExt(ext, req.ext); !res) {

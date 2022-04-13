@@ -21,11 +21,9 @@
 
 namespace fty::disco::job {
 
-enum class Type
-{
-    Powercom = 1,
-    Xml      = 2,
-    Snmp     = 3,
+struct config_protocol_t {
+    ConfigDiscovery::Protocol::Type protocol;
+    uint16_t                        defaultPort;
 };
 
 /// Discover supported protocols by endpoint
@@ -43,7 +41,7 @@ public:
 
     // Test input option (protocol filter and port)
     static std::optional<const fty::disco::ConfigDiscovery::Protocol>
-    findProtocol(const ConfigDiscovery::Protocol::Type& protocolIn, const commands::protocols::In& in);
+    findProtocol(const config_protocol_t& config_protocol, const commands::protocols::In& in);
 
 private:
     /// Try out if endpoint support xml pdc protocol
