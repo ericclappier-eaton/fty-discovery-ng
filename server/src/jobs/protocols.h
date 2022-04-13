@@ -41,7 +41,7 @@ public:
 
     // Test input option (protocol filter and port)
     static std::optional<const fty::disco::ConfigDiscovery::Protocol>
-    findProtocol(const config_protocol_t config_protocol, const commands::protocols::In& in);
+    findProtocol(const config_protocol_t& config_protocol, const commands::protocols::In& in);
 
 private:
     /// Try out if endpoint support xml pdc protocol

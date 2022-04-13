@@ -31,7 +31,7 @@ namespace fty::disco::job {
 
 // =====================================================================================================================
 std::optional<const ConfigDiscovery::Protocol>
-Protocols::findProtocol(const config_protocol_t config_protocol, const commands::protocols::In& in) {
+Protocols::findProtocol(const config_protocol_t& config_protocol, const commands::protocols::In& in) {
     // check if input protocols list is NOT empty
     if (in.protocols.size() != 0) {
         for (const auto& protocol : in.protocols) {
@@ -43,9 +43,9 @@ Protocols::findProtocol(const config_protocol_t config_protocol, const commands:
             }
         }
     }
+    // input protocols list is empty, return default configuration
+    // NOTE: protocol to search must be NOT unknown
     else if (config_protocol.protocol != ConfigDiscovery::Protocol::Type::Unknown) {
-        // input protocols list is empty, return default configuration
-        // NOTE: protocol to search must be known
         ConfigDiscovery::Protocol res;
         res.protocol = config_protocol.protocol;
         res.ports.append(config_protocol.defaultPort);
@@ -84,8 +84,9 @@ Expected<commands::protocols::Out> Protocols::getProtocols(const commands::proto
         protocol.available = Return::Available::No; // and protocol is not available
         //protocol.ignored   = true;  // default, filtered
 
-        // check if current protocol to search is in the input protocols list
-        // NOTE: if input protocols list is empty, return current default configuration (all protocols will be scan with default port)
+        // check if current protocol to search is in the input protocols list.
+        // NOTE: if input protocols list is empty, return current default configuration. In
+        // this case, all protocols will be scan with default port.
         auto find = Protocols::findProtocol(aux, in);
         if (find /*&& !find->ignore*/) {
             // TBD: To be reworked with scan auto interface (possibility to add more then one port)
