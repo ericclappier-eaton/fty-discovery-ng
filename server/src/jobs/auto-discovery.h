@@ -29,8 +29,9 @@ using StatusDiscovery = commands::scan::status::Out;
 class AutoDiscovery
 {
 public:
-    static const uint32_t SCAN_CHECK_PERIOD_MS = 1000;
-    static const uint32_t SCAN_MIN_NUM_THREAD  = 5;
+    static const uint32_t SCAN_CHECK_PERIOD_MS      = 1000;
+    static const uint32_t SCAN_MIN_NUM_THREAD       = 5;
+    static const uint32_t TIMEOUT_BLOCKING_SCAN_SEC = 120;
 
     enum class AssetStatus
     {
@@ -73,6 +74,8 @@ public:
     // Manage pool scan
     void resetPoolScan();
     void stopPoolScan();
+    void cancelPoolScan();
+    inline uint32_t getTimeoutBlockingScan() { return TIMEOUT_BLOCKING_SCAN_SEC; };
 
     // Construct and update output ext attributes according input ext attributes
     static Expected<void> updateExt(const commands::assets::Ext& ext_in, asset::create::Ext& ext_out);
@@ -101,6 +104,9 @@ private:
 
     // Bus for creation asset
     disco::MessageBus                m_bus;
+
+    // Flag to stop thread
+    std::atomic_bool                 m_stop {false};
 };
 
 } // namespace fty::disco::job

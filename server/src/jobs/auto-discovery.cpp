@@ -71,12 +71,14 @@ Expected<void> AutoDiscovery::start(const disco::commands::scan::start::In& in)
     //critical section to check the status
     {
         std::unique_lock<std::mutex> lock(m_mutex);
-        if (m_statusDiscovery.status == StatusDiscovery::Status::InProgess) {
+        if (m_statusDiscovery.status == StatusDiscovery::Status::InProgress ||
+            m_statusDiscovery.status == StatusDiscovery::Status::StopInProgress) {
             return fty::unexpected("Scan in progress");
         }
     }
 
     m_params = in;
+    m_stop   = false;
     logTrace("Set scan in progress");
 
     // Read and test input parameters
@@ -105,9 +107,11 @@ Expected<void> AutoDiscovery::start(const disco::commands::scan::start::In& in)
 
 Expected<void> AutoDiscovery::stop()
 {
+    logTrace("Stop of scan thread");
     std::unique_lock<std::mutex> lock(m_mutex);
-    if (m_statusDiscovery.status == StatusDiscovery::Status::InProgess) {
-        m_statusDiscovery.status = StatusDiscovery::Status::CancelledByUser;
+    if (m_statusDiscovery.status == StatusDiscovery::Status::InProgress) {
+        m_statusDiscovery.status = StatusDiscovery::Status::StopInProgress;
+        m_stop = true;
         lock.unlock();
         stopPoolScan();
     }
@@ -212,7 +216,7 @@ void AutoDiscovery::statusDiscoveryInit()
 void AutoDiscovery::statusDiscoveryReset(uint32_t numOfAddress)
 {
     std::lock_guard<std::mutex> lock(m_mutex);
-    m_statusDiscovery.status         = StatusDiscovery::Status::InProgess;
+    m_statusDiscovery.status         = StatusDiscovery::Status::InProgress;
     m_statusDiscovery.numOfAddress   = numOfAddress;
     m_statusDiscovery.addressScanned = 0;
     m_statusDiscovery.discovered     = 0;
@@ -412,33 +416,28 @@ bool AutoDiscovery::scanCheck(AutoDiscovery* autoDiscovery)
 {
     if (!autoDiscovery) return true;
 
-#undef WORK_AROUND_SCAN_BLOCKING
-
-#if WORK_AROUND_SCAN_BLOCKING
     static size_t previousCounter = 0;
-    static std::chrono::steady_clock::time_point start;
+    static std::chrono::steady_clock::time_point start {};
     static bool isBlockingDetected = false;
-#endif
 
     auto countPendingTasks = autoDiscovery->m_poolScan->getCountPendingTasks();
     auto countActiveTasks = autoDiscovery->m_poolScan->getCountActiveTasks();
 
     logTrace("AutoDiscovery scanCheck: status ={}, pending tasks={}, active tasks={})",
         autoDiscovery->m_statusDiscovery.status, countPendingTasks, countActiveTasks);
-    if (countPendingTasks == 0 && countActiveTasks == 0) {
+    if ((autoDiscovery->m_stop && countActiveTasks == 0) || (countPendingTasks == 0 && countActiveTasks == 0)) {
         std::lock_guard<std::mutex> lock(autoDiscovery->m_mutex);
-        autoDiscovery->m_statusDiscovery.status = StatusDiscovery::Status::Terminated;
-        logTrace("End of discovery detected");
-#if WORK_AROUND_SCAN_BLOCKING
-        if (isBlockingDetected) {
-            isBlockingDetected = false;
+        if (autoDiscovery->m_stop) {
+            autoDiscovery->m_statusDiscovery.status = StatusDiscovery::Status::CancelledByUser;
         }
-#endif
+        else {
+            autoDiscovery->m_statusDiscovery.status = StatusDiscovery::Status::Terminated;
+        }
+        logTrace("End of discovery detected");
+        isBlockingDetected = false;
         return true;
     }
-    // TBD: Workaround for scan blocking: if counter don't decrease during 60 sec, stop scan in progress
-#if WORK_AROUND_SCAN_BLOCKING
-    const uint32_t TIMEOUT_BLOCKING_SCAN_SEC = 60;
+    // Workaround if scan blocking: if counter don't decrease during timeout, force stop scan in progress (kill process)
     size_t counter = countPendingTasks + countActiveTasks;
     if (previousCounter == counter) {
         if (!isBlockingDetected) {
@@ -447,12 +446,19 @@ bool AutoDiscovery::scanCheck(AutoDiscovery* autoDiscovery)
         }
         else {
             auto end = std::chrono::steady_clock::now();
-            if (std::chrono::duration_cast<std::chrono::seconds>(end - start).count() > TIMEOUT_BLOCKING_SCAN_SEC) {
-                autoDiscovery->stopPoolScan();
+            if (std::chrono::duration_cast<std::chrono::seconds>(end - start).count() > autoDiscovery->getTimeoutBlockingScan()) {
+                // Kill all remaining threads
+                autoDiscovery->cancelPoolScan();
                 std::lock_guard<std::mutex> lock(autoDiscovery->m_mutex);
-                autoDiscovery->m_statusDiscovery.state = Status::Terminated;
+                if (autoDiscovery->m_stop) {
+                    autoDiscovery->m_statusDiscovery.status = StatusDiscovery::Status::CancelledByUser;
+                }
+                else {
+                    autoDiscovery->m_statusDiscovery.status = StatusDiscovery::Status::Terminated;
+                }
                 logWarn("Blocking scan detected (Timeout of {} sec). Stop scan with {} remaining tasks",
-                    TIMEOUT_BLOCKING_SCAN_SEC, countActiveTasks);
+                    autoDiscovery->getTimeoutBlockingScan(),
+                    countActiveTasks);
                 return true;
             }
         }
@@ -462,7 +468,6 @@ bool AutoDiscovery::scanCheck(AutoDiscovery* autoDiscovery)
             isBlockingDetected = false;
         }
     }
-#endif
     return false;
 }
 
@@ -488,9 +493,16 @@ void AutoDiscovery::resetPoolScan()
     m_poolScan.reset(new fty::ThreadPool(Config::instance().pollScanMax.value()));
 }
 
+// Stop pool scan by waiting for all threads in progress to terminate
 void AutoDiscovery::stopPoolScan()
 {
     m_poolScan->stop(fty::ThreadPool::Stop::Immedialy);
+}
+
+// Cancel pool scan by killing all threads in progress
+void AutoDiscovery::cancelPoolScan()
+{
+    m_poolScan->stop(fty::ThreadPool::Stop::Cancel);
 }
 
 Expected<void> AutoDiscovery::updateExt(const commands::assets::Ext& extIn, asset::create::Ext& extOut)

@@ -206,7 +206,7 @@ TEST_CASE("Auto disco / Test normal scan auto", "[auto]")
     logDebug("Check status in progress");
     // Check status (in progress)
     out = getStatus();
-    CHECK(out.status     == status::Out::Status::InProgess);
+    CHECK(out.status     == status::Out::Status::InProgress);
     CHECK(out.discovered == 0);
     CHECK(out.ups        == 0);
     CHECK(out.epdu       == 0);
@@ -293,7 +293,7 @@ TEST_CASE("Auto disco / Test stop scan auto", "[auto]")
     // Check status (in progress)
     logDebug("Check status in progress");
     out = getStatus();
-    CHECK(out.status == status::Out::Status::InProgess);
+    CHECK(out.status == status::Out::Status::InProgress);
     //CHECK(out.addressScanned == 0);
     CHECK(out.discovered == 0);
     CHECK(out.ups        == 0);
@@ -308,15 +308,26 @@ TEST_CASE("Auto disco / Test stop scan auto", "[auto]")
         FAIL(ret2.error());
     }
 
+    bool stopDetected = false;
     auto start = std::chrono::steady_clock::now();
     while(1) {
         auto end = std::chrono::steady_clock::now();
-        logDebug("Check status terminated or cancelled");
         out = getStatus();
-        if (out.status == status::Out::Status::Terminated || out.status == status::Out::Status::CancelledByUser) {
-            logDebug("Check status terminated or cancelled detected after: {} sec",
-                std::chrono::duration_cast<std::chrono::seconds>(end - start).count());
-            break;
+        // Check first if status stop in progress
+        if (!stopDetected) {
+            if (out.status == status::Out::Status::StopInProgress) {
+                logDebug("Check status stop in progress after {} sec",
+                    std::chrono::duration_cast<std::chrono::seconds>(end - start).count());
+                stopDetected = true;
+            }
+        }
+        // Then Check if status terminated or cancelled
+        else {
+            if (out.status == status::Out::Status::Terminated || out.status == status::Out::Status::CancelledByUser) {
+                logDebug("Check status terminated or cancelled detected after {} sec",
+                    std::chrono::duration_cast<std::chrono::seconds>(end - start).count());
+                break;
+            }
         }
         if (std::chrono::duration_cast<std::chrono::seconds>(end - start).count() > 20) {
             FAIL("Timeout when wait terminated or cancelled status");
@@ -357,6 +368,7 @@ void TestAuto::recAssets(const fty::disco::Message& msg)
 
         // send response
         auto res = m_bus.send(msg2.metaData().find(messagebus::Message::REPLY_TO)->second, Message(answ));
+        logDebug("Send create asset message");
     }
 }
 
@@ -478,7 +490,7 @@ TEST_CASE("Auto disco / Test real scan auto with simulation", "[auto]")
         while(1) {
             auto end = std::chrono::steady_clock::now();
             out = getStatus();
-            if (out.status == status::Out::Status::InProgess) {
+            if (out.status == status::Out::Status::InProgress) {
                 logDebug("Check status in progress detected after: {} sec",
                     std::chrono::duration_cast<std::chrono::seconds>(end - start).count());
                 CHECK(out.addressScanned == 0);

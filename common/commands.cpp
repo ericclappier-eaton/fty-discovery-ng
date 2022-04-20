@@ -49,8 +49,10 @@ namespace commands::scan::status {
                     return "1";
                 case Out::Status::Terminated:
                     return "2";
-                case Out::Status::InProgess:
+                case Out::Status::InProgress:
                     return "3";
+                case Out::Status::StopInProgress:
+                    return "4";
                 case Out::Status::Unknown:
                     return "0";
             }
@@ -68,7 +70,9 @@ namespace commands::scan::status {
         } else if (strval == "2") {
             value = Out::Status::Terminated;
         } else if (strval == "3") {
-            value = Out::Status::InProgess;
+            value = Out::Status::InProgress;
+        } else if (strval == "4") {
+            value = Out::Status::StopInProgress;
         } else {
             value = Out::Status::Unknown;
         }

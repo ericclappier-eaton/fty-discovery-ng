@@ -172,7 +172,8 @@ namespace commands::scan {
                 Unknown,
                 CancelledByUser,
                 Terminated,
-                InProgess
+                InProgress,
+                StopInProgress
             };
 
             pack::Enum<Status> status         = FIELD("status");
