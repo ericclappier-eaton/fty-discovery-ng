@@ -330,7 +330,7 @@ void AutoDiscovery::scan(AutoDiscovery* autoDiscovery, const std::string& ipAddr
                             req.sub_type = asset.asset.subtype;
                             auto& ext    = asset.asset.ext;
                             req.status   = getAssetStatus();
-                            req.priority = autoDiscovery->m_params.aux.priority;
+                            req.priority = static_cast<uint>(autoDiscovery->m_params.aux.priority.asInt());
                             req.linked   = autoDiscovery->m_defaultValuesLinks;
                             // Workaround: complete the missing link for sts on device centric view
                             if ((asset.asset.subtype == "sts") && (autoDiscovery->m_defaultValuesLinks.size() == 1)) {
@@ -365,7 +365,7 @@ void AutoDiscovery::scan(AutoDiscovery* autoDiscovery, const std::string& ipAddr
                                 reqSensor.type     = sensor.type;
                                 reqSensor.sub_type = sensor.subtype;
                                 reqSensor.status   = getAssetStatus();
-                                reqSensor.priority = autoDiscovery->m_params.aux.priority;
+                                reqSensor.priority = static_cast<uint>(autoDiscovery->m_params.aux.priority.asInt());
                                 reqSensor.linked   = {}; // defaultValuesLinks; // TBD ???
                                 reqSensor.parent   = assetNameCreated;
 
