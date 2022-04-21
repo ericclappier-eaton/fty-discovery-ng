@@ -92,6 +92,48 @@ std::istream& operator>>(std::istream& ss, ConfigDiscovery::Discovery::Type& val
     return ss;
 }
 
+std::ostream& operator<<(std::ostream& ss, ConfigDiscovery::DefaultValuesAux::Priority value)
+{
+    using Priority = ConfigDiscovery::DefaultValuesAux::Priority;
 
+    ss << [&]() {
+        switch (value) {
+            case Priority::P1:
+                return "P1";
+            case Priority::P2:
+                return "P2";
+            case Priority::P3:
+                return "P3";
+            case Priority::P4:
+                return "P4";
+            case Priority::P5:
+                return "P5";
+        }
+        return "P1";
+    }();
+    return ss;
+}
+
+std::istream& operator>>(std::istream& ss, ConfigDiscovery::DefaultValuesAux::Priority& value)
+{
+    using Priority = ConfigDiscovery::DefaultValuesAux::Priority;
+
+    std::string strval;
+    ss >> strval;
+    if (strval == "P1") {
+        value = Priority::P1;
+    } else if (strval == "P2") {
+        value = Priority::P2;
+    } else if (strval == "P3") {
+        value = Priority::P3;
+    } else if (strval == "P4") {
+        value = Priority::P4;
+    } else if (strval == "P5") {
+        value = Priority::P5;
+    } else {
+        value = Priority::P1;
+    }
+    return ss;
+}
 
 } // namespace fty::disco
