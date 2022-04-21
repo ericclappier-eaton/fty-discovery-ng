@@ -448,6 +448,13 @@ void Assets::enrichAsset(commands::assets::Return& asset)
         asset.asset.subtype = "sts";
     }
 
+    // TBD Workaround for automatic discovery: If sts device, add missing ext attributes with its
+    // default values for configuration. It will appear as configured in device centric view.
+    if (asset.asset.subtype == "sts") {
+        addAssetVal(asset.asset, "outlet.count", "1", false);
+        addAssetVal(asset.asset, "outlet_numbering_orientation", "left", false);
+    }
+
     addAssetVal(asset.asset, "ip.1", m_params.address, false);
 
     // uuid attribute
