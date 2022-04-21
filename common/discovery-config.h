@@ -61,8 +61,8 @@ struct ConfigDiscovery : public pack::Node
 
     struct DefaultValuesAux : public pack::Node
     {
-        pack::UInt32 createMode = FIELD("create_mode");
-        pack::String createUser = FIELD("create_user");
+        pack::UInt32 createMode = FIELD("create_mode", "1");
+        pack::String createUser = FIELD("create_user", "");  // usual
         pack::String parent     = FIELD("parent");
         pack::UInt32 priority   = FIELD("priority");
         pack::String status     = FIELD("status"); // enum?
