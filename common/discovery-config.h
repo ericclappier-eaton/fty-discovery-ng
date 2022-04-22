@@ -61,6 +61,12 @@ struct ConfigDiscovery : public pack::Node
 
     struct DefaultValuesAux : public pack::Node
     {
+        enum CreateMode
+        {
+            CreateModeOneAsset = 1,
+            CreateModeCsv
+        };
+
         enum class Priority
         {
             P1 = 1,
@@ -69,11 +75,12 @@ struct ConfigDiscovery : public pack::Node
             P4,
             P5
         };
-        pack::UInt32 createMode       = FIELD("create_mode", 1);
+
+        pack::UInt32 createMode       = FIELD("create_mode", CreateMode::CreateModeOneAsset);
         pack::String createUser       = FIELD("create_user", "");  // usual
         pack::String parent           = FIELD("parent");
         pack::Enum<Priority> priority = FIELD("priority");
-        pack::String status           = FIELD("status"); // enum?
+        pack::String status           = FIELD("status");
 
         using pack::Node::Node;
         META(DefaultValuesAux, createMode, createUser, parent, priority, status);
