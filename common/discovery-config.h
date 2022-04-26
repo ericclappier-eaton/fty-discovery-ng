@@ -79,7 +79,7 @@ struct ConfigDiscovery : public pack::Node
         pack::UInt32 createMode       = FIELD("create_mode", CreateMode::CreateModeOneAsset);
         pack::String createUser       = FIELD("create_user", "");  // usual
         pack::String parent           = FIELD("parent");
-        pack::Enum<Priority> priority = FIELD("priority", Priority::P3);
+        pack::Enum<Priority> priority = FIELD("priority");
         pack::String status           = FIELD("status");
 
         using pack::Node::Node;
