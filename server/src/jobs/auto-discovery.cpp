@@ -468,7 +468,7 @@ bool AutoDiscovery::scanCheck(AutoDiscovery* autoDiscovery)
             isBlockingDetected = false;
         }
     }
-    previousCounter = counter;
+    //reviousCounter = counter;
     return false;
 }
 
