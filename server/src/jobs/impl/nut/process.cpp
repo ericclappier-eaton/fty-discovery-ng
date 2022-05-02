@@ -334,7 +334,7 @@ Expected<std::string> Process::run() const
     }
 
     if (auto pid = m_process->run()) {
-        if (auto stat = m_process->wait(); *stat == 0) {
+        if (auto stat = m_process->wait(WAIT_TIME_OUT_MS); *stat == 0) {
             return m_process->readAllStandardOutput();
         } else {
             std::string stdError = m_process->readAllStandardError();
