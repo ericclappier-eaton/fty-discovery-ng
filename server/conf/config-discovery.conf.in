@@ -17,7 +17,7 @@ defaultValuesAux:
   create_mode: 0
   create_user: ""
   parent: ""
-  priority: 0
+  priority: "P1"
   status: ""
 defaultValuesLink:
   []

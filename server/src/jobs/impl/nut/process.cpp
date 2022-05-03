@@ -334,7 +334,11 @@ Expected<std::string> Process::run() const
     }
 
     if (auto pid = m_process->run()) {
-        if (auto stat = m_process->wait(); *stat == 0) {
+        auto stat = m_process->wait(WAIT_TIME_OUT_MS);
+        if (!stat) {
+            return unexpected(stat.error());
+        }
+        else if (*stat == 0) {
             return m_process->readAllStandardOutput();
         } else {
             std::string stdError = m_process->readAllStandardError();
@@ -353,7 +357,7 @@ Expected<std::string> Process::run() const
             return unexpected(stdError);
         }
     } else {
-        log_error("Run error: %s", pid.error().c_str());
+        logError("Run error: {}", pid.error());
         return unexpected(pid.error());
     }
 }
