@@ -113,7 +113,10 @@ Expected<void> AutoDiscovery::stop()
         m_statusDiscovery.status = StatusDiscovery::Status::StopInProgress;
         m_stop = true;
         lock.unlock();
-        stopPoolScan();
+        // Stop pool scan in a thread because can take long time
+        std::thread([this]() {
+            stopPoolScan();
+        }).detach();
     }
     else {
         lock.unlock();
