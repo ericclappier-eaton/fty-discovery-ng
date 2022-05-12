@@ -113,10 +113,9 @@ Expected<void> AutoDiscovery::stop()
         m_statusDiscovery.status = StatusDiscovery::Status::StopInProgress;
         m_stop = true;
         lock.unlock();
-        // Stop pool scan in a thread because can take long time
-        std::thread([this]() {
-            stopPoolScan();
-        }).detach();
+        // Stop pool scan is async (this call make just the request
+        stopPoolScan();
+
     }
     else {
         lock.unlock();
@@ -463,7 +462,7 @@ void AutoDiscovery::resetPoolScan()
 // Stop pool scan by waiting for all threads in progress to terminate
 void AutoDiscovery::stopPoolScan()
 {
-    m_poolScan->stop(fty::ThreadPool::Stop::Immedialy);
+    m_poolScan->requestStop(fty::ThreadPool::Stop::Immedialy);
 }
 
 // Cancel pool scan by killing all threads in progress
