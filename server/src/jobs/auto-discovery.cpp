@@ -113,7 +113,10 @@ Expected<void> AutoDiscovery::stop()
         m_statusDiscovery.status = StatusDiscovery::Status::StopInProgress;
         m_stop = true;
         lock.unlock();
-        stopPoolScan();
+        // Stop pool scan in a thread because can take long time
+        std::thread([this]() {
+            stopPoolScan();
+        }).detach();
     }
     else {
         lock.unlock();
@@ -416,10 +419,6 @@ bool AutoDiscovery::scanCheck(AutoDiscovery* autoDiscovery)
 {
     if (!autoDiscovery) return true;
 
-    static size_t previousCounter = 0;
-    static std::chrono::steady_clock::time_point start {};
-    static bool isBlockingDetected = false;
-
     auto countPendingTasks = autoDiscovery->m_poolScan->getCountPendingTasks();
     auto countActiveTasks = autoDiscovery->m_poolScan->getCountActiveTasks();
 
@@ -434,41 +433,8 @@ bool AutoDiscovery::scanCheck(AutoDiscovery* autoDiscovery)
             autoDiscovery->m_statusDiscovery.status = StatusDiscovery::Status::Terminated;
         }
         logTrace("End of discovery detected");
-        isBlockingDetected = false;
         return true;
     }
-    // Workaround if scan blocking: if counter don't decrease during timeout, force stop scan in progress (kill process)
-    size_t counter = countPendingTasks + countActiveTasks;
-    if (previousCounter == counter) {
-        if (!isBlockingDetected) {
-            isBlockingDetected = true;
-            start = std::chrono::steady_clock::now();
-        }
-        else {
-            auto end = std::chrono::steady_clock::now();
-            if (std::chrono::duration_cast<std::chrono::seconds>(end - start).count() > autoDiscovery->getTimeoutBlockingScan()) {
-                // Kill all remaining threads
-                autoDiscovery->cancelPoolScan();
-                std::lock_guard<std::mutex> lock(autoDiscovery->m_mutex);
-                if (autoDiscovery->m_stop) {
-                    autoDiscovery->m_statusDiscovery.status = StatusDiscovery::Status::CancelledByUser;
-                }
-                else {
-                    autoDiscovery->m_statusDiscovery.status = StatusDiscovery::Status::Terminated;
-                }
-                logWarn("Blocking scan detected (Timeout of {} sec). Stop scan with {} remaining tasks",
-                    autoDiscovery->getTimeoutBlockingScan(),
-                    countActiveTasks);
-                return true;
-            }
-        }
-    }
-    else {
-        if (isBlockingDetected) {
-            isBlockingDetected = false;
-        }
-    }
-    //reviousCounter = counter;
     return false;
 }
 
