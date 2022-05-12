@@ -12,11 +12,13 @@ Build-Depends:
     libsnmp-dev,
     libneon27-dev,
     libtntnet-dev,
+    libcidr-dev,
     libfty-cmake-rest-dev,
     libfty-security-wallet-dev,
     libfty-common-socket-dev,
     libcxxtools-dev,
     libyaml-cpp-dev,
+    libfty-asset-dev,
     uuid-dev
 Standards-Version: 1.0.0
 Section: devel

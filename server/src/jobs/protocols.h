@@ -19,10 +19,12 @@
 
 // =====================================================================================================================
 
-namespace fty::job {
+namespace fty::disco::job {
 
-/// Forward declaration
-enum class Type;
+struct config_protocol_t {
+    ConfigDiscovery::Protocol::Type protocol;
+    uint16_t                        defaultPort;
+};
 
 /// Discover supported protocols by endpoint
 /// Returns @ref commands::protocols::Out (list of protocols)
@@ -31,20 +33,27 @@ class Protocols : public Task<Protocols, commands::protocols::In, commands::prot
 public:
     using Task::Task;
 
+    // Get list protocols found
+    Expected<commands::protocols::Out> getProtocols(const commands::protocols::In& in) const;
+
     /// Runs discover job.
     void run(const commands::protocols::In& in, commands::protocols::Out& out);
 
+    // Test input option (protocol filter and port)
+    static std::optional<const fty::disco::ConfigDiscovery::Protocol>
+    findProtocol(const config_protocol_t& config_protocol, const commands::protocols::In& in);
+
 private:
     /// Try out if endpoint support xml pdc protocol
-    Expected<void> tryXmlPdc(const commands::protocols::In& in, uint16_t port) const;
+    Expected<void> tryXmlPdc(const std::string& address, uint16_t port) const;
 
     /// Try out if endpoint support xnmp protocol
-    Expected<void> trySnmp(const commands::protocols::In& in, uint16_t port) const;
+    Expected<void> trySnmp(const std::string& address, uint16_t port) const;
 
     /// Try out if endpoint support genapi protocol
-    Expected<void> tryPowercom(const commands::protocols::In& in, uint16_t port) const;
+    Expected<void> tryPowercom(const std::string& address, uint16_t port) const;
 };
 
-} // namespace fty::job
+} // namespace fty::disco::job
 
 // =====================================================================================================================

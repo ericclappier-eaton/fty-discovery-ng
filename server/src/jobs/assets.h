@@ -16,10 +16,18 @@
 
 #pragma once
 #include "discovery-task.h"
+#include <set>
 
 // =====================================================================================================================
 
-namespace fty::job {
+namespace fty::disco::job {
+
+struct DeviceInfo
+{
+    int         indexDevice;
+    std::string deviceSerial;
+    std::string type;
+};
 
 /// Discover Assets from enpoint
 /// Returns @ref commands::assets::Out (something like a list of Assets)
@@ -28,17 +36,28 @@ class Assets : public Task<Assets, commands::assets::In, commands::assets::Out>
 public:
     using Task::Task;
 
+    // Get assets list
+    Expected<void> getAssets(const commands::assets::In& in, commands::assets::Out& out);
+
+    // Add asset sensors
+    void addSensors(const DeviceInfo& deviceInfo, int& indexSensor,
+        pack::ObjectList<commands::assets::Asset>& sensors, const std::map<std::string, std::string>& dump);
+
     /// Runs discover job.
     void run(const commands::assets::In& in, commands::assets::Out& out);
+
 private:
     void parse(const std::string& cnt, commands::assets::Out& out);
-    void addAssetVal(commands::assets::Return::Asset& asset, const std::string& key, const std::string& val, bool readOnly = true);
-    void enrichAsset(commands::assets::Return& asset);
+    void addAssetVal(
+        commands::assets::Asset& asset, const std::string& key, const std::string& val, bool readOnly = true);
+    fty::Expected<std::string> getAssetVal(const commands::assets::Asset& asset, const std::string& key) const;
+    void                       enrichAsset(commands::assets::Return& asset);
 
 private:
-    commands::assets::In m_params;
+    commands::assets::In  m_params;
+    std::set<std::string> m_discoveredSerialSet;
 };
 
-} // namespace fty::job
+} // namespace fty::disco::job
 
 // =====================================================================================================================

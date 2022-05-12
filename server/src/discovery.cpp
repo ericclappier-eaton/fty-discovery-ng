@@ -26,13 +26,15 @@
 #include "jobs/assets.h"
 #include "jobs/mibs.h"
 #include "jobs/protocols.h"
+#include "jobs/scan-start.h"
+#include "jobs/scan-status.h"
+#include "jobs/scan-stop.h"
 #include <fty/thread-pool.h>
 #include <fty_log.h>
 
-namespace fty {
+namespace fty::disco {
 
-Discovery::Discovery(const std::string& config)
-    : m_configPath(config)
+Discovery::Discovery(const std::string& config) : m_configPath(config)
 {
     m_stopSlot.connect(Daemon::instance().stopEvent);
     m_loadConfigSlot.connect(Daemon::instance().loadConfigEvent);
@@ -56,14 +58,19 @@ bool Discovery::loadConfig()
 
 Expected<void> Discovery::init()
 {
-    if (auto res = m_bus.init(Config::instance().actorName)) {
-        if (auto sub = m_bus.subsribe(fty::Channel, &Discovery::discover, this)) {
+    logDebug("Discovery::init actorName={} endpoint={}", Config::instance().actorName.value(),
+                                                         Config::instance().endpoint.value());
+    if (auto init = m_bus.init(Config::instance().actorName.value(), Config::instance().endpoint.value())) {
+        if (auto sub = m_bus.subsribe(Channel, &Discovery::discover, this)) {
+            if (auto autoInit = m_autoDiscovery.init(); !autoInit) {
+                return unexpected(autoInit.error());
+            }
             return {};
         } else {
             return unexpected(sub.error());
         }
     } else {
-        return unexpected(res.error());
+        return unexpected(init.error());
     }
 }
 
@@ -71,6 +78,8 @@ void Discovery::shutdown()
 {
     stop();
     m_pool.stop();
+    m_autoDiscovery.shutdown();
+    m_bus.shutdown();
 }
 
 int Discovery::run()
@@ -83,13 +92,18 @@ void Discovery::discover(const disco::Message& msg)
 {
     logDebug("Discovery: got message {}", msg.dump());
     logDebug("Payload: {}", msg.userData.asString());
-
     if (msg.meta.subject == commands::protocols::Subject) {
         m_pool.pushWorker<job::Protocols>(msg, m_bus);
     } else if (msg.meta.subject == commands::mibs::Subject) {
         m_pool.pushWorker<job::Mibs>(msg, m_bus);
     } else if (msg.meta.subject == commands::assets::Subject) {
         m_pool.pushWorker<job::Assets>(msg, m_bus);
+    } else if (msg.meta.subject == disco::commands::scan::status::Subject) {
+        m_pool.pushWorker<job::ScanStatus>(msg, m_bus, m_autoDiscovery);
+    } else if (msg.meta.subject == disco::commands::scan::stop::Subject) {
+        m_pool.pushWorker<job::ScanStop>(msg, m_bus, m_autoDiscovery);
+    } else if (msg.meta.subject == disco::commands::scan::start::Subject) {
+        m_pool.pushWorker<job::ScanStart>(msg, m_bus, m_autoDiscovery);
     } else {
         logError("Subject not handled {}", msg.meta.subject);
     }
@@ -103,4 +117,4 @@ Config& Config::instance()
     return inst;
 }
 
-} // namespace fty
+} // namespace fty::disco

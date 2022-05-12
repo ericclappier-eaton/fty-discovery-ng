@@ -30,17 +30,23 @@ namespace fty::disco {
 
 MessageBus::MessageBus() = default;
 
-Expected<void> MessageBus::init(const std::string& actorName)
+Expected<void> MessageBus::init(const std::string& actorName, const std::string& endpoint)
 {
     std::lock_guard<std::mutex> lock(m_mutex);
     try {
         m_bus = std::unique_ptr<messagebus::MessageBus>(messagebus::MlmMessageBus(endpoint, actorName));
         m_bus->connect();
         m_actorName = actorName;
+        m_endpoint = endpoint;
         return {};
     } catch (std::exception& ex) {
         return unexpected(ex.what());
     }
+}
+
+void MessageBus::shutdown()
+{
+    m_bus = nullptr;
 }
 
 MessageBus::~MessageBus()

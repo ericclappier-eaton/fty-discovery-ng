@@ -15,6 +15,8 @@
 */
 
 #include "snmp.h"
+#include "src/config.h"
+#include "credentials.h"
 // Config should be first
 #include <net-snmp/net-snmp-config.h>
 // Snmp stuff
@@ -28,7 +30,7 @@
 #include <fty_security_wallet.h>
 #include <array>
 
-namespace fty::impl {
+namespace fty::disco::impl {
 
 // =====================================================================================================================
 // Wallet to snmp values conversion
@@ -132,10 +134,7 @@ public:
     Expected<void> setCredentialId(const std::string& credId)
     {
         try {
-            fty::SocketSyncClient secwSyncClient("/run/fty-security-wallet/secw.socket");
-            auto                  client  = secw::ConsumerAccessor(secwSyncClient);
-            auto                  secCred = client.getDocumentWithPrivateData("default", credId);
-
+            auto secCred = getCredential(credId);
             if (auto credV3 = secw::Snmpv3::tryToCast(secCred)) {
                 m_sess.version = SNMP_VERSION_3;
 
@@ -150,7 +149,7 @@ public:
                 if (auto prot = authProt(credV3->getAuthProtocol())) {
                     m_sess.securityAuthProto  = *prot;
                     m_sess.securityAuthKeyLen = USM_AUTH_KU_LEN;
-                  
+
                     if (m_sess.securityAuthProto == usmHMACMD5AuthProtocol) {
                         m_sess.securityAuthProtoLen = OID_LENGTH(usmHMACMD5AuthProtocol);
                     } else if (m_sess.securityAuthProto == usmHMACSHA1AuthProtocol) {
@@ -437,4 +436,4 @@ snmp::SessionPtr Snmp::session(const std::string& address, uint16_t port)
     return std::shared_ptr<snmp::Session>(new snmp::Session(address, port));
 }
 
-} // namespace fty::impl
+} // namespace fty::disco::impl

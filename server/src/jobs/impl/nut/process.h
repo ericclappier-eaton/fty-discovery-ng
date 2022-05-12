@@ -5,11 +5,13 @@ namespace fty {
 class Process;
 }
 
-namespace fty::impl::nut {
+namespace fty::disco::impl::nut {
 
 class Process
 {
 public:
+    static const uint32_t WAIT_TIME_OUT_MS = 3 * 60 * 1000;  // Wait timeout of 3 mn
+
     Process(const std::string& protocol);
     ~Process();
 
@@ -33,4 +35,4 @@ private:
     std::unique_ptr<fty::Process> m_process;
 };
 
-} // namespace fty::impl::nut
+} // namespace fty::disco::impl::nut

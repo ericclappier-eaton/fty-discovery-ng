@@ -15,13 +15,12 @@
 */
 
 #include "uuid.h"
-
 #include <array>
 #include <fty_log.h>
 #include <openssl/sha.h>
 #include <uuid/uuid.h>
 
-namespace fty::impl {
+namespace fty::disco::impl {
 
 std::string generateUUID(const std::string& manufacturer, const std::string& model, const std::string& serial)
 {
@@ -60,4 +59,4 @@ std::string generateUUID(const std::string& manufacturer, const std::string& mod
     return uuid;
 }
 
-}
+} // namespace fty::disco::impl

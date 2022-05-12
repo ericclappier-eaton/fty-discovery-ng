@@ -22,26 +22,26 @@
 #include <regex>
 
 
-namespace fty::impl::nut {
+namespace fty::disco::impl::nut {
 
 // =====================================================================================================================
 
-struct Mappping : public pack::Node
+struct Mapping : public pack::Node
 {
-    pack::StringMap physicsMapping   = FIELD("physicsMapping");
-    pack::StringMap inventoryMapping = FIELD("inventoryMapping");
+    pack::StringMap physicsMapping         = FIELD("physicsMapping");
+    pack::StringMap inventoryMapping       = FIELD("inventoryMapping");
+    pack::StringMap sensorInventoryMapping = FIELD("sensorInventoryMapping");
 
     using pack::Node::Node;
-    META(Mappping, physicsMapping, inventoryMapping);
+    META(Mapping, physicsMapping, inventoryMapping, sensorInventoryMapping);
 
     std::string map(const std::string& key) const
     {
-        //We do not need physics mapping for discovery
-        /*if (physicsMapping.contains(key)) {
-            return physicsMapping[key];
-        }*/ 
         if (inventoryMapping.contains(key)) {
             return inventoryMapping[key];
+        }
+        if (sensorInventoryMapping.contains(key)) {
+            return sensorInventoryMapping[key];
         }
         return {};
     }
@@ -49,27 +49,49 @@ struct Mappping : public pack::Node
 
 // =====================================================================================================================
 
-std::string Mapper::mapKey(const std::string& key)
+std::string Mapper::mapKey(const std::string& key, int index)
 {
-    static std::regex rerex("#");
-    static std::regex rex("(.*\\.)(\\d+)(\\..*)");
-
-    auto&       map = mapping();
+    // Need to capture #n:
+    // device.n.xxx - daisychain device
+    // device.n.ambient.xxx  -> emp01 with daisychain (only one sensor on a device #n)
+    // ambient.n.xxx  -> emp02 with no daisychain
+    // device.1.ambient.n.xxx -> emp02 with daisychain (all sensor are on master #1)
+    const static std::regex prefixRegex(
+        R"xxx(.*((?:device(?!\.\d*\.ambient\.\d*\.))|ambient)\.(\d*)\.(.+))xxx", std::regex::optimize);
     std::smatch matches;
-    if (std::regex_match(key, matches, rex)) {
-        std::string num  = matches.str(2);
-        std::string repl = std::regex_replace(key, rex, "$1#$3");
 
-        if (auto mapped = map.map(repl); !mapped.empty()) {
-            return std::regex_replace(mapped, rerex, num);
+    std::string transformedKey = key;
+
+    //logTrace("Looking for key {} (index {})", key, index);
+    auto map = mapping();
+
+    // Daisy-chained or indexed sensor special case, need to fold it back into conventional case.
+    if (index > 0 && std::regex_match(key, matches, prefixRegex)) {
+        //logTrace("match1 = {}, match2 = {}, match3 = {}", matches.str(1), matches.str(2), matches.str(3));
+        if (matches.str(2) == std::to_string(index)) {
+            //logTrace("key {} (index {}) 1-> found and test {}.{}", key, index, matches.str(1), matches.str(3));
+            // We have a "{device,ambient}.<id>.<property>" property, map it to either device.<property> or
+            // ambient.<property> or <property> (for device only)
+            if (!map.map(matches.str(1) + "." + matches.str(3)).empty()) {
+                transformedKey = matches.str(1) + "." + matches.str(3);
+                // logTrace("key {} (index {}) -> {}", key, index, transformedKey);
+            } else {
+                if (matches.str(1) != "ambient") {
+                    transformedKey = matches.str(3);
+                    // logTrace("key {} (index {}) -> {}", key, index, transformedKey);
+                }
+            }
+        } else {
+            // Not the daisy-chained or sensor index we're looking for.
+            transformedKey = "";
         }
     }
-    return map.map(key);
+    return transformedKey.empty() ? "" : map.map(transformedKey);
 }
 
-const Mappping& Mapper::mapping()
+const Mapping& Mapper::mapping()
 {
-    static Mappping mapping;
+    static Mapping mapping;
     if (!mapping.hasValue()) {
         std::ifstream fs(mapFile);
         std::string   mapCnt;
@@ -89,4 +111,4 @@ const Mappping& Mapper::mapping()
 
 // =====================================================================================================================
 
-} // namespace fty::protocol::nut
+} // namespace fty::disco::impl::nut

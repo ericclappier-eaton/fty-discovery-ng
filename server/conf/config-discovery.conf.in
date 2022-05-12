@@ -1,0 +1,25 @@
+discovery:
+  type: localscan
+  scans:
+    []
+  ips:
+    []
+  documents:
+    []
+  protocols:
+    []
+disabled:
+  scans_disabled:
+    []
+  ips_disabled:
+    []
+defaultValuesAux:
+  create_mode: 0
+  create_user: ""
+  parent: ""
+  priority: "P1"
+  status: ""
+defaultValuesLink:
+  []
+defaultValuesExt:
+  []

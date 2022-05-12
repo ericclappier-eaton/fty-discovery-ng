@@ -1,7 +1,8 @@
 #pragma once
+#include "discovery-config.h"
 #include <pack/pack.h>
 
-namespace fty {
+namespace fty::disco {
 
 // =====================================================================================================================
 
@@ -15,14 +16,15 @@ namespace commands::protocols {
     class In : public pack::Node
     {
     public:
-        pack::String address = FIELD("address");
+        pack::String               address   = FIELD("address");
+        ConfigDiscovery::Protocols protocols = FIELD("protocols"); // optional
 
     public:
         using pack::Node::Node;
-        META(In, address);
+        META(In, address, protocols);
     };
 
-    class Return: public pack::Node
+    class Return : public pack::Node
     {
     public:
         enum class Available
@@ -35,49 +37,17 @@ namespace commands::protocols {
 
         pack::String          protocol  = FIELD("protocol");
         pack::UInt32          port      = FIELD("port");
+        //pack::Bool          ignored   = FIELD("ignored");
         pack::Enum<Available> available = FIELD("available");
         pack::Bool            reachable = FIELD("reachable");
 
     public:
         using pack::Node::Node;
-        META(Return, protocol, port, reachable, available);
+        META(Return, protocol, port, available, reachable);
     };
 
-    inline std::ostream& operator<<(std::ostream& ss, Return::Available value)
-    {
-        ss << [&]() {
-            switch (value) {
-                case Return::Available::Unknown:
-                    return "unknown";
-                case Return::Available::No:
-                    return "no";
-                case Return::Available::Maybe:
-                    return "maybe";
-                case Return::Available::Yes:
-                    return "yes";
-            }
-            return "unknown";
-        }();
-        return ss;
-    };
-
-    inline std::istream& operator>>(std::istream& ss, Return::Available& value)
-    {
-        std::string strval;
-        ss >> strval;
-        if (strval == "unknown") {
-            value = Return::Available::Unknown;
-        } else if (strval == "no") {
-            value = Return::Available::No;
-        } else if (strval == "maybe") {
-            value = Return::Available::Maybe;
-        } else if (strval == "yes") {
-            value = Return::Available::Yes;
-        } else {
-            value = Return::Available::Unknown;
-        }
-        return ss;
-    };
+    std::ostream& operator<<(std::ostream& ss, Return::Available value);
+    std::istream& operator>>(std::istream& ss, Return::Available& value);
 
     using Out = pack::ObjectList<Return>;
 } // namespace commands::protocols
@@ -106,10 +76,8 @@ namespace commands::mibs {
 
 // =====================================================================================================================
 
-namespace commands::assets {
-    static constexpr const char* Subject = "assets";
-
-    class In : public pack::Node
+namespace commands {
+    class CommonIn : public pack::Node
     {
     public:
         class Settings : public pack::Node
@@ -134,32 +102,40 @@ namespace commands::assets {
 
     public:
         using pack::Node::Node;
-        META(In, address, protocol, port, settings);
+        META(CommonIn, address, protocol, port, settings);
+    };
+} // namespace commands
+
+namespace commands::assets {
+    static constexpr const char* Subject = "assets";
+
+    using In = commands::CommonIn;
+
+    using Ext = pack::ObjectList<pack::StringMap>;
+
+    class Asset : public pack::Node
+    {
+    public:
+        pack::String name    = FIELD("name");
+        pack::String type    = FIELD("type");
+        pack::String subtype = FIELD("sub_type");
+        Ext          ext     = FIELD("ext");
+
+    public:
+        using pack::Node::Node;
+        META(Asset, name, type, subtype, ext);
     };
 
     class Return : public pack::Node
     {
     public:
-        class Asset : public pack::Node
-        {
-        public:
-            //pack::String                      name    = FIELD("name");
-            pack::String                      type    = FIELD("type");
-            pack::String                      subtype = FIELD("sub_type");
-            pack::ObjectList<pack::StringMap> ext     = FIELD("ext");
-
-        public:
-            using pack::Node::Node;
-            META(Asset, type, subtype, ext);
-        };
-
-    public:
-        pack::String subAddress = FIELD("sub_address", "-1");
-        Asset        asset      = FIELD("asset");
+        pack::String            subAddress = FIELD("sub_address", "-1");
+        Asset                   asset      = FIELD("asset");
+        pack::ObjectList<Asset> sensors    = FIELD("sensors");
 
     public:
         using pack::Node::Node;
-        META(Return, subAddress, asset);
+        META(Return, subAddress, asset, sensors);
     };
 
     using Out = pack::ObjectList<Return>;
@@ -167,4 +143,92 @@ namespace commands::assets {
 
 // =====================================================================================================================
 
-} // namespace fty
+namespace commands::config {
+    namespace read {
+        static constexpr const char* Subject = "config-read";
+
+        using Out = ConfigDiscovery;
+    } // namespace read
+
+    namespace create {
+        static constexpr const char* Subject = "config-create";
+
+        using In = ConfigDiscovery;
+    } // namespace create
+
+} // namespace commands::config
+
+// =====================================================================================================================
+
+namespace commands::scan {
+    namespace status {
+        static constexpr const char* Subject = "scan-status";
+
+        class Out : public pack::Node
+        {
+        public:
+            enum class Status
+            {
+                Unknown,
+                CancelledByUser,
+                Terminated,
+                InProgress,
+                StopInProgress
+            };
+
+            pack::Enum<Status> status         = FIELD("status");
+            pack::UInt32       numOfAddress   = FIELD("number-of-address");
+            pack::UInt32       addressScanned = FIELD("address-scanned");
+            pack::UInt32       discovered     = FIELD("discovered");
+            pack::UInt32       ups            = FIELD("ups-discovered");
+            pack::UInt32       epdu           = FIELD("epdu-discovered");
+            pack::UInt32       sts            = FIELD("sts-discovered");
+            pack::UInt32       sensors        = FIELD("sensors-discovered");
+
+        public:
+            using pack::Node::Node;
+            META(Out, status, numOfAddress, addressScanned, discovered, ups, epdu, sts, sensors);
+        };
+
+        std::ostream& operator<<(std::ostream& ss, Out::Status value);
+        std::istream& operator>>(std::istream& ss, Out::Status& value);
+    } // namespace status
+
+    class Response : public pack::Node
+    {
+    public:
+        enum class Status
+        {
+            Success = 0,
+            Failure,
+            Unknown
+        };
+
+        pack::Enum<Status> status = FIELD("status");
+        pack::String       data   = FIELD("data");
+
+    public:
+        using pack::Node::Node;
+        META(Response, status, data);
+    };
+
+    std::ostream& operator<<(std::ostream& ss, Response::Status value);
+    std::istream& operator>>(std::istream& ss, Response::Status& value);
+
+    namespace stop {
+        static constexpr const char* Subject = "scan-stop";
+
+        using Out = Response;
+    } // namespace stop
+
+    namespace start {
+        static constexpr const char* Subject = "scan-start";
+
+        using In  = ConfigDiscovery;
+        using Out = Response;
+    } // namespace start
+} // namespace commands::scan
+
+// =====================================================================================================================
+
+} // namespace fty::disco

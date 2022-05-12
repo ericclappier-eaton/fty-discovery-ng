@@ -21,11 +21,13 @@
 
 #pragma once
 #include "message-bus.h"
+#include "jobs/auto-discovery.h"
 #include <fty/event.h>
 #include <fty/thread-pool.h>
 #include <string>
+#include <secw_document.h>
 
-namespace fty {
+namespace fty::disco {
 
 /// Discovery message dispatcher, worker
 class Discovery
@@ -35,6 +37,8 @@ public:
 
     /// Loads config
     bool loadConfig();
+
+    inline job::AutoDiscovery& getAutoDiscovery() { return m_autoDiscovery; };
 
     /// Runs message dispatcher
     int run();
@@ -50,16 +54,18 @@ public:
 
 private:
     void discover(const disco::Message& msg);
+    void addTask();
     void doStop();
 
 private:
-    std::string       m_configPath;
-    disco::MessageBus m_bus;
-    ThreadPool        m_pool;
+    std::string                 m_configPath;
+    disco::MessageBus           m_bus;
+    ThreadPool                  m_pool;
+    job::AutoDiscovery          m_autoDiscovery;
 
     Slot<>                      m_stopSlot       = {&Discovery::doStop, this};
     Slot<>                      m_loadConfigSlot = {&Discovery::loadConfig, this};
     Slot<const disco::Message&> m_discoverSlot   = {&Discovery::discover, this};
 };
 
-} // namespace fty
+} // namespace fty::disco

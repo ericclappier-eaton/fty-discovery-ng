@@ -40,13 +40,15 @@ namespace fty::disco {
 class MessageBus
 {
 public:
-    static constexpr const char* endpoint = "ipc://@/malamute";
+    static constexpr const char* ENDPOINT = "ipc://@/malamute";
 
-public:
     MessageBus();
     ~MessageBus();
 
-    [[nodiscard]] Expected<void> init(const std::string& actorName);
+    [[nodiscard]] Expected<void> init(const std::string& actorName, const std::string& endpoint = ENDPOINT);
+    void shutdown();
+
+    [[nodiscard]] std::string getEndpoint() { return m_endpoint; };
 
     [[nodiscard]] Expected<Message> send(const std::string& queue, const Message& msg, int timeoutSec = 60);
     [[nodiscard]] Expected<void>    reply(const std::string& queue, const Message& req, const Message& answ);
@@ -67,6 +69,7 @@ private:
     std::unique_ptr<messagebus::MessageBus> m_bus;
     std::mutex                              m_mutex;
     std::string                             m_actorName;
+    std::string                             m_endpoint;
 };
 
 } // namespace fty

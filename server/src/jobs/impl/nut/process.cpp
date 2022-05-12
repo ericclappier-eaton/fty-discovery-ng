@@ -1,14 +1,15 @@
 #include "process.h"
 #include "src/config.h"
 #include "src/jobs/impl/mibs.h"
+#include "src/jobs/impl/credentials.h"
 #include <filesystem>
 #include <fty/process.h>
-#include <fty_common_socket_sync_client.h>
 #include <fty_log.h>
-#include <fty_security_wallet.h>
 #include <unistd.h>
+#include <fty_security_wallet.h>
 
-namespace fty::impl::nut {
+namespace fty::disco::impl::nut {
+
 
 Process::Process(const std::string& protocol)
     : m_protocol(protocol)
@@ -46,7 +47,7 @@ Expected<void> Process::setupSnmp(const std::string& address, uint16_t port)
         }));
         // clang-format on
         m_process->setEnvVar("NUT_STATEPATH", m_root);
-        m_process->setEnvVar("MIBDIRS", Config::instance().mibDatabase);
+        m_process->setEnvVar("MIBDIRS", Config::instance().mibDatabase.value());
         return {};
     } else {
         return unexpected(path.error());
@@ -147,8 +148,6 @@ Expected<void> Process::setCredentialId(const std::string& credential)
     }
 
     if (m_protocol == "nut_snmp") {
-        fty::SocketSyncClient secwSyncClient("/run/fty-security-wallet/secw.socket");
-        auto                  client = secw::ConsumerAccessor(secwSyncClient);
 
         auto levelStr = [](secw::Snmpv3SecurityLevel lvl) -> Expected<std::string> {
             switch (lvl) {
@@ -199,7 +198,7 @@ Expected<void> Process::setCredentialId(const std::string& credential)
         };
 
         try {
-            auto secCred = client.getDocumentWithPrivateData("default", credential);
+            auto secCred = getCredential(credential);
 
             if (auto credV3 = secw::Snmpv3::tryToCast(secCred)) {
                 log_debug("Init from wallet for SNMP v3");
@@ -245,11 +244,9 @@ Expected<void> Process::setCredentialId(const std::string& credential)
             return unexpected(err.what());
         }
     } else if (m_protocol == "nut_powercom") {
-        fty::SocketSyncClient secwSyncClient("/run/fty-security-wallet/secw.socket");
-        auto                  client = secw::ConsumerAccessor(secwSyncClient);
 
         try {
-            auto secCred = client.getDocumentWithPrivateData("default", credential);
+            auto secCred = getCredential(credential);
             if (auto cred = secw::UserAndPassword::tryToCast(secCred)) {
                 m_process->addArgument("-x");
                 m_process->addArgument(fmt::format("username={}", cred->getUsername()));
@@ -337,7 +334,11 @@ Expected<std::string> Process::run() const
     }
 
     if (auto pid = m_process->run()) {
-        if (auto stat = m_process->wait(); *stat == 0) {
+        auto stat = m_process->wait(WAIT_TIME_OUT_MS);
+        if (!stat) {
+            return unexpected(stat.error());
+        }
+        else if (*stat == 0) {
             return m_process->readAllStandardOutput();
         } else {
             std::string stdError = m_process->readAllStandardError();
@@ -356,9 +357,9 @@ Expected<std::string> Process::run() const
             return unexpected(stdError);
         }
     } else {
-        log_error("Run error: %s", pid.error().c_str());
+        logError("Run error: {}", pid.error());
         return unexpected(pid.error());
     }
 }
 
-} // namespace fty::impl::nut
+} // namespace fty::disco::impl::nut

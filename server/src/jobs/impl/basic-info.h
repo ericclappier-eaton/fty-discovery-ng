@@ -17,6 +17,6 @@
 #pragma once
 #include <pack/pack.h>
 
-namespace fty::protocol {
+namespace fty::disco::protocol {
 
 }

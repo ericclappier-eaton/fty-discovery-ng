@@ -31,13 +31,14 @@ int main(int argc, char** argv)
         return EXIT_SUCCESS;
     }
 
-    fty::Discovery dis(config);
+    fty::disco::Discovery dis(config);
     if (!dis.loadConfig()) {
         return EXIT_FAILURE;
     }
 
-    fty::impl::Snmp::instance().init(fty::Config::instance().mibDatabase);
-    ManageFtyLog::setInstanceFtylog(fty::Config::instance().actorName, fty::Config::instance().logConfig);
+    fty::disco::impl::Snmp::instance().init(fty::disco::Config::instance().mibDatabase.value());
+    ManageFtyLog::setInstanceFtylog(fty::disco::Config::instance().actorName.value(),
+                                    fty::disco::Config::instance().logConfig.value());
 
     if (daemon) {
         log_debug("Start discovery agent as daemon");

@@ -1,0 +1,4 @@
+# create runtime directory structure and change configuration file user rights for fty-discovery-ng
+d /etc/fty-discovery-ng 0755 root root
+X /etc/fty-discovery-ng
+f /etc/fty-discovery-ng/config-discovery.conf 0660 www-data discovery-monitoring-daemon

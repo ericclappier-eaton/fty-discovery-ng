@@ -14,6 +14,16 @@ etn_target(static ${PROJECT_NAME}-static
         src/jobs/mibs.h
         src/jobs/assets.cpp
         src/jobs/assets.h
+        src/jobs/auto-discovery.cpp
+        src/jobs/auto-discovery.h
+        src/jobs/create-asset.cpp
+        src/jobs/create-asset.h
+        src/jobs/scan-start.cpp
+        src/jobs/scan-start.h
+        src/jobs/scan-stop.cpp
+        src/jobs/scan-stop.h
+        src/jobs/scan-status.cpp
+        src/jobs/scan-status.h
 
         src/jobs/impl/snmp.cpp
         src/jobs/impl/snmp.h
@@ -26,11 +36,16 @@ etn_target(static ${PROJECT_NAME}-static
         src/jobs/impl/mibs.h
         src/jobs/impl/uuid.cpp
         src/jobs/impl/uuid.h
-
         src/jobs/impl/nut/mapper.cpp
         src/jobs/impl/nut/mapper.h
         src/jobs/impl/nut/process.cpp
         src/jobs/impl/nut/process.h
+        src/jobs/impl/address.cpp
+        src/jobs/impl/address.h
+        src/jobs/impl/credentials.cpp
+        src/jobs/impl/credentials.h
+    INCLUDE_DIRS
+        src
     USES
         fty-utils
         fty_common_logging
@@ -40,6 +55,7 @@ etn_target(static ${PROJECT_NAME}-static
         netsnmp
         neon
         stdc++fs
+        cidr
         fty_security_wallet
         czmq
         fty_common
@@ -47,6 +63,11 @@ etn_target(static ${PROJECT_NAME}-static
         crypto
         uuid
         yaml-cpp
+        fty-asset-libng
+
+        # TBD To Remove ???
+        tntdb
+        cxxtools
     PRIVATE
 )
 
@@ -93,3 +114,12 @@ etn_configure_file(
 )
 
 ########################################################################################################################
+
+etn_configure_file(
+    conf/config-discovery.conf.in
+
+    TARGET      ${PROJECT_NAME}
+    DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/${PROJECT_NAME}
+)
+
+add_subdirectory(test)

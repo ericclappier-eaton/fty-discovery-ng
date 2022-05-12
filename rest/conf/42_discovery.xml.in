@@ -13,3 +13,35 @@
     <url>^/api/v1/admin/discovery/assets$</url>
     <method>POST</method>
 </mapping>
+
+
+<mapping>
+    <target>discovery/config/create@lib${NAME}</target>
+    <url>^/api/v1/admin/discovery/auto-discovery-config$</url>
+    <method>PUT</method>
+</mapping>
+
+<mapping>
+    <target>discovery/config/read@lib${NAME}</target>
+    <url>^/api/v1/admin/discovery/auto-discovery-config$</url>
+    <method>GET</method>
+</mapping>
+
+<mapping>
+  <target>discovery/scan/start@lib${NAME}</target>
+  <url>^/api/v1/admin/discovery/auto-discovery-scan$</url>
+  <method>POST</method>
+</mapping>
+
+<mapping>
+  <target>discovery/scan/status@lib${NAME}</target>
+  <url>^/api/v1/admin/discovery/auto-discovery-scan$</url>
+  <method>GET</method>
+</mapping>
+
+<mapping>
+    <target>discovery/scan/stop@lib${NAME}</target>
+    <url>^/api/v1/admin/discovery/auto-discovery-scan$</url>
+    <method>DELETE</method>
+</mapping>
+

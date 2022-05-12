@@ -16,11 +16,11 @@
 
 #include "neon.h"
 #include <fty/string-utils.h>
+#include <iostream>
 #include <neon/ne_request.h>
 #include <neon/ne_session.h>
 #include <neon/ne_xml.h>
 #include <pack/visitor.h>
-#include <iostream>
 
 static int verify_fn(void* /*userdata*/, int /*failures*/, const ne_ssl_certificate* /*cert*/)
 {
@@ -52,7 +52,7 @@ fty::Expected<std::string> Neon::get(const std::string& path) const
     std::string body;
 
     do {
-        int stat = ne_begin_request(request.get());
+        int  stat   = ne_begin_request(request.get());
         auto status = ne_get_status(request.get());
         if (stat != NE_OK) {
             if (!status->code) {
@@ -268,7 +268,7 @@ void deserialize(const std::string& cnt, pack::Attribute& node)
     NeonNode neon;
     Parser   p(neon);
     p.parse(cnt);
-    //neon.dump(std::cout);
+    // neon.dump(std::cout);
     if (!neon.children.empty()) {
         NeonDeserializer::visit(node, neon.children[0]);
     }

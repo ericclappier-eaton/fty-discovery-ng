@@ -6,7 +6,7 @@
 #include <fty/thread-pool.h>
 #include <fty_log.h>
 
-namespace fty::job {
+namespace fty::disco::job {
 
 // =====================================================================================================================
 
@@ -88,15 +88,14 @@ public:
     {
     }
 
-    void operator()() override
+    Task() = default;
+
+    inline void operator()() override
     {
         Response<ResponseT> response;
         try {
-            if (m_in.userData.empty()) {
-                throw Error("Wrong input data: payload is empty");
-            }
 
-            InputT cmd;
+            /* InputT cmd;
             if (auto parsedCmd = m_in.userData.decode<InputT>()) {
                 cmd = *parsedCmd;
             } else {
@@ -107,24 +106,65 @@ public:
                 it->run(cmd, response.out);
             } else {
                 throw Error("Not a correct task");
+            } */
+            if (auto it = dynamic_cast<T*>(this)) {
+                if constexpr (!std::is_same<InputT, void>::value) {
+                    if (m_in.userData.empty()) {
+                        throw Error("Wrong input data: payload is empty");
+                    }
+                    InputT cmd;
+                    if (auto parsedCmd = m_in.userData.decode<InputT>()) {
+                        cmd = *parsedCmd;
+                    } else {
+                        throw Error("Wrong input data: format of payload is incorrect");
+                    }
+                    if constexpr (std::is_same<ResponseT, void>::value) {
+                        it->run(cmd);
+                    } else {
+                        it->run(cmd, response.out);
+                    }
+                } else if constexpr (!std::is_same<ResponseT, void>::value) {
+                    it->run(response.out);
+                }
+            } else {
+                throw Error("Not a correct task");
             }
 
             response.status = disco::Message::Status::Ok;
-            if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
-                log_error(res.error().c_str());
+            if (auto res = m_bus->reply(Channel, m_in, response); !res) {
+                logError(res.error());
             }
         } catch (const Error& err) {
-            log_error("Error: %s", err.what());
+            logError("Error: {}", err.what());
             response.setError(err.what());
-            if (auto res = m_bus->reply(fty::Channel, m_in, response); !res) {
-                log_error(res.error().c_str());
+            if (auto res = m_bus->reply(Channel, m_in, response); !res) {
+                logError(res.error());
             }
         }
     }
 
 protected:
     disco::Message     m_in;
-    disco::MessageBus* m_bus;
+    disco::MessageBus* m_bus = nullptr;
 };
 
-} // namespace fty::job
+class AutoDiscovery;
+
+template <typename T, typename InputT, typename ResponseT>
+class AutoTask : public Task<T, InputT, ResponseT>
+{
+public:
+    AutoTask(const disco::Message& in, disco::MessageBus& bus, AutoDiscovery& autoDiscovery)
+          : m_autoDiscovery(&autoDiscovery)
+    {
+        this->m_in = in;
+        this->m_bus = &bus;
+    }
+
+    AutoTask() = default;
+
+protected:
+    AutoDiscovery* m_autoDiscovery = nullptr;
+};
+
+} // namespace fty::disco::job

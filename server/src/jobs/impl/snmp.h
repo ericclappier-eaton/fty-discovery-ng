@@ -19,7 +19,7 @@
 #include <fty/expected.h>
 #include <functional>
 
-namespace fty::impl {
+namespace fty::disco::impl {
 
 namespace snmp {
     class Session;
@@ -66,4 +66,4 @@ namespace snmp {
 } // namespace snmp
 
 
-} // namespace fty::impl
+} // namespace fty::disco::impl

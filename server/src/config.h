@@ -22,22 +22,24 @@
 #pragma once
 #include <pack/pack.h>
 
-namespace fty {
+namespace fty::disco {
 
 class Config : public pack::Node
 {
 public:
-    pack::String actorName   = FIELD("actor-name", "conf/discovery-ng");
-    pack::String logConfig   = FIELD("log-config", "conf/logger.conf");
+    pack::String actorName   = FIELD("actor-name", "discovery-ng");
+    pack::String logConfig   = FIELD("log-config", "logger.conf");
     pack::String mibDatabase = FIELD("mib-database", "mibs");
     pack::Bool   tryAll      = FIELD("try-all", false);
+    pack::UInt32 pollScanMax = FIELD("poll-scan-max", 50);
+    pack::String endpoint    = FIELD("endpoint", "ipc://@/malamute");
 
 public:
     using pack::Node::Node;
-    META(Config, actorName, logConfig, mibDatabase, tryAll);
+    META(Config, actorName, logConfig, mibDatabase, tryAll, pollScanMax, endpoint);
 
 public:
     static Config& instance();
 };
 
-} // namespace fty
+} // namespace fty::disco
