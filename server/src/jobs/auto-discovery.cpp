@@ -107,7 +107,7 @@ Expected<void> AutoDiscovery::start(const disco::commands::scan::start::In& in)
 
 Expected<void> AutoDiscovery::stop()
 {
-    logTrace("Stop of scan thread");
+    logTrace("Stop of scan thread requested");
     std::unique_lock<std::mutex> lock(m_mutex);
     if (m_statusDiscovery.status == StatusDiscovery::Status::InProgress) {
         m_statusDiscovery.status = StatusDiscovery::Status::StopInProgress;
@@ -115,10 +115,12 @@ Expected<void> AutoDiscovery::stop()
         lock.unlock();
         // Stop pool scan is async (this call make just the request
         stopPoolScan();
+        logTrace("Stop in progress");
 
     }
     else {
         lock.unlock();
+        logTrace("Stop failed: No scan in progress");
         return fty::unexpected("No scan in progress");
     }
     return {};
