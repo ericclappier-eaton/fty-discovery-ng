@@ -344,7 +344,14 @@ void AutoDiscovery::scan(AutoDiscovery* autoDiscovery, const std::string& ipAddr
                                     req.linked.append(autoDiscovery->m_defaultValuesLinks[0]);
                                 }
                             }
+
+                            //Check for parents
                             req.parent   = std::string(autoDiscovery->m_params.aux.parent);
+
+                            if(req.parent == "0") {
+                                req.parent = "";
+                            }
+
                             // Initialise ext attributes
                             if (auto res = updateExt(ext, req.ext); !res) {
                                 logError("Could not update ext during creation of asset ({}): {}", ipAddress, res.error());
