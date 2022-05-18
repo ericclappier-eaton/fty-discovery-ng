@@ -417,9 +417,18 @@ void Assets::parse(const std::string& cnt, commands::assets::Out& out)
 
 void Assets::addAssetVal(commands::assets::Asset& asset, const std::string& key, const std::string& val, bool readOnly)
 {
-    auto& ext = asset.ext.append();
-    ext.append(key, val);
-    ext.append("read_only", (readOnly ? "true" : "false"));
+    // try first to update value if key exist
+    for (auto& map : asset.ext) {
+        if (map.contains(key)) {
+           map[key] = val;
+           map["read_only"] = readOnly ? "true" : "false";
+           return;
+        }
+    }
+    // else value not exist, add new value
+    auto& map = asset.ext.append();
+    map.append(key, val);
+    map.append("read_only", (readOnly ? "true" : "false"));
 }
 
 fty::Expected<std::string> Assets::getAssetVal(const commands::assets::Asset& asset, const std::string& key) const
