@@ -550,11 +550,11 @@ Expected<void> AutoDiscovery::updateHostName(const std::string& address, asset::
             logDebug("Retrieved DNS information: FQDN = '{}' and Hostname ='{}'", fqdn, hostname);
 
             auto& itExtDns    = ext.append("dns.1");
-            itExtDns.value    = std::string(dnsName);
+            itExtDns.value    = fqdn;
             itExtDns.readOnly = false;
 
             auto& itExtHostname    = ext.append("hostname");
-            itExtHostname.value    = std::string(dnsName);
+            itExtHostname.value    = hostname;
             itExtHostname.readOnly = false;
 
             return {};
