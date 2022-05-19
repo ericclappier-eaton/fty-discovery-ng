@@ -23,3 +23,4 @@ defaultValuesLink:
   []
 defaultValuesExt:
   []
+recoverFqdn: true

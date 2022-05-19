@@ -112,8 +112,11 @@ struct ConfigDiscovery : public pack::Node
 
     pack::ObjectList<DefaultValuesExt> ext = FIELD("defaultValuesExt");
 
+    pack::Bool recoverFqdn = FIELD("recoverFqdn", true); 
+
+
     using pack::Node::Node;
-    META(ConfigDiscovery, discovery, disabled, aux, links, ext);
+    META(ConfigDiscovery, discovery, disabled, aux, links, ext, recoverFqdn);
 
     fty::Expected<void> save(const std::string& path = ConfigFile);
     fty::Expected<void> load(const std::string& path = ConfigFile);
