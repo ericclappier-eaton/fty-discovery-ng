@@ -360,13 +360,14 @@ void AutoDiscovery::scan(AutoDiscovery* autoDiscovery, const std::string& ipAddr
                             // Update host name
                             if (auto res = updateHostName(ipAddress, req.ext); !res) {
                                 logError("Could not update host name during creation of asset ({}): {}", ipAddress, res.error());
-
-                                //Replace IP by FQDN
-                                if(autoDiscovery->m_params.recoverFqdn) {
-                                    req.ext["discoveredIp"].value = ipAddress;
-                                    req.ext["ip.1"].value = req.ext["dns.1"].value;
-                                }
                             }
+                            
+                            //Replace IP by FQDN
+                            if(autoDiscovery->m_params.recoverFqdn) {
+                                req.ext["discoveredIp"].value = ipAddress;
+                                req.ext["ip.1"].value = req.ext["dns.1"].value;
+                            }
+
                             // Create asset
                             if (auto res = asset::create::run(autoDiscovery->m_bus, Config::instance().actorName.value(), req); !res) {
                                 logError("Could not create asset ({}): {}", ipAddress, res.error());
