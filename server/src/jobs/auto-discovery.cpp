@@ -277,6 +277,7 @@ void AutoDiscovery::scan(AutoDiscovery* autoDiscovery, const std::string& ipAddr
         // Optional parameter
         inProt.protocols = autoDiscovery->m_params.discovery.protocols;
 
+
         Protocols protocols;
         auto listProtocols = protocols.getProtocols(inProt);
         if (!listProtocols) {
@@ -359,6 +360,12 @@ void AutoDiscovery::scan(AutoDiscovery* autoDiscovery, const std::string& ipAddr
                             // Update host name
                             if (auto res = updateHostName(ipAddress, req.ext); !res) {
                                 logError("Could not update host name during creation of asset ({}): {}", ipAddress, res.error());
+
+                                //Replace IP by FQDN
+                                if(autoDiscovery->m_params.recoverFqdn) {
+                                    req.ext["discoveredIp"].value = ipAddress;
+                                    req.ext["ip.1"].value = req.ext["dns.1"].value;
+                                }
                             }
                             // Create asset
                             if (auto res = asset::create::run(autoDiscovery->m_bus, Config::instance().actorName.value(), req); !res) {
@@ -513,38 +520,47 @@ Expected<void> AutoDiscovery::updateExt(const commands::assets::Ext& extIn, asse
 
 Expected<void> AutoDiscovery::updateHostName(const std::string& address, asset::create::Ext& ext)
 {
-    if (!address.empty()) {
-        // Set host name
-        struct sockaddr_in saIn;
-        struct sockaddr*   sa  = reinterpret_cast<sockaddr*>(&saIn);
-        socklen_t          len = sizeof(sockaddr_in);
-        char               dnsName[NI_MAXHOST];
-        saIn.sin_family = AF_INET;
-        memset(dnsName, 0, sizeof(dnsName));
-        if (inet_aton(address.c_str(), &saIn.sin_addr) == 1) {
-            if (!getnameinfo(sa, len, dnsName, sizeof(dnsName), NULL, 0, NI_NAMEREQD)) {
-                auto& itExtDns    = ext.append("dns.1");
-                itExtDns.value    = std::string(dnsName);
-                itExtDns.readOnly = false;
-                logDebug("Retrieved DNS information: FQDN = '{}'", dnsName);
-                char* p = strchr(dnsName, '.');
-                if (p) {
-                    *p = 0;
-                }
-                auto& itExtHostname    = ext.append("hostname");
-                itExtHostname.value    = std::string(dnsName);
-                itExtHostname.readOnly = false;
-                logDebug("Hostname = '{}'", dnsName);
-            } else {
-                return fty::unexpected("No host information retrieved from DNS for {}", address);
-            }
-        } else {
-            return fty::unexpected("Error during read DNS for {}", address);
-        }
-    } else {
+    if (address.empty()) {
         return fty::unexpected("Ip address empty");
     }
-    return {};
+
+    // Set host name
+    struct sockaddr_in saIn;
+    struct sockaddr*   sa  = reinterpret_cast<sockaddr*>(&saIn);
+    socklen_t          len = sizeof(sockaddr_in);
+    char               dnsName[NI_MAXHOST];
+    saIn.sin_family = AF_INET;
+    memset(dnsName, 0, sizeof(dnsName));
+
+    if (inet_aton(address.c_str(), &saIn.sin_addr) == 0) {
+        return fty::unexpected("{} is invalid address", address);
+    }
+
+    //Make 3 try because it can fail
+    for (int requestTry = 0; requestTry < 3; requestTry++) {
+        if (!getnameinfo(sa, len, dnsName, sizeof(dnsName), NULL, 0, NI_NAMEREQD)) {
+            std::string fqdn = std::string(dnsName);
+            std::string hostname = fqdn;
+            std::size_t found = fqdn.find_first_of(".");
+            if(found!=std::string::npos) {
+                hostname = fqdn.substr(0,found);
+            }
+
+            logDebug("Retrieved DNS information: FQDN = '{}' and Hostname ='{}'", fqdn, hostname);
+
+            auto& itExtDns    = ext.append("dns.1");
+            itExtDns.value    = std::string(dnsName);
+            itExtDns.readOnly = false;
+
+            auto& itExtHostname    = ext.append("hostname");
+            itExtHostname.value    = std::string(dnsName);
+            itExtHostname.readOnly = false;
+
+            return {};
+        }
+    }
+
+    return fty::unexpected("No host information retrieved from DNS for {}", address);
 }
 
 } // namespace fty::disco::job
