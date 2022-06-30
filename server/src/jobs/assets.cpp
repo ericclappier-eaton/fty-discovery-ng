@@ -516,7 +516,11 @@ void Assets::enrichAsset(commands::assets::Return& asset)
         if (!asset.subAddress.empty()) {
             daisyChain = asset.subAddress;
         }
-        addAssetVal(asset.asset, "daisy_chain", daisyChain);
+
+        // IPMVAL-4176: don't publish a daisy_chain ext. attribute if 0
+        if (daisyChain != "0") {
+            addAssetVal(asset.asset, "daisy_chain", daisyChain);
+        }
 
         // Redefine name
         if (daisyChain != "0") {
