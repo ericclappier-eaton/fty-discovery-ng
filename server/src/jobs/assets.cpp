@@ -293,7 +293,7 @@ void Assets::addSensors(const DeviceInfo& deviceInfo, int& indexSensor,
         // Update asset name
         logTrace("Set asset name={} for sensor {}", externalName, s);
         if (!getAssetVal(sensor, "name")) {
-            addAssetVal(sensor, "name", externalName);
+            addAssetVal(sensor, "name", externalName, false);
         } else {
             if (auto index = sensor.ext.findIndex([](auto& map) {
                     return map.contains("name");
@@ -536,7 +536,7 @@ void Assets::enrichAsset(commands::assets::Return& asset)
     }
     logTrace("Set asset name={}", name);
     if (!getAssetVal(asset.asset, "name")) {
-        addAssetVal(asset.asset, "name", name);
+        addAssetVal(asset.asset, "name", name, false);
     } else {
         if (auto index = asset.asset.ext.findIndex([](const auto& map) {
                 return map.contains("name");
