@@ -536,7 +536,7 @@ void Assets::enrichAsset(commands::assets::Return& asset)
     }
     logTrace("Set asset name={}", name);
     if (!getAssetVal(asset.asset, "name")) {
-        addAssetVal(asset.asset, "name", name);
+        addAssetVal(asset.asset, "name", name, false);
     } else {
         if (auto index = asset.asset.ext.findIndex([](const auto& map) {
                 return map.contains("name");
