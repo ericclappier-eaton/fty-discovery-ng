@@ -21,6 +21,7 @@
 
 #include "message.h"
 #include <fty_common_messagebus_message.h>
+#include <fty/messagebus/Message.h>
 
 namespace fty::disco {
 
@@ -75,6 +76,56 @@ messagebus::Message Message::toMessageBus() const
     msg.metaData()[messagebus::Message::TIMEOUT]        = meta.timeout;
     msg.metaData()[messagebus::Message::CORRELATION_ID] = meta.correlationId;
     msg.metaData()[messagebus::Message::STATUS]         = meta.status.asString();
+
+    return msg;
+}
+
+Message::Message(const fty::messagebus2::Message& msg)
+    : pack::Node::Node()
+{
+    meta.to            = value(msg.metaData(), fty::messagebus2::TO);
+    meta.from          = value(msg.metaData(), fty::messagebus2::FROM);
+    meta.replyTo       = value(msg.metaData(), fty::messagebus2::REPLY_TO);
+    meta.subject       = value(msg.metaData(), fty::messagebus2::SUBJECT);
+    meta.timeout       = value(msg.metaData(), fty::messagebus2::TIME_OUT);
+    meta.correlationId = value(msg.metaData(), fty::messagebus2::CORRELATION_ID);
+
+    meta.status.fromString(value(msg.metaData(), fty::messagebus2::STATUS, "ok"));
+
+    if (!msg.userData().empty()) {
+        userData.setString(msg.userData());
+    }
+}
+/*
+void Message::fromMessageBus2(const fty::messagebus2::Message& msg)
+{
+    meta.to            = value(msg.metaData(), fty::messagebus2::TO);
+    meta.from          = value(msg.metaData(), fty::messagebus2::FROM);
+    meta.replyTo       = value(msg.metaData(), fty::messagebus2::REPLY_TO);
+    meta.subject       = value(msg.metaData(), fty::messagebus2::SUBJECT);
+    meta.timeout       = value(msg.metaData(), fty::messagebus2::TIME_OUT);
+    meta.correlationId = value(msg.metaData(), fty::messagebus2::CORRELATION_ID);
+
+    meta.status.fromString(value(msg.metaData(), fty::messagebus2::STATUS, "ok"));
+
+    if (!msg.userData().empty()) {
+        userData.setString(msg.userData());
+    }
+}*/
+
+fty::messagebus2::Message Message::toMessageBus2() const
+{
+    fty::messagebus2::Message msg;
+
+    msg.userData(userData.asString());
+
+    msg.metaData()[fty::messagebus2::TO]             = meta.to;
+    msg.metaData()[fty::messagebus2::FROM]           = meta.from;
+    msg.metaData()[fty::messagebus2::REPLY_TO]       = meta.replyTo;
+    msg.metaData()[fty::messagebus2::SUBJECT]        = meta.subject;
+    msg.metaData()[fty::messagebus2::TIME_OUT]       = meta.timeout;
+    msg.metaData()[fty::messagebus2::CORRELATION_ID] = meta.correlationId;
+    msg.metaData()[fty::messagebus2::STATUS]         = meta.status.asString();
 
     return msg;
 }

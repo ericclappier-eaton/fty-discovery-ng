@@ -22,9 +22,15 @@
 #pragma once
 #include <pack/pack.h>
 
+//#include <fty/messagebus/Message.h>
+
 // =====================================================================================================================
 
 namespace messagebus {
+class Message;
+}
+
+namespace fty::messagebus2 {
 class Message;
 }
 
@@ -67,6 +73,11 @@ public:
 public:
     explicit Message(const messagebus::Message& msg);
     messagebus::Message toMessageBus() const;
+    
+    explicit Message(const fty::messagebus2::Message& msg);
+    //void fromMessageBus2(const fty::messagebus2::Message& msg);
+    fty::messagebus2::Message toMessageBus2() const;
+    
     void                setData(const std::string& data);
 };
 
