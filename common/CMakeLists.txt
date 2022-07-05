@@ -8,6 +8,8 @@ etn_target(static ${PROJECT_NAME}-common
         message-bus.h
         message.h
         message.cpp
+        message-bus-amqp-client.cpp
+        message-bus-amqp-client.h
         commands.h
         commands.cpp
         discovery-task.h
@@ -20,5 +22,6 @@ etn_target(static ${PROJECT_NAME}-common
         fty-pack
         fty_common_logging
         fty_common_messagebus
+        fty-messagebus2-amqp
     PRIVATE
 )
