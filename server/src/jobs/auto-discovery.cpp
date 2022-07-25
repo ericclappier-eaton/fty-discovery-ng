@@ -263,10 +263,127 @@ void AutoDiscovery::updateStatusDiscoveryProgress()
 void AutoDiscovery::scan(AutoDiscovery* autoDiscovery, const std::string& ipAddress)
 {
     try {
+        Assets assets;
+
+        /////////////////////////////////////////////////////////////////////////////////////////
+        // getAssetStatus
+        auto getAssetStatus = [autoDiscovery]() -> uint {
+            return autoDiscovery->m_params.aux.status.value() == "active" ?
+                static_cast<uint>(AssetStatus::Active) : static_cast<uint>(AssetStatus::Nonactive);
+        };
+
+        /////////////////////////////////////////////////////////////////////////////////////////
+        // doScan
+        auto doScan = [&](const commands::protocols::Return& protocol, const commands::assets::In& inAsset) -> bool {
+
+            commands::assets::Out outAsset;
+
+            if (auto getAssetsRes = assets.getAssets(inAsset, outAsset); !getAssetsRes) {
+                logError(getAssetsRes.error().c_str());
+                return false;
+            }
+
+            logInfo("Found asset with protocol/port/credential ({}/{}/{}) for {}",
+                protocol.protocol, protocol.port, inAsset.settings.credentialId, ipAddress);
+
+            bool isAssetCreated = false;
+
+            // Create asset list
+            std::string assetNameCreated;
+
+            // For each asset to create
+            for (auto& asset : outAsset) {
+                asset::create::Request req;
+                req.type     = asset.asset.type;
+                req.sub_type = asset.asset.subtype;
+                auto& ext    = asset.asset.ext;
+                req.status   = getAssetStatus();
+                req.priority = static_cast<uint>(autoDiscovery->m_params.aux.priority.asInt());
+                req.linked   = autoDiscovery->m_defaultValuesLinks;
+                // Workaround: complete the missing link for sts on device centric view
+                if ((asset.asset.subtype == "sts") && (autoDiscovery->m_defaultValuesLinks.size() == 1)) {
+                    // TODO: Considerer that we are on device centric view when the status is activated
+                    if (autoDiscovery->m_params.aux.status.value() == "active") {
+                        // Duplicate the default link for each input
+                        req.linked.append(autoDiscovery->m_defaultValuesLinks[0]);
+                    }
+                }
+
+                // Check for parents
+                req.parent = std::string(autoDiscovery->m_params.aux.parent);
+                if(req.parent == "0") {
+                    req.parent = "";
+                }
+
+                // Initialise ext attributes
+                if (auto res = updateExt(ext, req.ext); !res) {
+                    logError("Could not update ext during creation of asset ({}): {}", ipAddress, res.error());
+                }
+                // Update host name
+                if (auto res = updateHostName(ipAddress, req.ext); !res) {
+                    logWarn("Could not update host name during creation of asset ({}): {}", ipAddress, res.error());
+                } else {
+                    // Replace IP by FQDN
+                    if(autoDiscovery->m_params.recoverFqdn) {
+                        req.ext["discoveredIp"].value = ipAddress;
+                        req.ext["ip.1"].value = req.ext["dns.1"].value;
+                    }
+                }
+
+                // Create asset
+                if (auto res = asset::create::run(autoDiscovery->m_bus, Config::instance().actorName.value(), req); !res) {
+                    logError("Could not create asset ({}): {}", ipAddress, res.error());
+                    // An error occurred during creation, try to discover others
+                    continue;
+
+                } else {
+                    assetNameCreated = res->name;
+                    isAssetCreated = true;
+                    logInfo("Create asset for {}: name={}", ipAddress, assetNameCreated);
+                }
+                autoDiscovery->updateStatusDiscoveryCounters(asset.asset.subtype);
+
+                // Now create sensors attached to the asset
+                for (auto& sensor : asset.sensors) {
+                    asset::create::Request reqSensor;
+                    reqSensor.type     = sensor.type;
+                    reqSensor.sub_type = sensor.subtype;
+                    reqSensor.status   = getAssetStatus();
+                    reqSensor.priority = static_cast<uint>(autoDiscovery->m_params.aux.priority.asInt());
+                    reqSensor.linked   = {}; // defaultValuesLinks; // TBD ???
+                    reqSensor.parent   = assetNameCreated;
+
+                    // Add logical asset in ext
+                    auto& extLogicalAsset = sensor.ext.append();
+                    extLogicalAsset.append("logical_asset", (autoDiscovery->m_params.aux.parent == "0") ?
+                        pack::String(std::string("")) : autoDiscovery->m_params.aux.parent);
+                    extLogicalAsset.append("read_only", "false");
+                    // Add parent name in ext
+                    auto& extParentName = sensor.ext.append();
+                    extParentName.append("parent_name.1", assetNameCreated);
+                    extParentName.append("read_only", "false");
+
+                    // Initialise ext attributes
+                    if (auto res = updateExt(sensor.ext, reqSensor.ext); !res) {
+                        logError("Could not update ext during creation of sensor ({}): {}", ipAddress, res.error());
+                    }
+                    if (auto resSensor = asset::create::run(autoDiscovery->m_bus, Config::instance().actorName.value(), reqSensor); !resSensor) {
+                        logError("Could not create sensor ({}): {}", ipAddress, resSensor.error());
+                        // An error occurred during creation, try to discover other sensors
+                        continue;
+                    }
+                    autoDiscovery->updateStatusDiscoveryCounters(sensor.subtype);
+                }
+            }
+            // Found at least one asset with protocol and credential, we can leave
+            return isAssetCreated;
+        };
+        /////////////////////////////////////////////////////////////////////////////////////////
+
         logTrace("Start of scan thread");
         if (!autoDiscovery) {
             // Update progress
-            logTrace("exit #0");
+            logError("Discovery instance empty");
             autoDiscovery->updateStatusDiscoveryProgress();
             return;
         }
@@ -276,7 +393,6 @@ void AutoDiscovery::scan(AutoDiscovery* autoDiscovery, const std::string& ipAddr
         inProt.address = ipAddress;
         // Optional parameter
         inProt.protocols = autoDiscovery->m_params.discovery.protocols;
-
 
         Protocols protocols;
         auto listProtocols = protocols.getProtocols(inProt);
@@ -291,131 +407,48 @@ void AutoDiscovery::scan(AutoDiscovery* autoDiscovery, const std::string& ipAddr
         }
 
         bool found = false;
-        Assets assets;
 
-        // For each protocols read, get assets list available
-        // Note: stop when found first assets with the protocol in progress
+        // For each protocol read, get assets list available
+        // Note: stop discovery when found first asset(s) with the current protocol
         for (const auto& elt : *listProtocols) {
-            // if protocol reachable
+            // if the current protocol is reachable
             if (elt.reachable) {
 
-                // Get list of credentials
-                auto& documents = autoDiscovery->m_params.discovery.documents;
+                commands::assets::In inAsset;
+                inAsset.address = ipAddress;
+                inAsset.protocol = elt.protocol;
+                inAsset.port = elt.port;
+                // Optional parameter (for test) TBD
+                /*if (autoDiscovery->m_params.mib.hasValue()) {
+                    logDebug("Set mib {}", autoDiscovery->m_params.mib);
+                    inAsset.settings.mib = autoDiscovery->m_params.mib;
+                }*/
 
-                // For each credential, try to discover assets according the protocol in progress
+                // If XML protocol for NMC card, try to discovery the asset directly (no need credentials)
+                if (elt.protocol == "nut_xml_pdc") {
+
+                    logInfo("Try with protocol/port ({}/{}) for {}", elt.protocol, elt.port, ipAddress);
+                    inAsset.settings.credentialId = "";
+                    found = doScan(elt, inAsset);
+                }
+                // Normal treatment: For each credential, try to discover assets according the protocol in progress
                 // Note: stop when found first assets with the credential in progress
-                for (const auto doc : documents) {
-                    logInfo("Try with protocol/port/credential ({}/{}/{}) for {}", elt.protocol, elt.port, doc, ipAddress);
-                    commands::assets::In inAsset;
-                    inAsset.address = ipAddress;
-                    inAsset.protocol = elt.protocol;
-                    inAsset.port = elt.port;
-                    inAsset.settings.credentialId = doc;
-                    // Optional parameter (for test) TBD
-                    /*if (autoDiscovery->m_params.mib.hasValue()) {
-                        logDebug("Set mib {}", autoDiscovery->m_params.mib);
-                        inAsset.settings.mib = autoDiscovery->m_params.mib;
-                    }*/
-                    commands::assets::Out outAsset;
-                    if (auto getAssetsRes = assets.getAssets(inAsset, outAsset)) {
-                        logInfo("Found asset with protocol/port/credential ({}/{}/{}) for {}", elt.protocol, elt.port, doc, ipAddress);
+                else {
+                    // Get list of credentials
+                    auto& documents = autoDiscovery->m_params.discovery.documents;
 
-                        auto getAssetStatus = [autoDiscovery]() -> uint {
-                            return autoDiscovery->m_params.aux.status.value() == "active" ?
-                                static_cast<uint>(AssetStatus::Active) : static_cast<uint>(AssetStatus::Nonactive);
-                        };
-
-                        // Create asset list
-                        std::string assetNameCreated;
-
-                        // For each asset to create
-                        for (auto& asset : outAsset) {
-                            asset::create::Request req;
-                            req.type     = asset.asset.type;
-                            req.sub_type = asset.asset.subtype;
-                            auto& ext    = asset.asset.ext;
-                            req.status   = getAssetStatus();
-                            req.priority = static_cast<uint>(autoDiscovery->m_params.aux.priority.asInt());
-                            req.linked   = autoDiscovery->m_defaultValuesLinks;
-                            // Workaround: complete the missing link for sts on device centric view
-                            if ((asset.asset.subtype == "sts") && (autoDiscovery->m_defaultValuesLinks.size() == 1)) {
-                                // TODO: Considerer that we are on device centric view when the status is activated
-                                if (autoDiscovery->m_params.aux.status.value() == "active") {
-                                    // Duplicate the default link for each input
-                                    req.linked.append(autoDiscovery->m_defaultValuesLinks[0]);
-                                }
-                            }
-
-                            //Check for parents
-                            req.parent   = std::string(autoDiscovery->m_params.aux.parent);
-
-                            if(req.parent == "0") {
-                                req.parent = "";
-                            }
-
-                            // Initialise ext attributes
-                            if (auto res = updateExt(ext, req.ext); !res) {
-                                logError("Could not update ext during creation of asset ({}): {}", ipAddress, res.error());
-                            }
-                            // Update host name
-                            if (auto res = updateHostName(ipAddress, req.ext); !res) {
-                                logError("Could not update host name during creation of asset ({}): {}", ipAddress, res.error());
-                            } else {
-                                //Replace IP by FQDN
-                                if(autoDiscovery->m_params.recoverFqdn) {
-                                    req.ext["discoveredIp"].value = ipAddress;
-                                    req.ext["ip.1"].value = req.ext["dns.1"].value;
-                                }
-                            }
-
-                            // Create asset
-                            if (auto res = asset::create::run(autoDiscovery->m_bus, Config::instance().actorName.value(), req); !res) {
-                                logError("Could not create asset ({}): {}", ipAddress, res.error());
-                                continue;
-                            } else {
-                                assetNameCreated = res->name;
-                                logInfo("Create asset for {}: name={}", ipAddress, assetNameCreated);
-                            }
-                            autoDiscovery->updateStatusDiscoveryCounters(asset.asset.subtype);
-
-                            // Now create sensors attached to the asset
-                            for (auto& sensor : asset.sensors) {
-                                asset::create::Request reqSensor;
-                                reqSensor.type     = sensor.type;
-                                reqSensor.sub_type = sensor.subtype;
-                                reqSensor.status   = getAssetStatus();
-                                reqSensor.priority = static_cast<uint>(autoDiscovery->m_params.aux.priority.asInt());
-                                reqSensor.linked   = {}; // defaultValuesLinks; // TBD ???
-                                reqSensor.parent   = assetNameCreated;
-
-                                // Add logical asset in ext
-                                auto& extLogicalAsset = sensor.ext.append();
-                                extLogicalAsset.append("logical_asset", (autoDiscovery->m_params.aux.parent == "0") ?
-                                    pack::String(std::string("")) : autoDiscovery->m_params.aux.parent);
-                                extLogicalAsset.append("read_only", "false");
-                                // Add parent name in ext
-                                auto& extParentName = sensor.ext.append();
-                                extParentName.append("parent_name.1", assetNameCreated);
-                                extParentName.append("read_only", "false");
-
-                                // Initialise ext attributes
-                                if (auto res = updateExt(sensor.ext, reqSensor.ext); !res) {
-                                    logError("Could not update ext during creation of sensor ({}): {}", ipAddress, res.error());
-                                }
-                                if (auto resSensor = asset::create::run(autoDiscovery->m_bus, Config::instance().actorName.value(), reqSensor); !resSensor) {
-                                    logError("Could not create sensor ({}): {}", ipAddress, resSensor.error());
-                                    continue;
-                                }
-                                autoDiscovery->updateStatusDiscoveryCounters(sensor.subtype);
-                            }
+                    // For each credential
+                    for (const auto doc : documents) {
+                        logInfo("Try with protocol/port/credential ({}/{}/{}) for {}", elt.protocol, elt.port, doc, ipAddress);
+                        inAsset.settings.credentialId = doc;
+                        found = doScan(elt, inAsset);
+                        if (found) {
+                            // Found assets with current protocol and credential, we can leave
+                            break;
                         }
-                        // Found assets with protocol and credential, we can leave
-                        found = true;
-                        break;
-                    } else {
-                        logError(getAssetsRes.error().c_str());
                     }
                 }
+
                 // If found, leave main protocol loop
                 if (found) {
                     break;
@@ -426,9 +459,9 @@ void AutoDiscovery::scan(AutoDiscovery* autoDiscovery, const std::string& ipAddr
     catch (std::exception& ex) {
         logError(ex.what());
     }
+
     // Update progress
     autoDiscovery->updateStatusDiscoveryProgress();
-
 }
 
 bool AutoDiscovery::scanCheck(AutoDiscovery* autoDiscovery)
