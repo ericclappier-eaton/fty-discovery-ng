@@ -286,7 +286,12 @@ void Assets::addSensors(const DeviceInfo& deviceInfo, int& indexSensor,
             }
 
             if (auto key = impl::nut::Mapper::mapKey(p.first, s); !key.empty()) {
-                addAssetVal(sensor, key, p.second);
+                auto value = p.second;
+                // HOTFIX: Normalize manufacturer for uuid calulation (SET UPPER CASE)
+                if (key == "manufacturer") {
+                    std::transform(value.begin(), value.end(), value.begin(), ::toupper);
+                }
+                addAssetVal(sensor, key, value);
             }
         }
 
@@ -365,7 +370,12 @@ void Assets::parse(const std::string& cnt, commands::assets::Out& out)
                 }
 
                 if (auto key = impl::nut::Mapper::mapKey(p.first, i); !key.empty()) {
-                    addAssetVal(asset.asset, key, p.second);
+                    auto value = p.second;
+                    // HOTFIX: Normalize manufacturer for uuid calulation (SET UPPER CASE)
+                    if (key == "manufacturer") {
+                        std::transform(value.begin(), value.end(), value.begin(), ::toupper);
+                    }
+                    addAssetVal(asset.asset, key, value);
                 }
             }
             enrichAsset(asset);
@@ -396,7 +406,12 @@ void Assets::parse(const std::string& cnt, commands::assets::Out& out)
                 continue;
             }
             if (auto key = impl::nut::Mapper::mapKey(p.first); !key.empty()) {
-                addAssetVal(asset.asset, key, p.second);
+                auto value = p.second;
+                // HOTFIX: Normalize manufacturer for uuid calulation (SET UPPER CASE)
+                if (key == "manufacturer") {
+                    std::transform(value.begin(), value.end(), value.begin(), ::toupper);
+                }
+                addAssetVal(asset.asset, key, value);
             }
         }
         enrichAsset(asset);
