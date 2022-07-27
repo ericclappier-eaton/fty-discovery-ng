@@ -468,12 +468,19 @@ void Assets::enrichAsset(commands::assets::Return& asset)
 
     // uuid attribute
     {
+        auto strToUpper = [](const std::string& input) -> std::string {
+            std::string buffer { input };
+            std::transform(buffer.begin(), buffer.end(), buffer.begin(), ::toupper);
+            //return buffer;
+            return input;
+        };
+
         auto manufacturer = getAssetVal(asset.asset, "manufacturer");
         auto model = getAssetVal(asset.asset, "model");
         auto serial = getAssetVal(asset.asset, "serial_no");
         std::string uuid; //empty
         if (manufacturer && model && serial) {
-            uuid = impl::generateUUID(*manufacturer, *model, *serial);
+            uuid = impl::generateUUID(strToUpper(*manufacturer), strToUpper(*model), strToUpper(*serial));
         }
         addAssetVal(asset.asset, "uuid", uuid, false);
     }
