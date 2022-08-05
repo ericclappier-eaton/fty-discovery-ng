@@ -40,11 +40,7 @@ public:
     fty::Expected<std::string> get(const std::string& path) const;
 
 private:
-    static void closeSession(ne_session*);
-
-private:
-    using NeonSession = std::unique_ptr<ne_session, decltype(&closeSession)>;
-    NeonSession m_session;
+    ne_session* m_session{nullptr};
 };
 
 // =====================================================================================================================
