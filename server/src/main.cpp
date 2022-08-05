@@ -37,8 +37,9 @@ int main(int argc, char** argv)
     }
 
     fty::disco::impl::Snmp::instance().init(fty::disco::Config::instance().mibDatabase.value());
+
     ManageFtyLog::setInstanceFtylog(fty::disco::Config::instance().actorName.value(),
-                                    fty::disco::Config::instance().logConfig.value());
+                                    FTY_COMMON_LOGGING_DEFAULT_CFG);
 
     if (daemon) {
         log_debug("Start discovery agent as daemon");
