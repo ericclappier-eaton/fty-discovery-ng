@@ -20,6 +20,7 @@
 #include "impl/xml-pdc.h"
 #include "impl/snmp.h"
 #include <fty/string-utils.h>
+#include <fty_log.h>
 #include <netdb.h>
 #include <netinet/ip_icmp.h>
 #include <poll.h>
@@ -51,7 +52,8 @@ Protocols::findProtocol(const config_protocol_t& config_protocol, const commands
         res.ports.append(config_protocol.defaultPort);
         return res;
     }
-    // no option avaliable, any protocol filtered
+
+    // no option available, any protocol filtered
     return std::nullopt;
 }
 
@@ -148,6 +150,8 @@ Expected<commands::protocols::Out> Protocols::getProtocols(const commands::proto
 
 void Protocols::run(const commands::protocols::In& in, commands::protocols::Out& out)
 {
+    logDebug("Protocols::run started");
+
     auto protocols = getProtocols(in);
     if (!protocols) {
         throw Error(protocols.error().c_str());
@@ -163,6 +167,8 @@ void Protocols::run(const commands::protocols::In& in, commands::protocols::Out&
 
 Expected<void> Protocols::tryXmlPdc(const std::string& address, uint16_t port) const
 {
+    logDebug("Protocols::tryXmlPdc {}:{}", address, port);
+
     impl::XmlPdc xml("http", address, port);
     if (auto prod = xml.get<impl::ProductInfo>("product.xml")) {
         if (!(prod->name == "Network Management Card" || prod->name == "HPE UPS Network Module")) {
@@ -185,6 +191,8 @@ Expected<void> Protocols::tryXmlPdc(const std::string& address, uint16_t port) c
 
 Expected<void> Protocols::tryPowercom(const std::string& address, uint16_t port) const
 {
+    logDebug("Protocols::tryPowercom {}:{}", address, port);
+
     neon::Neon ne("https", address, port);
     if (auto content = ne.get("etn/v1/comm/services/powerdistributions1")) {
         try {
@@ -252,6 +260,8 @@ struct AutoRemove
 
 Expected<void> Protocols::trySnmp(const std::string& address, uint16_t port) const
 {
+    logDebug("Protocols::trySnmp {}:{}", address, port);
+
     // fast check (no timeout, quite unreliable)
     // connect with a DGRAM socket, multiple tries to write in, check errors
     {

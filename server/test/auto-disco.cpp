@@ -56,73 +56,73 @@ TEST_CASE("Auto disco / status discovery update", "[auto]")
     auto& discoAuto = Test::instance().getDisco().getAutoDiscovery();
     discoAuto.statusDiscoveryReset(4);
     auto status = discoAuto.getStatus();
-    CHECK(status.numOfAddress   == 4);
-    CHECK(status.addressScanned == 0);
+    CHECK(status.numOfAddress   == uint(4));
+    CHECK(status.addressScanned == uint(0));
     status = discoAuto.getStatus();
-    CHECK(status.addressScanned == 0);
-    CHECK(status.discovered     == 0);
-    CHECK(status.ups            == 0);
-    CHECK(status.epdu           == 0);
-    CHECK(status.sts            == 0);
-    CHECK(status.sensors        == 0);
+    CHECK(status.addressScanned == uint(0));
+    CHECK(status.discovered     == uint(0));
+    CHECK(status.ups            == uint(0));
+    CHECK(status.epdu           == uint(0));
+    CHECK(status.sts            == uint(0));
+    CHECK(status.sensors        == uint(0));
     discoAuto.updateStatusDiscoveryCounters("ups");
     discoAuto.updateStatusDiscoveryProgress();
     status = discoAuto.getStatus();
-    CHECK(status.addressScanned == 1);
-    CHECK(status.discovered     == 1);
-    CHECK(status.ups            == 1);
-    CHECK(status.epdu           == 0);
-    CHECK(status.sts            == 0);
-    CHECK(status.sensors        == 0);
+    CHECK(status.addressScanned == uint(1));
+    CHECK(status.discovered     == uint(1));
+    CHECK(status.ups            == uint(1));
+    CHECK(status.epdu           == uint(0));
+    CHECK(status.sts            == uint(0));
+    CHECK(status.sensors        == uint(0));
     discoAuto.updateStatusDiscoveryCounters("epdu");
     discoAuto.updateStatusDiscoveryProgress();
     status = discoAuto.getStatus();
-    CHECK(status.addressScanned == 2);
-    CHECK(status.discovered     == 2);
-    CHECK(status.ups            == 1);
-    CHECK(status.epdu           == 1);
-    CHECK(status.sts            == 0);
-    CHECK(status.sensors        == 0);
+    CHECK(status.addressScanned == uint(2));
+    CHECK(status.discovered     == uint(2));
+    CHECK(status.ups            == uint(1));
+    CHECK(status.epdu           == uint(1));
+    CHECK(status.sts            == uint(0));
+    CHECK(status.sensors        == uint(0));
     discoAuto.updateStatusDiscoveryCounters("sts");
     discoAuto.updateStatusDiscoveryProgress();
     status = discoAuto.getStatus();
-    CHECK(status.addressScanned == 3);
-    CHECK(status.discovered     == 3);
-    CHECK(status.ups            == 1);
-    CHECK(status.epdu           == 1);
-    CHECK(status.sts            == 1);
-    CHECK(status.sensors        == 0);
+    CHECK(status.addressScanned == uint(3));
+    CHECK(status.discovered     == uint(3));
+    CHECK(status.ups            == uint(1));
+    CHECK(status.epdu           == uint(1));
+    CHECK(status.sts            == uint(1));
+    CHECK(status.sensors        == uint(0));
     discoAuto.updateStatusDiscoveryCounters("sensor");
     // caution normally no progress for sensor, just for test
     discoAuto.updateStatusDiscoveryProgress();
     status = discoAuto.getStatus();
-    CHECK(status.addressScanned == 4);
-    CHECK(status.discovered     == 4);
-    CHECK(status.ups            == 1);
-    CHECK(status.epdu           == 1);
-    CHECK(status.sts            == 1);
-    CHECK(status.sensors        == 1);
+    CHECK(status.addressScanned == uint(4));
+    CHECK(status.discovered     == uint(4));
+    CHECK(status.ups            == uint(1));
+    CHECK(status.epdu           == uint(1));
+    CHECK(status.sts            == uint(1));
+    CHECK(status.sensors        == uint(1));
     // test limits
     discoAuto.updateStatusDiscoveryCounters("ups");
     discoAuto.updateStatusDiscoveryProgress();
     status = discoAuto.getStatus();
     // Note: addressScanned cannot be superior to total address
-    CHECK(status.addressScanned == 4);
-    CHECK(status.discovered     == 5);
-    CHECK(status.ups            == 2);
-    CHECK(status.epdu           == 1);
-    CHECK(status.sts            == 1);
-    CHECK(status.sensors        == 1);
+    CHECK(status.addressScanned == uint(4));
+    CHECK(status.discovered     == uint(5));
+    CHECK(status.ups            == uint(2));
+    CHECK(status.epdu           == uint(1));
+    CHECK(status.sts            == uint(1));
+    CHECK(status.sensors        == uint(1));
     discoAuto.updateStatusDiscoveryCounters("bad_type");
     discoAuto.updateStatusDiscoveryProgress();
     status = discoAuto.getStatus();
    // Note: Cannot add bad type of device
-    CHECK(status.addressScanned == 4);
-    CHECK(status.discovered     == 5);
-    CHECK(status.ups            == 2);
-    CHECK(status.epdu           == 1);
-    CHECK(status.sts            == 1);
-    CHECK(status.sensors        == 1);
+    CHECK(status.addressScanned == uint(4));
+    CHECK(status.discovered     == uint(5));
+    CHECK(status.ups            == uint(2));
+    CHECK(status.epdu           == uint(1));
+    CHECK(status.sts            == uint(1));
+    CHECK(status.sensors        == uint(1));
 }
 
 TEST_CASE("Auto disco / Empty request", "[auto]")
@@ -159,13 +159,13 @@ TEST_CASE("Auto disco / Test normal scan auto", "[auto]")
     // Test status before scan
     auto out = getStatus();
     CHECK(out.status         == status::Out::Status::Unknown);
-    CHECK(out.numOfAddress   == 0);
-    CHECK(out.addressScanned == 0);
-    CHECK(out.discovered     == 0);
-    CHECK(out.ups            == 0);
-    CHECK(out.epdu           == 0);
-    CHECK(out.sts            == 0);
-    CHECK(out.sensors        == 0);
+    CHECK(out.numOfAddress   == uint(0));
+    CHECK(out.addressScanned == uint(0));
+    CHECK(out.discovered     == uint(0));
+    CHECK(out.ups            == uint(0));
+    CHECK(out.epdu           == uint(0));
+    CHECK(out.sts            == uint(0));
+    CHECK(out.sensors        == uint(0));
 
     // clang-format off
     fty::Process proc("snmpsimd", {
@@ -184,10 +184,10 @@ TEST_CASE("Auto disco / Test normal scan auto", "[auto]")
     std::this_thread::sleep_for(std::chrono::seconds(1));
 
     // Prepare discovery
-    const int nbAddressToTest = 2000;
+    const uint nbAddressToTest = 2000;
     start::In in;
     in.discovery.type = ConfigDiscovery::Discovery::Type::Ip;
-    for (int i = 0; i < nbAddressToTest; i++) {
+    for (uint i = 0; i < nbAddressToTest; i++) {
         in.discovery.ips.append("127.0.0.1");
     }
     ConfigDiscovery::Protocol nutSnmp;
@@ -207,11 +207,11 @@ TEST_CASE("Auto disco / Test normal scan auto", "[auto]")
     // Check status (in progress)
     out = getStatus();
     CHECK(out.status     == status::Out::Status::InProgress);
-    CHECK(out.discovered == 0);
-    CHECK(out.ups        == 0);
-    CHECK(out.epdu       == 0);
-    CHECK(out.sts        == 0);
-    CHECK(out.sensors    == 0);
+    CHECK(out.discovered == uint(0));
+    CHECK(out.ups        == uint(0));
+    CHECK(out.epdu       == uint(0));
+    CHECK(out.sts        == uint(0));
+    CHECK(out.sensors    == uint(0));
 
     auto start = std::chrono::steady_clock::now();
     while(1) {
@@ -247,11 +247,11 @@ TEST_CASE("Auto disco / Test stop scan auto", "[auto]")
     // Test status before scan
     auto out = getStatus();
     CHECK(out.status     == status::Out::Status::Unknown);
-    CHECK(out.discovered == 0);
-    CHECK(out.ups        == 0);
-    CHECK(out.epdu       == 0);
-    CHECK(out.sts        == 0);
-    CHECK(out.sensors    == 0);
+    CHECK(out.discovered == uint(0));
+    CHECK(out.ups        == uint(0));
+    CHECK(out.epdu       == uint(0));
+    CHECK(out.sts        == uint(0));
+    CHECK(out.sensors    == uint(0));
 
     // clang-format off
     fty::Process proc("snmpsimd", {
@@ -270,10 +270,10 @@ TEST_CASE("Auto disco / Test stop scan auto", "[auto]")
     std::this_thread::sleep_for(std::chrono::seconds(1));
 
     // Prepare discovery
-    const int nbAddressToTest = 1000;
+    const uint nbAddressToTest = 1000;
     start::In in;
     in.discovery.type = ConfigDiscovery::Discovery::Type::Ip;
-    for (int i = 0; i < nbAddressToTest; i++) {
+    for (uint i = 0; i < nbAddressToTest; i++) {
         in.discovery.ips.append("127.0.0.1");
     }
     ConfigDiscovery::Protocol nutSnmp;
@@ -294,12 +294,12 @@ TEST_CASE("Auto disco / Test stop scan auto", "[auto]")
     logDebug("Check status in progress");
     out = getStatus();
     CHECK(out.status == status::Out::Status::InProgress);
-    //CHECK(out.addressScanned == 0);
-    CHECK(out.discovered == 0);
-    CHECK(out.ups        == 0);
-    CHECK(out.epdu       == 0);
-    CHECK(out.sts        == 0);
-    CHECK(out.sensors    == 0);
+    //CHECK(out.addressScanned == uint(0));
+    CHECK(out.discovered == uint(0));
+    CHECK(out.ups        == uint(0));
+    CHECK(out.epdu       == uint(0));
+    CHECK(out.sts        == uint(0));
+    CHECK(out.sensors    == uint(0));
 
     // Stop discovery
     fty::disco::Message msg2 = Test::createMessage(stop::Subject);
@@ -455,11 +455,11 @@ TEST_CASE("Auto disco / Test real scan auto with simulation", "[auto]")
         auto out = getStatus();
         if (i == 0) {
             //CHECK(out.status   == status::Out::Status::Unknown); // TBD ???
-            CHECK(out.discovered == 0);
-            CHECK(out.ups        == 0);
-            CHECK(out.epdu       == 0);
-            CHECK(out.sts        == 0);
-            CHECK(out.sensors    == 0);
+            CHECK(out.discovered == uint(0));
+            CHECK(out.ups        == uint(0));
+            CHECK(out.epdu       == uint(0));
+            CHECK(out.sts        == uint(0));
+            CHECK(out.sensors    == uint(0));
         }
 
         // Prepare discovery
@@ -493,12 +493,12 @@ TEST_CASE("Auto disco / Test real scan auto with simulation", "[auto]")
             if (out.status == status::Out::Status::InProgress) {
                 logDebug("Check status in progress detected after: {} sec",
                     std::chrono::duration_cast<std::chrono::seconds>(end - start).count());
-                CHECK(out.addressScanned == 0);
-                CHECK(out.discovered     == 0);
-                CHECK(out.ups            == 0);
-                CHECK(out.epdu           == 0);
-                CHECK(out.sts            == 0);
-                CHECK(out.sensors        == 0);
+                CHECK(out.addressScanned == uint(0));
+                CHECK(out.discovered     == uint(0));
+                CHECK(out.ups            == uint(0));
+                CHECK(out.epdu           == uint(0));
+                CHECK(out.sts            == uint(0));
+                CHECK(out.sensors        == uint(0));
                 break;
             }
             // Timeout of 100 sec
@@ -532,7 +532,7 @@ TEST_CASE("Auto disco / Test real scan auto with simulation", "[auto]")
         // Check status (terminated)
         out = getStatus();
         CHECK(out.status         == status::Out::Status::Terminated);
-        CHECK(out.addressScanned == 1);
+        CHECK(out.addressScanned == uint(1));
         CHECK(out.discovered     == statusExpected.discovered);
         CHECK(out.ups            == statusExpected.ups);
         CHECK(out.epdu           == statusExpected.epdu);

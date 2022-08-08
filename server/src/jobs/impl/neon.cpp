@@ -16,6 +16,7 @@
 
 #include "neon.h"
 #include <fty/string-utils.h>
+#include <fty_log.h>
 #include <iostream>
 #include <neon/ne_request.h>
 #include <neon/ne_session.h>
@@ -30,38 +31,60 @@ static int verify_fn(void* /*userdata*/, int /*failures*/, const ne_ssl_certific
 namespace neon {
 
 Neon::Neon(const std::string& scheme, const std::string& address, uint16_t port, uint16_t timeout)
-    : m_session(ne_session_create(scheme.c_str(), address.c_str(), port), &closeSession)
 {
-    // trust any certificate
-    ne_ssl_set_verify(m_session.get(), verify_fn, nullptr);
+    ne_sock_init();
+    //ne_debug_init(stderr, NE_DBG_HTTP | NE_DBG_HTTPBODY);
 
-    ne_set_connect_timeout(m_session.get(), timeout);
-    ne_set_read_timeout(m_session.get(), timeout);
+    m_session = ne_session_create(scheme.c_str(), address.c_str(), port);
+
+    if (!m_session) {
+        logError("ne_session_create() failed");
+        return;
+    }
+
+    // trust any certificate
+    ne_ssl_set_verify(m_session, verify_fn, nullptr);
+
+    ne_set_connect_timeout(m_session, timeout);
+    ne_set_read_timeout(m_session, timeout);
 }
 
 Neon::~Neon()
 {
+    if (m_session) {
+        ne_session_destroy(m_session);
+        m_session = nullptr;
+    }
+    ne_sock_exit();
 }
 
 fty::Expected<std::string> Neon::get(const std::string& path) const
 {
+    if (!m_session) {
+        return fty::unexpected("m_session not initialized");
+    }
+
     std::string rpath = "/" + path;
-    std::unique_ptr<ne_request, decltype(&ne_request_destroy)> request(
-        ne_request_create(m_session.get(), "GET", rpath.c_str()), &ne_request_destroy);
+    ne_request* request = ne_request_create(m_session, "GET", rpath.c_str());
+    if (!request) {
+        return fty::unexpected("ne_request_create() failed");
+    }
 
     std::string body;
 
     do {
-        int  stat   = ne_begin_request(request.get());
-        auto status = ne_get_status(request.get());
+        int  stat   = ne_begin_request(request);
+        auto status = ne_get_status(request);
         if (stat != NE_OK) {
+            ne_request_destroy(request);
             if (!status->code) {
-                return fty::unexpected(ne_get_error(m_session.get()));
+                return fty::unexpected(ne_get_error(m_session));
             }
             return fty::unexpected("non-NE_OK, status: {} {}", status->code, status->reason_phrase);
         }
 
         if (status->code != 200) {
+            ne_request_destroy(request);
             return fty::unexpected("NE_OK, status: {} {}", status->code, status->reason_phrase);
         }
 
@@ -69,17 +92,14 @@ fty::Expected<std::string> Neon::get(const std::string& path) const
         std::array<char, 1024> buffer;
 
         ssize_t bytes = 0;
-        while ((bytes = ne_read_response_block(request.get(), buffer.data(), buffer.size())) > 0) {
+        while ((bytes = ne_read_response_block(request, buffer.data(), buffer.size())) > 0) {
             body += std::string(buffer.data(), size_t(bytes));
         }
-    } while (ne_end_request(request.get()) == NE_RETRY);
+    } while (ne_end_request(request) == NE_RETRY);
+
+    ne_request_destroy(request);
 
     return fty::Expected<std::string>(body);
-}
-
-void Neon::closeSession(ne_session* sess)
-{
-    ne_session_destroy(sess);
 }
 
 // =====================================================================================================================
