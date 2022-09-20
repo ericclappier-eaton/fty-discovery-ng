@@ -300,6 +300,7 @@ void Assets::addSensors(const DeviceInfo& deviceInfo, int& indexSensor,
                 });
                 index != -1) {
                 sensor.ext[index]["name"] = externalName;
+                sensor.ext[index]["read_only"] = "false";
             }
         }
         addAssetVal(sensor, "model", sensorModel);
@@ -543,6 +544,7 @@ void Assets::enrichAsset(commands::assets::Return& asset)
             });
             index != -1) {
             asset.asset.ext[index]["name"] = name;
+            asset.asset.ext[index]["read_only"] = "false";
         }
     }
     // endpoint.1 attributes (monitoring)
