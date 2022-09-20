@@ -304,7 +304,7 @@ void Assets::addSensors(const DeviceInfo& deviceInfo, int& indexSensor,
             }
         }
         addAssetVal(sensor, "model", sensorModel);
-        addAssetVal(sensor, "endpoint.1.sub_address", modbusAddress);
+        addAssetVal(sensor, "endpoint.1.sub_address", modbusAddress, false);
 
         logDebug("Added new sensor ({}/{}): SERIAL: {} - TYPE: {} - PARENT: {}", s, endSensor, sensorSerialNumber,
             sensorModel, parentIdentifier);
