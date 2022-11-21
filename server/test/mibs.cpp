@@ -16,14 +16,14 @@ TEST_CASE("Mibs / Wrong request", "[mibs]")
 {
     fty::disco::Message msg = Test::createMessage(commands::mibs::Subject);
 
-    msg.userData.setString("Some shit");
+    msg.userData.setString("Something");
     fty::Expected<fty::disco::Message> ret = Test::send(msg);
 
     CHECK_FALSE(ret);
     CHECK("Wrong input data: format of payload is incorrect" == ret.error());
 }
 
-TEST_CASE("Mibs / Unaviable host", "[mibs]")
+TEST_CASE("Mibs / Unavailable host", "[mibs]")
 {
     fty::disco::Message msg = Test::createMessage(commands::mibs::Subject);
 
