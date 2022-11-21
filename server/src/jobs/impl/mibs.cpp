@@ -46,6 +46,7 @@ static const std::vector<std::string>& knownMibs()
         "EATON-GENESIS-II-MIB::productTitle.0",    // aphel_genesisII
         "EATON-EPDU-MIB::productName.0",           // eaton_epdu
         "EATON-EPDU-PU-SW-MIB::pulizzi.1",         // pulizzi_switched1
+        "Eaton-MIB DEFINITIONS::pduModel.1",       // eaton_pdu_nlogic
         "CPQPOWER-MIB::pdu2Model.0",               // hpe_epdu
         "TRIPPUPS1-MIB::trippUPS1",                // tripplite
         "UPS-MIB::upsIdentManufacturer.0",         // ietf
@@ -81,6 +82,7 @@ std::string mapMibToLegacy(const std::string& mib)
         {"EATON-GENESIS-II-MIB::eaton",         "aphel_genesisII"},     // aphel_genesisII
         {"EATON-OIDS::pduAgent.6",              "aphel_revelation"},    // aphel_revelation
         {"EATON-EPDU-MIB::eatonEpdu",           "eaton_epdu"},          // eaton_marlin
+        {"Eaton-MIB DEFINITIONS::pduModel.1",   "eaton_pdu_nlogic"},    // eaton_pdu_nlogic
         {"PM-MIB::pm3024",                      "emerson_avocent_pdu"}, // emerson_avocent_pdu
         {"EATON-EPDU-PU-SW-MIB::pulizzi",       "pulizzi_switched1"},   // pulizzi_switched1
         {"CPQPOWER-MIB::pdu2",                  "hpe_epdu"},            // hpe_pdu
