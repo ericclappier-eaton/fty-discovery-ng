@@ -48,6 +48,7 @@ static const std::vector<std::string>& knownMibs()
         "EATON-EPDU-PU-SW-MIB::pulizzi.1",         // pulizzi_switched1
         "Eaton-MIB DEFINITIONS::pduModel.1",       // eaton_pdu_nlogic
         "CPQPOWER-MIB::pdu2Model.0",               // hpe_epdu
+        "CPQPOWER-MIB::pdu3Model.1",               // hpe_pdu3_cis
         "TRIPPUPS1-MIB::trippUPS1",                // tripplite
         "UPS-MIB::upsIdentManufacturer.0",         // ietf
         "MG-SNMP-UPS-MIB::upsmgIdentFamilyName.0", // mge
@@ -86,6 +87,7 @@ std::string mapMibToLegacy(const std::string& mib)
         {"PM-MIB::pm3024",                      "emerson_avocent_pdu"}, // emerson_avocent_pdu
         {"EATON-EPDU-PU-SW-MIB::pulizzi",       "pulizzi_switched1"},   // pulizzi_switched1
         {"CPQPOWER-MIB::pdu2",                  "hpe_epdu"},            // hpe_pdu
+        {"CPQPOWER-MIB::pdu3",                  "hpe_pdu3_cis"},        // hpe_pdu3_cis
         {"NET-SNMP-TC::linux",                  "huawei"},              // huawei
         {"MG-SNMP-UPS-MIB::upsmg",              "mge"},                 // mge
         {"EATON-OIDS::xupsMIB",                 "pw"},                  // powerware
