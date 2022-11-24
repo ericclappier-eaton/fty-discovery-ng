@@ -1,5 +1,5 @@
 /*  =========================================================================
-    daemon.h - Discovery config data desctripor
+    config.h - Discovery config data desctripor
 
     Copyright (C) 2014 - 2020 Eaton
 
@@ -27,7 +27,7 @@ namespace fty::disco {
 class Config : public pack::Node
 {
 public:
-    pack::String actorName   = FIELD("actor-name", "discovery-ng");
+    pack::String actorName   = FIELD("actor-name", "fty-discovery-ng");
     pack::String mibDatabase = FIELD("mib-database", "mibs");
     pack::Bool   tryAll      = FIELD("try-all", false);
     pack::UInt32 pollScanMax = FIELD("poll-scan-max", 50);
