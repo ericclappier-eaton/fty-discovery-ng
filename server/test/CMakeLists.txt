@@ -6,7 +6,6 @@ etn_test_target(${PROJECT_NAME}-static
         root/*
     CONFIGS
         conf/discovery.conf
-        conf/logger.conf
         conf/configuration.json
         conf/data.json
         conf/config-discovery.conf

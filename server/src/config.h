@@ -28,7 +28,6 @@ class Config : public pack::Node
 {
 public:
     pack::String actorName   = FIELD("actor-name", "discovery-ng");
-    pack::String logConfig   = FIELD("log-config", "logger.conf");
     pack::String mibDatabase = FIELD("mib-database", "mibs");
     pack::Bool   tryAll      = FIELD("try-all", false);
     pack::UInt32 pollScanMax = FIELD("poll-scan-max", 50);
@@ -36,7 +35,7 @@ public:
 
 public:
     using pack::Node::Node;
-    META(Config, actorName, logConfig, mibDatabase, tryAll, pollScanMax, endpoint);
+    META(Config, actorName, mibDatabase, tryAll, pollScanMax, endpoint);
 
 public:
     static Config& instance();

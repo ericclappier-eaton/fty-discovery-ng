@@ -112,14 +112,6 @@ etn_configure_file(
 
 ## -> etc/
 etn_configure_file(
-    conf/logger.conf.in
-
-    TARGET      ${PROJECT_NAME}
-    DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/${PROJECT_NAME}
-)
-
-## -> etc/
-etn_configure_file(
     conf/config-discovery.conf.in
 
     TARGET      ${PROJECT_NAME}
