@@ -128,7 +128,7 @@ Expected<MibsReader::MibList> MibsReader::read() const
 {
     if (!m_isOpen) {
         if (auto res = m_session->open(); !res) {
-            logTrace("session open() failed ({})", res.error());
+            logError("session open() failed ({})", res.error());
             return unexpected(res.error());
         }
         m_isOpen = true;
@@ -138,7 +138,7 @@ Expected<MibsReader::MibList> MibsReader::read() const
     {
         const std::string sysOid{".1.3.6.1.2.1.1.2.0"};
         if (auto res = m_session->read(sysOid); !res) {
-            logTrace("sysOid read() failed ({})", res.error());
+            logError("sysOid read() failed ({})", res.error());
             return unexpected("Connection failed.");
         }
     }
@@ -146,7 +146,7 @@ Expected<MibsReader::MibList> MibsReader::read() const
     MibList mibs;
 
     const std::string RFCMib{"RFC1213-MIB::sysObjectID.0"};
-    logTrace("read {}", RFCMib);
+    logDebug("read {}", RFCMib);
     auto oid = m_session->read(RFCMib);
     if (oid) {
         size_t pos;
@@ -186,7 +186,7 @@ Expected<MibsReader::MibList> MibsReader::read() const
     }
 
     if (mibs.empty()) {
-        logTrace("Cannot fetch any mibs from device");
+        logDebug("Cannot fetch any known mibs from device");
         return unexpected("SNMP device is not supported.");
     }
 
@@ -197,7 +197,7 @@ Expected<std::string> MibsReader::readName() const
 {
     if (!m_isOpen) {
         if (auto res = m_session->open(); !res) {
-            logTrace("session open() failed ({})", res.error());
+            logError("session open() failed ({})", res.error());
             return unexpected(res.error());
         }
         m_isOpen = true;

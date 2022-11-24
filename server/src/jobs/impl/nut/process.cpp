@@ -201,7 +201,7 @@ Expected<void> Process::setCredentialId(const std::string& credential)
             auto secCred = getCredential(credential);
 
             if (auto credV3 = secw::Snmpv3::tryToCast(secCred)) {
-                log_debug("Init from wallet for SNMP v3");
+                logDebug("Init from wallet for SNMP v3");
 
                 m_process->setEnvVar("SU_VAR_VERSION", "v3");
                 m_process->addArgument("-x");
