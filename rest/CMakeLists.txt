@@ -20,26 +20,25 @@ etn_target(shared ${PROJECT_NAME}-rest
         src/scan-stop.cpp
         src/scan-status.h
         src/scan-status.cpp
-
     USES
-        ${PROJECT_NAME}-common
-        fty-cmake-rest
         tntnet
         cxxtools
+        fty-cmake-rest
         fty_common_logging
         fty_common
         fty_common_rest
-    TARGET_DESTINATION /usr/lib/bios
+        ${PROJECT_NAME}-common
+    TARGET_DESTINATION
+        ${CMAKE_INSTALL_FULL_LIBDIR}
 )
 
 ########################################################################################################################
 
-# discovery.xml for tntnet
+# mappings for tntnet -> etc/
 etn_configure_file(
     conf/42_discovery.xml.in
-
     TARGET      ${PROJECT_NAME}-rest
-    DESTINATION /etc/tntnet/bios.d
+    DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/tntnet/bios.d
 )
 
 ########################################################################################################################
