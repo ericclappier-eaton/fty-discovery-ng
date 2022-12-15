@@ -29,8 +29,7 @@ fty::Expected<void> Test::init()
     }
 
     fty::disco::impl::Snmp::instance().init(fty::disco::Config::instance().mibDatabase.value());
-    ManageFtyLog::setInstanceFtylog(fty::disco::Config::instance().actorName.value(),
-                                    fty::disco::Config::instance().logConfig.value());
+    ManageFtyLog::setInstanceFtylog(fty::disco::Config::instance().actorName.value(), "");
 
     // Create the broker
     static const char* endpoint_disco = "inproc://fty-discovery-ng-test";

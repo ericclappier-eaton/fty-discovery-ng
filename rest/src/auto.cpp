@@ -47,16 +47,18 @@ unsigned DiscoveryAutoRest::run()
 
 Expected<std::string> DiscoveryAutoRest::discoveryAuto(const commands::discoveryauto::In& param)
 {
+    static constexpr const char* ACTOR_NAME = "fty-discovery-ng-rest_auto";
+
     disco::MessageBus bus;
-    if (auto res = bus.init("discovery_rest"); !res) {
+    if (auto res = bus.init(ACTOR_NAME); !res) {
         return unexpected(res.error());
     }
 
     disco::Message msg;
     msg.userData.setString(*pack::json::serialize(param));
-    msg.meta.to      = "discovery-ng";
+
+    msg.meta.to      = "fty-discovery-ng";
     msg.meta.subject = commands::discoveryauto::Subject;
-    msg.meta.from    = "discovery_rest";
 
     if (Expected<disco::Message> resp = bus.send(Channel, msg)) {
         if (resp->meta.status == disco::Message::Status::Error) {

@@ -1,5 +1,5 @@
 Source: fty-discovery-ng
-Maintainer: Clement Perrette <clementperrette@eaton.com>
+Maintainer: fty-discovery-ng Developers <eatonproductfeedback@eaton.com>
 Build-Depends:
     cmake (>=3.0),
     debhelper (>= 9),

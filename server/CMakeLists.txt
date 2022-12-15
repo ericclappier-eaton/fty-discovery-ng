@@ -47,40 +47,34 @@ etn_target(static ${PROJECT_NAME}-static
     INCLUDE_DIRS
         src
     USES
-        fty-utils
-        fty_common_logging
-        fty-pack
-        ${PROJECT_NAME}-common
+        stdc++fs
         pthread
         netsnmp
         neon
-        stdc++fs
         cidr
-        fty_security_wallet
         czmq
-        fty_common
-        fty_common_socket
         crypto
         uuid
         yaml-cpp
-        fty-asset-libng
-
-        # TBD To Remove ???
         tntdb
         cxxtools
+
+        fty-pack
+        fty_security_wallet
+        fty-utils
+        fty-asset-libng
+        fty_common
+        fty_common_logging
+        fty_common_socket
+
+        ${PROJECT_NAME}-common
     PRIVATE
 )
-
-########################################################################################################################
 
 etn_target(exe ${PROJECT_NAME}
     DATA
         mibs/*
     SOURCES
-        ${PROJECT_NAME}.service.in
-        conf/discovery.conf.in
-        conf/logger.conf.in
-
         src/main.cpp
     USES
         ${PROJECT_NAME}-static
@@ -88,15 +82,27 @@ etn_target(exe ${PROJECT_NAME}
 
 ########################################################################################################################
 
-etn_configure_file(
-    ${PROJECT_NAME}.service.in
-
-    TARGET      ${PROJECT_NAME}
-    DESTINATION /usr/lib/systemd/system/
-)
+add_subdirectory(test)
 
 ########################################################################################################################
 
+## -> etc/lib/systemd/system/
+etn_configure_file(
+    conf/${PROJECT_NAME}.service.in
+
+    TARGET      ${PROJECT_NAME}
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/systemd/system/
+)
+
+## -> etc/lib/tmpfiles.d/
+etn_configure_file(
+    conf/${PROJECT_NAME}.conf.in
+
+    TARGET      ${PROJECT_NAME}
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/tmpfiles.d/
+)
+
+## -> etc/
 etn_configure_file(
     conf/discovery.conf.in
 
@@ -104,17 +110,7 @@ etn_configure_file(
     DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/${PROJECT_NAME}
 )
 
-########################################################################################################################
-
-etn_configure_file(
-    conf/logger.conf.in
-
-    TARGET      ${PROJECT_NAME}
-    DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/${PROJECT_NAME}
-)
-
-########################################################################################################################
-
+## -> etc/
 etn_configure_file(
     conf/config-discovery.conf.in
 
@@ -122,4 +118,4 @@ etn_configure_file(
     DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/${PROJECT_NAME}
 )
 
-add_subdirectory(test)
+########################################################################################################################

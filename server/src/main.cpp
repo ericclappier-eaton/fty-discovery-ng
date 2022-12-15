@@ -12,7 +12,7 @@ int main(int argc, char** argv)
     bool        help   = false;
 
     // clang-format off
-    fty::CommandLine cmd("New discovery service", {
+    fty::CommandLine cmd("fty-discovery-ng", {
         {"--config", config, "Configuration file"},
         {"--daemon", daemon, "Daemonize this application"},
         {"--help",   help,   "Show this help"}
@@ -31,8 +31,8 @@ int main(int argc, char** argv)
         return EXIT_SUCCESS;
     }
 
-    fty::disco::Discovery dis(config);
-    if (!dis.loadConfig()) {
+    fty::disco::Discovery discovery(config);
+    if (!discovery.loadConfig()) {
         return EXIT_FAILURE;
     }
 
@@ -42,15 +42,16 @@ int main(int argc, char** argv)
                                     FTY_COMMON_LOGGING_DEFAULT_CFG);
 
     if (daemon) {
-        log_debug("Start discovery agent as daemon");
+        logDebug("Start discovery agent as daemon");
         fty::Daemon::daemonize();
     }
 
-    if (auto res = dis.init()) {
-        dis.run();
-        dis.shutdown();
-    } else {
-        log_error(res.error().c_str());
+    if (auto res = discovery.init()) {
+        discovery.run();
+        discovery.shutdown();
+    }
+    else {
+        logError("{}", res.error());
         return EXIT_FAILURE;
     }
     return EXIT_SUCCESS;

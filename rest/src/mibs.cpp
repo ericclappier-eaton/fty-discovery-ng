@@ -59,7 +59,7 @@ Expected<std::string> Mibs::mibs(const commands::mibs::In& param)
     disco::Message msg;
     msg.userData.setString(*pack::json::serialize(param));
 
-    msg.meta.to      = "discovery-ng";
+    msg.meta.to      = "fty-discovery-ng";
     msg.meta.subject = commands::mibs::Subject;
 
     if (Expected<disco::Message> resp = bus.send(Channel, msg)) {

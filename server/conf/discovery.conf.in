@@ -1,5 +1,3 @@
-actor-name: 'discovery-ng'
-log-config: 'logger.conf'
+actor-name: 'fty-discovery-ng'
 mib-database: '${DATA_DIR}/mibs/'
 poll-scan-max: 100
-
