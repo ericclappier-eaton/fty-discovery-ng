@@ -471,7 +471,7 @@ bool AutoDiscovery::scanCheck(AutoDiscovery* autoDiscovery)
     auto countPendingTasks = autoDiscovery->m_poolScan->getCountPendingTasks();
     auto countActiveTasks = autoDiscovery->m_poolScan->getCountActiveTasks();
 
-    logTrace("AutoDiscovery scanCheck: ================ status ={}, pending tasks={}, active tasks={})",
+    logDebug("AutoDiscovery scanCheck: ================ status ={}, pending tasks={}, active tasks={})",
         autoDiscovery->m_statusDiscovery.status, countPendingTasks, countActiveTasks);
     if ((autoDiscovery->m_stop && countActiveTasks == 0) || (countPendingTasks == 0 && countActiveTasks == 0)) {
         std::lock_guard<std::mutex> lock(autoDiscovery->m_mutex);
@@ -481,7 +481,7 @@ bool AutoDiscovery::scanCheck(AutoDiscovery* autoDiscovery)
         else {
             autoDiscovery->m_statusDiscovery.status = StatusDiscovery::Status::Terminated;
         }
-        logTrace("End of discovery detected");
+        logDebug("End of discovery detected");
         return true;
     }
     return false;
