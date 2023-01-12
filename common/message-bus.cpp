@@ -51,6 +51,7 @@ void MessageBus::shutdown()
 
 MessageBus::~MessageBus()
 {
+    shutdown();
 }
 
 Expected<Message> MessageBus::send(const std::string& queue, const Message& msg, int timeoutSec)

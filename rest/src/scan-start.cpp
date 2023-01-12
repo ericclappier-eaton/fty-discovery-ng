@@ -8,6 +8,8 @@ namespace fty::disco::start {
 
 unsigned Scan::run()
 {
+    static constexpr const char* ACTOR_NAME = "fty-discovery-ng-rest_scan-start";
+
     rest::User user(m_request);
     if (auto ret = checkPermissions(user.profile(), m_permissions); !ret) {
         throw rest::Error(ret.error());
@@ -18,11 +20,11 @@ unsigned Scan::run()
     }
 
     fty::disco::MessageBus bus;
-    if (auto res = bus.init(AgentName); !res) {
+    if (auto res = bus.init(ACTOR_NAME); !res) {
         throw rest::errors::Internal(res.error());
     }
 
-    fty::disco::Message msg = message(fty::disco::commands::scan::start::Subject);
+    fty::disco::Message msg = message(fty::disco::commands::scan::start::Subject, ACTOR_NAME);
     msg.setData(m_request.body());
     auto ret = bus.send(Channel, msg);
     if (!ret) {
