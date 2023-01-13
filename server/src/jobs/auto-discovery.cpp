@@ -57,7 +57,7 @@ Expected<void> AutoDiscovery::init()
 
     // Init bus for asset creation
     std::string agent = "fty-discovery-ng-asset-creation";
-    logTrace("Create agent {} with {} endpoint", agent, Config::instance().endpoint.value());
+    logDebug("Create agent {} with {} endpoint", agent, Config::instance().endpoint.value());
     if (auto init = m_bus.init(agent.c_str(), Config::instance().endpoint.value()); !init) {
         return fty::unexpected("Init bus error: {}", init.error());
     }
@@ -79,7 +79,7 @@ Expected<void> AutoDiscovery::start(const disco::commands::scan::start::In& in)
 
     m_params = in;
     m_stop   = false;
-    logTrace("Set scan in progress");
+    logInfo("Set scan in progress...");
 
     // Read and test input parameters
     if (auto res = readConfig(); !res) {
@@ -90,24 +90,25 @@ Expected<void> AutoDiscovery::start(const disco::commands::scan::start::In& in)
     statusDiscoveryReset(static_cast<uint32_t>(m_listIpAddress.size()));
     resetPoolScan();
 
+    std::vector<std::string> listIpAddress = m_listIpAddress;
     // For each ip, execute scan discovery
-    for (auto it = m_listIpAddress.begin(); it != m_listIpAddress.end(); it++) {
+    for (auto it = listIpAddress.begin(); it != listIpAddress.end(); it++) {
         // Execute discovery task
         m_poolScan->pushWorker(scan, this, *it);
         logTrace("Add scan with ip {}", *it);
     }
-    m_listIpAddress.clear();
+    listIpAddress.clear();
 
     // Execute task in charge of test end of discovery
     AutoDiscovery::startThreadScanCheck(this, SCAN_CHECK_PERIOD_MS);
 
-    logTrace("End start scan");
+    logInfo("End start scan");
     return {};
 }
 
 Expected<void> AutoDiscovery::stop()
 {
-    logTrace("Stop of scan thread requested");
+    logInfo("Stop of scan thread requested");
     std::unique_lock<std::mutex> lock(m_mutex);
     if (m_statusDiscovery.status == StatusDiscovery::Status::InProgress) {
         m_statusDiscovery.status = StatusDiscovery::Status::StopInProgress;
@@ -115,12 +116,12 @@ Expected<void> AutoDiscovery::stop()
         lock.unlock();
         // Stop pool scan is async (this call make just the request
         stopPoolScan();
-        logTrace("Stop in progress");
+        logInfo("Stop in progress...");
 
     }
     else {
         lock.unlock();
-        logTrace("Stop failed: No scan in progress");
+        logError("Stop failed: No scan in progress");
         return fty::unexpected("No scan in progress");
     }
     return {};
@@ -138,7 +139,7 @@ Expected<void> AutoDiscovery::readConfig()
             powerLink.source    = link.src;
             powerLink.link_type = link.type; // TBD
             m_defaultValuesLinks.append(powerLink);
-            logTrace("defaultValuesLinks add={}", link);
+            logDebug("defaultValuesLinks add={}", link);
         }
     }
     logTrace("defaultValuesLinks size={}", m_defaultValuesLinks.size());
@@ -252,11 +253,15 @@ void AutoDiscovery::updateStatusDiscoveryCounters(const std::string& deviceSubTy
     m_statusDiscovery.discovered = m_statusDiscovery.discovered + 1;
 }
 
-void AutoDiscovery::updateStatusDiscoveryProgress()
+void AutoDiscovery::updateStatusDiscoveryProgress(const std::string &ipAddress)
 {
     std::lock_guard<std::mutex> lock(m_mutex);
     if (m_statusDiscovery.addressScanned < m_statusDiscovery.numOfAddress) {
         m_statusDiscovery.addressScanned = m_statusDiscovery.addressScanned + 1;
+    }
+    // Remove address in list
+    if (!ipAddress.empty()) {
+        m_listIpAddress.erase(find(m_listIpAddress.begin(), m_listIpAddress.end(), ipAddress));
     }
 }
 
@@ -382,9 +387,7 @@ void AutoDiscovery::scan(AutoDiscovery* autoDiscovery, const std::string& ipAddr
 
         logTrace("Start of scan thread");
         if (!autoDiscovery) {
-            // Update progress
             logError("Discovery instance empty");
-            autoDiscovery->updateStatusDiscoveryProgress();
             return;
         }
 
@@ -399,7 +402,7 @@ void AutoDiscovery::scan(AutoDiscovery* autoDiscovery, const std::string& ipAddr
         if (!listProtocols) {
             logError(listProtocols.error());
             // Update progress
-            autoDiscovery->updateStatusDiscoveryProgress();
+            autoDiscovery->updateStatusDiscoveryProgress(ipAddress);
             return;
         }
         if (auto listStr = pack::json::serialize(*listProtocols, pack::Option::WithDefaults)) {
@@ -461,17 +464,21 @@ void AutoDiscovery::scan(AutoDiscovery* autoDiscovery, const std::string& ipAddr
     }
 
     // Update progress
-    autoDiscovery->updateStatusDiscoveryProgress();
+    autoDiscovery->updateStatusDiscoveryProgress(ipAddress);
 }
 
 bool AutoDiscovery::scanCheck(AutoDiscovery* autoDiscovery)
 {
     if (!autoDiscovery) return true;
 
+    static size_t previousCounter = 0;
+    static std::chrono::steady_clock::time_point start {};
+    static bool isBlockingDetected = false;
+
     auto countPendingTasks = autoDiscovery->m_poolScan->getCountPendingTasks();
     auto countActiveTasks = autoDiscovery->m_poolScan->getCountActiveTasks();
 
-    logDebug("AutoDiscovery scanCheck: ================ status ={}, pending tasks={}, active tasks={})",
+    logDebug("AutoDiscovery scanCheck: ================ status={}, pending tasks={}, active tasks={})",
         autoDiscovery->m_statusDiscovery.status, countPendingTasks, countActiveTasks);
     if ((autoDiscovery->m_stop && countActiveTasks == 0) || (countPendingTasks == 0 && countActiveTasks == 0)) {
         std::lock_guard<std::mutex> lock(autoDiscovery->m_mutex);
@@ -483,6 +490,45 @@ bool AutoDiscovery::scanCheck(AutoDiscovery* autoDiscovery)
         }
         logDebug("End of discovery detected");
         return true;
+    }
+    // Workaround for scan blocking: Sometimes some thread with paricular address don't terminate and block indefinitively
+    // the end of the scan. The detection can be made when the counter don't decrease after a timeout specified.
+    // In this case, we terminate the current scan to make possible to relaunch another one.
+    size_t counter = countPendingTasks + countActiveTasks;
+    if (previousCounter == counter) {
+        if (!isBlockingDetected) {
+            isBlockingDetected = true;
+            start = std::chrono::steady_clock::now();
+        }
+        else {
+            auto end = std::chrono::steady_clock::now();
+            if (std::chrono::duration_cast<std::chrono::seconds>(end - start).count() > autoDiscovery->getTimeoutBlockingScan()) {
+                // Kill all remaining threads
+                // TBD: Crash the process !!!
+                //autoDiscovery->cancelPoolScan();
+                std::lock_guard<std::mutex> lock(autoDiscovery->m_mutex);
+                if (autoDiscovery->m_stop) {
+                    autoDiscovery->m_statusDiscovery.status = StatusDiscovery::Status::CancelledByUser;
+                }
+                else {
+                    autoDiscovery->m_statusDiscovery.status = StatusDiscovery::Status::Terminated;
+                }
+                std::stringstream listAddressBlocked;
+                for (auto it = autoDiscovery->m_listIpAddress.begin(); it != autoDiscovery->m_listIpAddress.end(); it++) {
+                    listAddressBlocked << *it << " ";
+                }
+                logWarn("Blocking scan detected (Timeout of {} sec). Stop scan with {} remaining tasks ({})",
+                    autoDiscovery->getTimeoutBlockingScan(),
+                    countActiveTasks,
+                    listAddressBlocked.str());
+                return true;
+            }
+        }
+    }
+    else {
+        if (isBlockingDetected) {
+            isBlockingDetected = false;
+        }
     }
     return false;
 }

@@ -31,7 +31,7 @@ class AutoDiscovery
 public:
     static const uint32_t SCAN_CHECK_PERIOD_MS      = 1000;
     static const uint32_t SCAN_MIN_NUM_THREAD       = 5;
-    static const uint32_t TIMEOUT_BLOCKING_SCAN_SEC = 120;
+    static const uint32_t TIMEOUT_BLOCKING_SCAN_SEC = 180;
 
     enum class AssetStatus
     {
@@ -62,7 +62,7 @@ public:
     void statusDiscoveryInit();
     void statusDiscoveryReset(uint32_t numOfAddress);
     void updateStatusDiscoveryCounters(const std::string& deviceSubType);
-    void updateStatusDiscoveryProgress();
+    void updateStatusDiscoveryProgress(const std::string &ipAddress = "");
 
     // Scan node(s)
     static void scan(AutoDiscovery* autoDiscovery, const std::string& ipAddress);
