@@ -69,6 +69,9 @@ Expected<Message> MessageBus::send(const std::string& queue, const Message& msg,
         return Expected<Message>(m);
     } catch (messagebus::MessageBusException& ex) {
         return unexpected(ex.what());
+    } catch (std::exception& ex) {
+        logError("MessageBus error during sending a message: {}", ex.what());
+        return unexpected(ex.what());
     }
 }
 
@@ -85,6 +88,9 @@ Expected<void> MessageBus::reply(const std::string& queue, const Message& req, c
         return {};
     } catch (messagebus::MessageBusException& ex) {
         return unexpected(ex.what());
+    } catch (std::exception& ex) {
+        logError("MessageBus error during replying a message: {}", ex.what());
+        return unexpected(ex.what());
     }
 }
 
@@ -99,6 +105,9 @@ Expected<Message> MessageBus::recieve(const std::string& queue)
         return Expected<Message>(ret);
     } catch (messagebus::MessageBusException& ex) {
         return unexpected(ex.what());
+    } catch (std::exception& ex) {
+        logError("MessageBus error during receiving a message: {}", ex.what());
+        return unexpected(ex.what());
     }
 }
 
@@ -109,6 +118,9 @@ Expected<void> MessageBus::subsribe(const std::string& queue, std::function<void
         m_bus->subscribe(queue, func);
         return {};
     } catch (messagebus::MessageBusException& ex) {
+        return unexpected(ex.what());
+    } catch (std::exception& ex) {
+        logError("MessageBus error during subscribing: {}", ex.what());
         return unexpected(ex.what());
     }
 }
