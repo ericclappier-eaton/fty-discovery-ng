@@ -21,7 +21,9 @@
 
 #include "auto.h"
 #include "message-bus.h"
+#include "discovery-rest.h"
 #include <fty/rest/component.h>
+#include <sys/types.h> //gettid()
 
 namespace fty::disco {
 
@@ -47,17 +49,18 @@ unsigned DiscoveryAutoRest::run()
 
 Expected<std::string> DiscoveryAutoRest::discoveryAuto(const commands::discoveryauto::In& param)
 {
-    static constexpr const char* ACTOR_NAME = "fty-discovery-ng-rest_auto";
+    static const std::string ACTOR_NAME = "fty-discovery-ng-rest_auto";
+    std::string clientNameWithThreadId(ACTOR_NAME + "-" + std::to_string(gettid()));
 
     disco::MessageBus bus;
-    if (auto res = bus.init(ACTOR_NAME); !res) {
+    if (auto res = bus.init(clientNameWithThreadId); !res) {
         return unexpected(res.error());
     }
 
     disco::Message msg;
     msg.userData.setString(*pack::json::serialize(param));
 
-    msg.meta.to      = "fty-discovery-ng";
+    msg.meta.to      = AGENT_DISCOVERY_NAME;
     msg.meta.subject = commands::discoveryauto::Subject;
 
     if (Expected<disco::Message> resp = bus.send(Channel, msg)) {
