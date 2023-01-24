@@ -56,9 +56,10 @@ Expected<void> AutoDiscovery::init()
     m_poolScan = std::unique_ptr<fty::ThreadPool>(new fty::ThreadPool(minNumThreads, maxNumThreads));
 
     // Init bus for asset creation
-    std::string agent = "fty-discovery-ng-asset-creation";
-    logDebug("Create agent {} with {} endpoint", agent, Config::instance().endpoint.value());
-    if (auto init = m_bus.init(agent.c_str(), Config::instance().endpoint.value()); !init) {
+    static const std::string CLIENT_NAME = "fty-discovery-ng-asset-creation";
+    std::string clientNameWithThreadId(CLIENT_NAME + "-" + std::to_string(gettid()));
+    logDebug("Create agent {} with {} endpoint", clientNameWithThreadId, Config::instance().endpoint.value());
+    if (auto init = m_bus.init(clientNameWithThreadId.c_str(), Config::instance().endpoint.value()); !init) {
         return fty::unexpected("Init bus error: {}", init.error());
     }
     // Init status
