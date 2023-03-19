@@ -19,32 +19,35 @@ namespace address {
 
 fty::Expected<std::string> AddressParser::itIpInit(const std::string& startIP, const std::string& stopIP) {
 
-	if (startIP.empty()) {
-		return fty::unexpected("start ip empty");
-	}
+    if (startIP.empty()) {
+        return fty::unexpected("start ip empty");
+    }
 
     std::string stopIPCheck = stopIP;
-	if (stopIPCheck.empty()) {
-		stopIPCheck = startIP;
-	}
+    if (stopIPCheck.empty()) {
+        stopIPCheck = startIP;
+    }
 
     struct addrinfo hints;
-	memset(&hints, 0, sizeof(struct addrinfo));
-	hints.ai_family = AF_INET;
-
-    // Compute start IP
     struct sockaddr_in *s_in = nullptr;
     struct addrinfo *res = nullptr;
-	if (getaddrinfo(startIP.c_str(), nullptr, &hints, &res) == 0) {
-		s_in = reinterpret_cast<struct sockaddr_in *>(res->ai_addr);
-		start = s_in->sin_addr;
-		freeaddrinfo(res);
-	}
+
+    // Compute start IP
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_INET;
+    if (getaddrinfo(startIP.c_str(), nullptr, &hints, &res) == 0) {
+        s_in = reinterpret_cast<struct sockaddr_in *>(res->ai_addr);
+        start = s_in->sin_addr;
+        freeaddrinfo(res);
+        res = nullptr;
+        s_in = nullptr;
+    }
     else {
         return fty::unexpected("Invalid start address : {}", startIP);
     }
 
-	// Compute stop IP
+    // Compute stop IP
+    memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_INET;
     if (getaddrinfo(stopIPCheck.c_str(), nullptr, &hints, &res) != 0) {
         start.s_addr = 0;
@@ -55,7 +58,7 @@ fty::Expected<std::string> AddressParser::itIpInit(const std::string& startIP, c
     stop = s_in->sin_addr;
     freeaddrinfo(res);
 
-	// Make sure start IP is less than stop IP
+    // Make sure start IP is less than stop IP
     if (ntohl(start.s_addr) > ntohl(stop.s_addr) ) {
         start.s_addr = 0;
         stop.s_addr = 0;
@@ -104,8 +107,8 @@ bool AddressParser::isRange(const std::string& range) {
 fty::Expected<std::pair<std::string, std::string>> AddressParser::cidrToLimits(const std::string& cidr) {
 
     if (cidr.empty()) {
-		return fty::unexpected("Error invalid address");;
-	}
+        return fty::unexpected("Error invalid address");;
+    }
 
     int maskVal = 32;
     std::string firstIp;
@@ -122,19 +125,19 @@ fty::Expected<std::pair<std::string, std::string>> AddressParser::cidrToLimits(c
     }
 
     struct addrinfo hints;
-	memset(&hints, 0, sizeof(struct addrinfo));
-	hints.ai_family = AF_INET;
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_INET;
 
     AddressParser ip;
     struct addrinfo *res = nullptr;
     struct sockaddr_in *sIn = nullptr;
-	if (getaddrinfo(firstIp.c_str(), nullptr, &hints, &res) == 0) {
-		sIn = reinterpret_cast<struct sockaddr_in *>(res->ai_addr);
-		ip.start = sIn->sin_addr;
-		freeaddrinfo(res);
-	}
+    if (getaddrinfo(firstIp.c_str(), nullptr, &hints, &res) == 0) {
+        sIn = reinterpret_cast<struct sockaddr_in *>(res->ai_addr);
+        ip.start = sIn->sin_addr;
+        freeaddrinfo(res);
+    }
 
-    uint32_t maskBit;
+    uint32_t maskBit{0};
     if (maskVal > 0) {
         maskVal --;
         maskBit = 0x80000000;
@@ -164,8 +167,8 @@ fty::Expected<std::pair<std::string, std::string>> AddressParser::cidrToLimits(c
 fty::Expected<std::pair<std::string, std::string>> AddressParser::rangeToLimits(const std::string& range) {
 
     if (range.empty()) {
-		return fty::unexpected("Error invalid range");
-	}
+        return fty::unexpected("Error invalid range");
+    }
 
     std::string startIp;
     std::string stopIp;
@@ -240,7 +243,7 @@ fty::Expected<std::vector<std::string>> AddressParser::getLocalRangeIp() {
     std::vector<std::string> fullListIp;
     int             s, family, prefix;
     char            host[NI_MAXHOST];
-    struct ifaddrs *ifaddr, *ifa;
+    struct ifaddrs *ifaddr = nullptr, *ifa = nullptr;
     std::string     addr, netm, addrmask;
 
     int scanSize = 0;
@@ -319,8 +322,9 @@ fty::Expected<std::vector<std::string>> AddressParser::getLocalRangeIp() {
 fty::Expected<std::string> AddressParser::getAddrCidr(const std::string& address, uint prefix) {
 
     auto isValid = [](CIDR* cidr) {
-        in_addr  inAddr;
         if (cidr_get_proto(cidr) == CIDR_IPV4) {
+            in_addr  inAddr;
+            memset(&inAddr, 0, sizeof(inAddr));
             if (cidr_to_inaddr(cidr, &inAddr)) {
                 return (inAddr.s_addr != 0); // 0.0.0.0 address
             } else {
@@ -353,11 +357,11 @@ fty::Expected<std::string> AddressParser::getAddrCidr(const std::string& address
 fty::Expected<std::string> AddressParser::ntop(struct in_addr ip) {
 
     char hbuf[NI_MAXHOST];
-	struct sockaddr_in in;
-	memset(&in , 0, sizeof(struct sockaddr_in));
-	in.sin_addr = ip;
-	in.sin_family = AF_INET;
-	if (getnameinfo(reinterpret_cast<const sockaddr *>(&in),
+    struct sockaddr_in in;
+    memset(&in, 0, sizeof(in));
+    in.sin_addr = ip;
+    in.sin_family = AF_INET;
+    if (getnameinfo(reinterpret_cast<const sockaddr *>(&in),
                     sizeof(struct sockaddr_in),
                     hbuf, sizeof(hbuf), nullptr, 0, NI_NUMERICHOST) != 0) {
         return fty::unexpected("Host not valid");

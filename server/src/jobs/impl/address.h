@@ -28,7 +28,10 @@ namespace address {
 class AddressParser
 {
 public:
-    AddressParser() = default;
+    AddressParser() {
+        memset(&start, 0, sizeof(start));
+        memset(&stop, 0, sizeof(stop));
+    };
     AddressParser(const AddressParser&);
     ~AddressParser() = default;
 
@@ -61,7 +64,7 @@ private:
     static int maskNbBit(const std::string& mask);
 
     struct in_addr start;
-	struct in_addr stop;
+    struct in_addr stop;
 };
 
 // =====================================================================================================================

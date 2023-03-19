@@ -442,7 +442,7 @@ void AutoDiscovery::scan(AutoDiscovery* autoDiscovery, const std::string& ipAddr
                     auto& documents = autoDiscovery->m_params.discovery.documents;
 
                     // For each credential
-                    for (const auto doc : documents) {
+                    for (const auto& doc : documents) {
                         logInfo("Try with protocol/port/credential ({}/{}/{}) for {}", elt.protocol, elt.port, doc, ipAddress);
                         inAsset.settings.credentialId = doc;
                         found = doScan(elt, inAsset);
