@@ -25,7 +25,9 @@ namespace fty::disco::impl {
 std::string generateUUID(const std::string& manufacturer, const std::string& model, const std::string& serial)
 {
     static std::string ns = "\x93\x3d\x6c\x80\xde\xa9\x8c\x6b\xd1\x11\x8b\x3b\x46\xa1\x81\xf1";
-    std::string        uuid;
+
+    char uuid_char[37];
+    memset(uuid_char, 0, sizeof(uuid_char));
 
     if (!manufacturer.empty() && !model.empty() && !serial.empty()) {
         log_debug("generate full UUID");
@@ -42,21 +44,15 @@ std::string generateUUID(const std::string& manufacturer, const std::string& mod
         hash[8] &= 0x3F;
         hash[8] |= 0x80;
 
-        char uuid_char[37];
         uuid_unparse_lower(hash.data(), uuid_char);
-
-        uuid = uuid_char;
     } else {
         uuid_t u;
         uuid_generate_random(u);
 
-        char uuid_char[37];
         uuid_unparse_lower(u, uuid_char);
-
-        uuid = uuid_char;
     }
 
-    return uuid;
+    return std::string{uuid_char};
 }
 
 } // namespace fty::disco::impl
