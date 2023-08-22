@@ -205,6 +205,9 @@ Expected<void> Protocols::tryPowercom(const std::string& address, uint16_t port)
             if (deviceType == "ats") {
                 return {};
             }
+            if (deviceType == "pdu") {
+                return {};
+            }
 
             return unexpected("not supported device (" + deviceType + ")");
         } catch (const std::exception& e) {
