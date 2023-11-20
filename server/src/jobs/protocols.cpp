@@ -140,7 +140,7 @@ Expected<commands::protocols::Out> Protocols::getProtocols(const commands::proto
                         break;
                     }
                     default:
-                        logError("protocol not handled (type: {})", aux.protocol);
+                        logError("protocol not handled (type: {})", static_cast<int>(aux.protocol));
                 }
             }
         //}
