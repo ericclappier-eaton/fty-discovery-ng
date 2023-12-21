@@ -527,7 +527,7 @@ TEST_CASE("Auto disco / Test real scan auto with simulation", "[auto]")
             std::this_thread::sleep_for(std::chrono::seconds(5));
         }
         // Wait a little for creation of asset
-        std::this_thread::sleep_for(std::chrono::seconds(15));
+        std::this_thread::sleep_for(std::chrono::seconds(25));
 
         // Check status (terminated)
         out = getStatus();
