@@ -95,6 +95,7 @@ Expected<void> Process::setupPowercom(const std::string& address, uint16_t port)
         // clang-format off
         m_process = std::unique_ptr<fty::Process>(new fty::Process(*path, {
             "-x", fmt::format("port={}", toconnect),
+            "-x", "certPath=/var/lib/nut",
             "-d", "1"
         }));
         // clang-format on
