@@ -350,7 +350,11 @@ Expected<std::string> Process::run() const
                 if (stdError.find("Error when get client token on") != std::string::npos) {
                     return unexpected("Invalid credentials.");
                 }
-                if (stdError.find("Could not connect to device") != std::string::npos) {
+                if (stdError.find("The device firmware version detected was not compatible with the driver") != std::string::npos) {
+                    return unexpected("The device firmware version detected was not compatible with the driver");
+                }
+                if (stdError.find("Could not connect to device") != std::string::npos ||
+                    stdError.find("No mandatory firmware version detected") != std::string::npos) {
                     return unexpected("Connection failed.");
                 }
             }
