@@ -1,5 +1,10 @@
 #include "test-common.h"
 #include <fty/process.h>
+#include <fty_log.h>
+#include <iostream>
+#include <iomanip>
+#include <fstream>
+
 
 TEST_CASE("Assets / Empty request", "[assets]")
 {
@@ -47,8 +52,25 @@ TEST_CASE("Assets / Test output", "[assets]")
         // Wait a moment for snmpsim init
         std::this_thread::sleep_for(std::chrono::seconds(1));
 
+        ///////////////////////////////////////////////////////////////
         // Test
-        system("ps aux | grep snmpsimd");
+        //system("ps aux | grep snmpsimd");
+        int status = std::system("ps aux | grep snmpsimd > test.txt"); 
+        std::cout << "Exit code: " << WEXITSTATUS(status) << std::endl;
+
+        std::ifstream ifs("test.txt", std::ofstream::binary);
+        if (ifs.is_open())
+        {
+            std::stringstream buf;
+            buf << ifs.rdbuf();
+            std::cout << "buf=" << buf.str() << std::endl;
+            logInfo("buff={}", buf.str());
+        }
+        else {
+           std::cout << "Error when reading test file" << std::endl; 
+           logError("Error when reading test file");
+        }
+        ///////////////////////////////////////////////////////////////
 
         fty::disco::Message msg = Test::createMessage(fty::disco::commands::assets::Subject);
 
