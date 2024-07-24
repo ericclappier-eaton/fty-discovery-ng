@@ -11,13 +11,14 @@
 */
 #include "create-asset.h"
 #include <fty_log.h>
+#include "src/config.h"
 
 namespace fty::disco::job::asset::create {
 fty::Expected<Response> run(fty::disco::MessageBus& bus, const std::string& from, const Request& req)
 {
     fty::disco::Message msg;
     msg.meta.subject = Subject;
-    msg.meta.to      = Name;
+    msg.meta.to      = Config::instance().assetAgentName.value();
     msg.meta.replyTo = from;
 
     if (auto json = pack::json::serialize(req, pack::Option::WithDefaults); !json) {
@@ -29,7 +30,7 @@ fty::Expected<Response> run(fty::disco::MessageBus& bus, const std::string& from
 
     // query ID of all assets created
     Response resp;
-    if (auto reply = bus.send(Queue, msg); !reply) {
+    if (auto reply = bus.send(Config::instance().assetQueueName.value(), msg); !reply) {
         return fty::unexpected(reply.error());
     } else {
         const auto& data = reply.value().userData;

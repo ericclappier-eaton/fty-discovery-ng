@@ -27,15 +27,17 @@ namespace fty::disco {
 class Config : public pack::Node
 {
 public:
-    pack::String actorName   = FIELD("actor-name", "fty-discovery-ng");
-    pack::String mibDatabase = FIELD("mib-database", "mibs");
-    pack::Bool   tryAll      = FIELD("try-all", false);
-    pack::UInt32 pollScanMax = FIELD("poll-scan-max", 50);
-    pack::String endpoint    = FIELD("endpoint", "ipc://@/malamute");
+    pack::String actorName      = FIELD("actor-name", "fty-discovery-ng");
+    pack::String mibDatabase    = FIELD("mib-database", "mibs");
+    pack::Bool   tryAll         = FIELD("try-all", false);
+    pack::UInt32 pollScanMax    = FIELD("poll-scan-max", 50);
+    pack::String endpoint       = FIELD("endpoint", "ipc://@/malamute");
+    pack::String assetAgentName = FIELD("asset-agent-name", "asset-agent-ng");
+    pack::String assetQueueName = FIELD("asset-queue-name", "FTY.Q.ASSET.QUERY");
 
 public:
     using pack::Node::Node;
-    META(Config, actorName, mibDatabase, tryAll, pollScanMax, endpoint);
+    META(Config, actorName, mibDatabase, tryAll, pollScanMax, endpoint, assetAgentName, assetQueueName);
 
 public:
     static Config& instance();

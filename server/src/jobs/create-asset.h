@@ -17,9 +17,7 @@
 
 namespace fty::disco::job::asset::create {
 
-static constexpr const char* Name = "asset-agent-ng";
 static constexpr const char* Subject = "CREATE";
-static constexpr const char* Queue   = "FTY.Q.ASSET.QUERY";
 
 class PowerLink : public pack::Node
 {

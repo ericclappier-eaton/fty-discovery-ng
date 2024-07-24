@@ -360,14 +360,11 @@ void TestAuto::recAssets(const fty::disco::Message& msg)
         logDebug("Receive create asset message");
         messagebus::Message answ;
         answ.metaData().emplace(messagebus::Message::SUBJECT, msg2.metaData().find(messagebus::Message::SUBJECT)->second);
-        answ.metaData().emplace(messagebus::Message::FROM, "asset-agent-ng");
-        answ.metaData().emplace(messagebus::Message::TO, msg2.metaData().find(messagebus::Message::FROM)->second);
-        answ.metaData().emplace(messagebus::Message::CORRELATION_ID, msg2.metaData().find(messagebus::Message::CORRELATION_ID)->second);
         answ.metaData().emplace(messagebus::Message::STATUS, messagebus::STATUS_OK);
         answ.userData() = msg2.userData();
 
         // send response
-        auto res = m_bus.send(msg2.metaData().find(messagebus::Message::REPLY_TO)->second, Message(answ));
+        auto res = m_bus.reply(msg2.metaData().find(messagebus::Message::REPLY_TO)->second, msg, Message(answ));
         logDebug("Send create asset message");
     }
 }
@@ -393,11 +390,11 @@ TEST_CASE("Auto disco / Test real scan auto with simulation", "[auto]")
 
     // Create message bus for asset creation
     fty::disco::MessageBus bus;
-    if (auto res = bus.init("asset-agent-ng", endpoint_disco); !res) {
+    if (auto res = bus.init(Config::instance().assetAgentName.value(), endpoint_disco); !res) {
         FAIL("Bus asset init");
     }
     TestAuto testAuto(bus);
-    auto sub = bus.subsribe("FTY.Q.ASSET.QUERY", &TestAuto::recAssets, &testAuto);
+    auto sub = bus.subsribe(Config::instance().assetQueueName.value(), &TestAuto::recAssets, &testAuto);
 
     auto& discoAuto = Test::instance().getDisco().getAutoDiscovery();
     discoAuto.statusDiscoveryInit();
@@ -501,8 +498,8 @@ TEST_CASE("Auto disco / Test real scan auto with simulation", "[auto]")
                 CHECK(out.sensors        == uint(0));
                 break;
             }
-            // Timeout of 100 sec
-            if (std::chrono::duration_cast<std::chrono::seconds>(end - start).count() > 100) {
+            // Timeout of 30 sec
+            if (std::chrono::duration_cast<std::chrono::seconds>(end - start).count() > 30) {
                 FAIL("Timeout when wait progress status");
             }
             std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -520,14 +517,14 @@ TEST_CASE("Auto disco / Test real scan auto with simulation", "[auto]")
                     std::chrono::duration_cast<std::chrono::seconds>(end - start).count());
                 break;
             }
-            // Timeout of 300 sec
-            if (std::chrono::duration_cast<std::chrono::seconds>(end - start).count() > 300) {
+            // Timeout of 60 sec
+            if (std::chrono::duration_cast<std::chrono::seconds>(end - start).count() > 60) {
                 FAIL("Timeout when wait terminated status");
             }
-            std::this_thread::sleep_for(std::chrono::seconds(5));
+            std::this_thread::sleep_for(std::chrono::seconds(1));
         }
         // Wait a little for creation of asset
-        std::this_thread::sleep_for(std::chrono::seconds(25));
+        std::this_thread::sleep_for(std::chrono::seconds(5));
 
         // Check status (terminated)
         out = getStatus();
