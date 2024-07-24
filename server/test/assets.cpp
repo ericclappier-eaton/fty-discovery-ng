@@ -47,6 +47,9 @@ TEST_CASE("Assets / Test output", "[assets]")
         // Wait a moment for snmpsim init
         std::this_thread::sleep_for(std::chrono::seconds(1));
 
+        // Test
+        system("ps aux | grep snmpsimd");
+
         fty::disco::Message msg = Test::createMessage(fty::disco::commands::assets::Subject);
 
         fty::disco::commands::assets::In in;
