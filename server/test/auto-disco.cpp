@@ -173,6 +173,8 @@ TEST_CASE("Auto disco / Test normal scan auto", "[auto]")
         "--agent-udpv4-endpoint=127.0.0.1:1161",
         "--logging-method=file:.snmpsim.txt",
         "--variation-modules-dir=root",
+        "--process-user=nobody",
+        "--process-group=nogroup"
     });
     // clang-format on
 
@@ -259,6 +261,8 @@ TEST_CASE("Auto disco / Test stop scan auto", "[auto]")
         "--agent-udpv4-endpoint=127.0.0.1:1161",
         "--logging-method=file:.snmpsim.txt",
         "--variation-modules-dir=root",
+        "--process-user=nobody",
+        "--process-group=nogroup"
     });
     // clang-format on
 
@@ -376,7 +380,9 @@ TEST_CASE("Auto disco / Test real scan auto with simulation", "[auto]")
         "--data-dir=assets",
         "--agent-udpv4-endpoint=127.0.0.1:1161",
         "--logging-method=file:.snmpsim.txt",
-        "--variation-modules-dir=assets"
+        "--variation-modules-dir=assets",
+        "--process-user=nobody",
+        "--process-group=nogroup"
     });
     // clang-format on
     if (auto pid = proc.run(); !pid) {

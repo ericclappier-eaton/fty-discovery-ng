@@ -154,6 +154,8 @@ TEST_CASE("Protocols / Fake request", "[protocols]")
         "--agent-udpv4-endpoint=127.0.0.1:1161",
         "--logging-method=file:.snmpsim.txt",
         "--variation-modules-dir=root",
+        "--process-user=nobody",
+        "--process-group=nogroup"
     });
     // clang-format on
 

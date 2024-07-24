@@ -43,7 +43,9 @@ TEST_CASE("Assets / Test output", "[assets]")
         "--data-dir=assets",
         "--agent-udpv4-endpoint=127.0.0.1:1161",
         "--logging-method=file:.snmpsim.txt",
-        "--variation-modules-dir=assets"
+        "--variation-modules-dir=assets",
+        "--process-user=nobody",
+        "--process-group=nogroup"
         //"--log-level=error"
     });
     // clang-format on
@@ -51,26 +53,6 @@ TEST_CASE("Assets / Test output", "[assets]")
     if (auto pid = proc.run()) {
         // Wait a moment for snmpsim init
         std::this_thread::sleep_for(std::chrono::seconds(1));
-
-        ///////////////////////////////////////////////////////////////
-        // Test
-        //system("ps aux | grep snmpsimd");
-        int status = std::system("ps aux | grep snmpsimd > test.txt"); 
-        std::cout << "Exit code: " << WEXITSTATUS(status) << std::endl;
-
-        std::ifstream ifs("test.txt", std::ofstream::binary);
-        if (ifs.is_open())
-        {
-            std::stringstream buf;
-            buf << ifs.rdbuf();
-            std::cout << "buf=" << buf.str() << std::endl;
-            logInfo("buff={}", buf.str());
-        }
-        else {
-           std::cout << "Error when reading test file" << std::endl; 
-           logError("Error when reading test file");
-        }
-        ///////////////////////////////////////////////////////////////
 
         fty::disco::Message msg = Test::createMessage(fty::disco::commands::assets::Subject);
 
